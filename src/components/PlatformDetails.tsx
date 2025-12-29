@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, forwardRef } from "react";
 import { ComparisonItem } from "./PlatformCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,17 @@ interface PlatformDetailsProps {
     item: ComparisonItem;
     allItems: ComparisonItem[];
     onBack?: () => void;
+    hoverColor?: string;
+    primaryColor?: string;
 }
 
-const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
+const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: PlatformDetailsProps) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedAlts, setSelectedAlts] = useState<ComparisonItem[]>([]);
     const [showWarning, setShowWarning] = useState(false);
+
+    // Generate unique ID for scoping styles
+    const uniqueId = "pd-" + Math.random().toString(36).substr(2, 9);
 
     const filteredItems = allItems.filter(p =>
         p.id !== item.id &&
@@ -92,9 +97,14 @@ const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
                                 </Badge>
                             ))}
                         </div>
-                        <Button onClick={handleCompare} className="w-full md:w-auto bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 font-bold">
+                        <DynamicButton
+                            hoverColor={hoverColor}
+                            primaryColor={primaryColor}
+                            onClick={handleCompare}
+                            className="w-full md:w-auto font-bold shadow-lg"
+                        >
                             Compare Now <BarChart className="w-4 h-4 ml-2" />
-                        </Button>
+                        </DynamicButton>
                     </div>
                 )}
 
@@ -129,17 +139,43 @@ const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
                         </div>
 
                         <div className="flex flex-wrap gap-4">
-                            <Button size="lg" className="px-8" onClick={() => window.open(item.details_link, '_blank')}>
+                            <Button size="lg" className="px-8" onClick={() => {
+                                const settings = (window as any).wpcSettings || (window as any).ecommerceGuiderSettings;
+                                const shouldOpenNewTab = settings?.openNewTab !== false;
+                                window.open(item.details_link, shouldOpenNewTab ? '_blank' : '_self');
+                            }}>
                                 Visit {item.name} <ExternalLink className="w-4 h-4 ml-2" />
                             </Button>
 
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/5">
+                                    <DynamicButton
+                                        hoverColor={hoverColor}
+                                        primaryColor={primaryColor}
+                                        variant="outline"
+                                        size="lg"
+                                        className="transition-colors border-primary text-primary"
+                                    >
                                         Compare Alternatives
-                                    </Button>
+                                    </DynamicButton>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-72" align="start">
+                                <DropdownMenuContent className={`w-72 ${uniqueId}`} align="start">
+                                    {/* Dynamic Hover Styles */}
+                                    {hoverColor && (
+                                        <style>
+                                            {`
+                                            .${uniqueId} [role="menuitem"]:hover, 
+                                            .${uniqueId} [role="menuitem"][data-highlighted] {
+                                                background-color: ${hoverColor}15 !important;
+                                                color: ${hoverColor} !important;
+                                            }
+                                            .${uniqueId} [role="menuitem"]:hover svg,
+                                            .${uniqueId} [role="menuitem"][data-highlighted] svg {
+                                                color: ${hoverColor} !important;
+                                            }
+                                            `}
+                                        </style>
+                                    )}
                                     <div className="p-3 border-b border-border bg-muted/30">
                                         <DropdownMenuLabel className="px-0 pb-2">Compare {item.name} with...</DropdownMenuLabel>
                                         <div className="relative">
@@ -168,10 +204,14 @@ const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
                                                         toggleAlt(p);
                                                     }}
                                                     className={`cursor-pointer flex items-center justify-between py-2.5 px-3 rounded-md transition-colors ${isSelected ? 'bg-primary/10 text-primary' : ''}`}
+                                                    style={isSelected && primaryColor ? {
+                                                        backgroundColor: `${primaryColor}15`, // ~8% opacity
+                                                        color: primaryColor,
+                                                    } : undefined}
                                                 >
                                                     <span className="font-medium">{p.name}</span>
                                                     {isSelected ? (
-                                                        <Check className="w-4 h-4 text-primary font-bold" />
+                                                        <Check className="w-4 h-4 text-primary font-bold" style={{ color: primaryColor }} />
                                                     ) : (
                                                         <ArrowLeft className="w-4 h-4 opacity-30 rotate-180" />
                                                     )}
@@ -187,9 +227,15 @@ const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
                                         <>
                                             <DropdownMenuSeparator />
                                             <div className="p-2">
-                                                <Button onClick={handleCompare} size="sm" className="w-full">
+                                                <DynamicButton
+                                                    hoverColor={hoverColor}
+                                                    primaryColor={primaryColor}
+                                                    onClick={handleCompare}
+                                                    size="sm"
+                                                    className="w-full"
+                                                >
                                                     Compare ({selectedAlts.length + 1}) Now
-                                                </Button>
+                                                </DynamicButton>
                                             </div>
                                         </>
                                     )}
@@ -261,5 +307,47 @@ const PlatformDetails = ({ item, allItems, onBack }: PlatformDetailsProps) => {
         </div>
     );
 };
+
+interface DynamicButtonProps extends React.ComponentProps<typeof Button> {
+    hoverColor?: string;
+    primaryColor?: string;
+}
+
+const DynamicButton = forwardRef<HTMLButtonElement, DynamicButtonProps>(
+    ({ hoverColor, primaryColor, className, style, variant, onMouseEnter, onMouseLeave, ...props }, ref) => {
+        const [isHovered, setIsHovered] = useState(false);
+        const isOutline = variant === "outline";
+
+        return (
+            <Button
+                ref={ref}
+                variant={variant}
+                className={`transition-colors duration-200 ${className}`}
+                onMouseEnter={(e) => {
+                    setIsHovered(true);
+                    onMouseEnter?.(e);
+                }}
+                onMouseLeave={(e) => {
+                    setIsHovered(false);
+                    onMouseLeave?.(e);
+                }}
+                style={{
+                    ...style,
+                    ...(isOutline ? {
+                        borderColor: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                        color: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                        backgroundColor: isHovered && hoverColor ? `${hoverColor}10` : undefined
+                    } : {
+                        backgroundColor: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                        borderColor: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                        color: 'white'
+                    })
+                }}
+                {...props}
+            />
+        );
+    }
+);
+DynamicButton.displayName = "DynamicButton";
 
 export default PlatformDetails;

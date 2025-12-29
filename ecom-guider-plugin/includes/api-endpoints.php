@@ -167,8 +167,6 @@ function wpc_get_items() {
                 'featured_badge_text' => get_post_meta( $id, '_wpc_featured_badge_text', true ),
                 'featured_color' => get_post_meta( $id, '_wpc_featured_color', true ),
                 'coupon_code' => get_post_meta( $id, '_wpc_coupon_code', true ),
-                'featured_color' => get_post_meta( $id, '_wpc_featured_color', true ),
-                'coupon_code' => get_post_meta( $id, '_wpc_coupon_code', true ),
                 'button_text' => get_post_meta( $id, '_wpc_button_text', true ),
                 // Footer / Display Settings (Independent of Design Overrides)
                 'footer_button_text' => get_post_meta( $id, '_wpc_footer_button_text', true ),

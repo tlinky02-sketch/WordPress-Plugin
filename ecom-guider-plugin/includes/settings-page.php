@@ -23,7 +23,7 @@ function wpc_add_settings_page() {
  */
 add_action( 'admin_init', 'wpc_register_settings' );
 function wpc_register_settings() {
-    // Visual Style Settings
+    // Register Settings
     register_setting( 'wpc_settings_group', 'wpc_primary_color' );
     register_setting( 'wpc_settings_group', 'wpc_accent_color' );
     register_setting( 'wpc_settings_group', 'wpc_secondary_color' );
@@ -37,6 +37,17 @@ function wpc_register_settings() {
     
     // Filter Style Setting
     register_setting( 'wpc_settings_group', 'wpc_filter_style' );
+    
+    // Search Type Setting (Global)
+    register_setting( 'wpc_settings_group', 'wpc_search_type' );
+
+    // Link Behavior (New Tab)
+    register_setting( 'wpc_settings_group', 'wpc_target_details' );
+    register_setting( 'wpc_settings_group', 'wpc_target_direct' );
+    register_setting( 'wpc_settings_group', 'wpc_target_pricing' );
+
+    // Legacy (keep for fallback if needed, or remove if migrated? Keeping for now)
+    // register_setting( 'wpc_settings_group', 'wpc_open_links_new_tab' );
 
     // Pricing Table Visuals
     register_setting( 'wpc_settings_group', 'wpc_pt_header_bg' );
@@ -46,6 +57,23 @@ function wpc_register_settings() {
     // Position Settings
     register_setting( 'wpc_settings_group', 'wpc_pt_btn_pos_table' );
     register_setting( 'wpc_settings_group', 'wpc_pt_btn_pos_popup' );
+
+    // Text Label Settings
+    register_setting( 'wpc_settings_group', 'wpc_text_view_details' );
+    register_setting( 'wpc_settings_group', 'wpc_text_compare_alternatives' );
+    register_setting( 'wpc_settings_group', 'wpc_text_compare_now' );
+    register_setting( 'wpc_settings_group', 'wpc_text_reviews' );
+    register_setting( 'wpc_settings_group', 'wpc_text_back_to_reviews' );
+    register_setting( 'wpc_settings_group', 'wpc_text_filters' );
+    register_setting( 'wpc_settings_group', 'wpc_text_search_placeholder' );
+    register_setting( 'wpc_settings_group', 'wpc_text_category' );
+    register_setting( 'wpc_settings_group', 'wpc_text_features' );
+    register_setting( 'wpc_settings_group', 'wpc_text_items_count' );
+    register_setting( 'wpc_settings_group', 'wpc_text_selected' );
+    register_setting( 'wpc_settings_group', 'wpc_text_clear_all' );
+    register_setting( 'wpc_settings_group', 'wpc_text_visit' ); // "Visit" (short)
+    register_setting( 'wpc_settings_group', 'wpc_text_about' );
+    register_setting( 'wpc_settings_group', 'wpc_text_sort_default' );
 }
 
 /**
@@ -495,7 +523,11 @@ function wpc_reset_settings() {
         'wpc_pt_btn_bg' => '#0f172a',
         'wpc_pt_btn_text' => '#ffffff',
         'wpc_pt_btn_pos_table' => 'after_price',
+        'wpc_pt_btn_pos_table' => 'after_price',
         'wpc_pt_btn_pos_popup' => 'after_price',
+        'wpc_target_details' => '_blank',
+        'wpc_target_direct' => '_blank',
+        'wpc_target_pricing' => '_blank',
     );
 
     foreach ( $defaults as $key => $value ) {
@@ -588,11 +620,17 @@ function wpc_render_settings_page() {
             <a href="#" class="nav-tab nav-tab-active" data-tab="general">
                 <?php _e( 'General & Visuals', 'wp-comparison-builder' ); ?>
             </a>
+            <a href="#" class="nav-tab" data-tab="texts">
+                <?php _e( 'Text Labels', 'wp-comparison-builder' ); ?>
+            </a>
             <a href="#" class="nav-tab" data-tab="pricing">
                 <?php _e( 'Pricing Table', 'wp-comparison-builder' ); ?>
             </a>
             <a href="#" class="nav-tab" data-tab="schema-seo">
                 <?php _e( 'Schema SEO', 'wp-comparison-builder' ); ?>
+            </a>
+            <a href="#" class="nav-tab" data-tab="links">
+                <?php _e( 'Link Behavior', 'wp-comparison-builder' ); ?>
             </a>
             <a href="#" class="nav-tab" data-tab="import-export">
                 <?php _e( 'Import / Export', 'wp-comparison-builder' ); ?>
@@ -608,6 +646,14 @@ function wpc_render_settings_page() {
         <!-- Tab Contents -->
         <div class="wpc-tab-content" id="wpc-tab-general">
             <?php wpc_render_general_tab(); ?>
+        </div>
+
+        <div class="wpc-tab-content" id="wpc-tab-links" style="display: none;">
+            <?php wpc_render_links_tab(); ?>
+        </div>
+
+        <div class="wpc-tab-content" id="wpc-tab-texts" style="display: none;">
+            <?php wpc_render_texts_tab(); ?>
         </div>
         
         <div class="wpc-tab-content" id="wpc-tab-pricing" style="display: none;">
@@ -687,6 +733,36 @@ function wpc_render_general_tab() {
         <?php settings_fields( 'wpc_settings_group' ); ?>
         <?php do_settings_sections( 'wpc_settings_group' ); ?>
         
+        <h2><?php _e( 'General Options', 'wp-comparison-builder' ); ?></h2>
+        <table class="form-table">
+            <!-- Link Settings Moved to New Tab -->
+            <!-- <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_open_links_new_tab"><?php _e( 'Open Links in New Tab', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <input type="checkbox" id="wpc_open_links_new_tab" name="wpc_open_links_new_tab" value="1" <?php checked( '1', get_option( 'wpc_open_links_new_tab', '1' ) ); ?> />
+                    <p class="description">
+                        <?php _e( 'If checked, all external links (Visit buttons, Pricing plans) will open in a new tab. Uncheck to open in the same tab.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr> -->
+            <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_search_type"><?php _e( 'Default Search Bar Type', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <select name="wpc_search_type" id="wpc_search_type">
+                        <option value="text" <?php selected( get_option( 'wpc_search_type', 'text' ), 'text' ); ?>><?php _e( 'Standard Text Input', 'wp-comparison-builder' ); ?></option>
+                        <option value="combobox" <?php selected( get_option( 'wpc_search_type' ), 'combobox' ); ?>><?php _e( 'Advanced Combobox', 'wp-comparison-builder' ); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e( 'Select the default search bar style for comparison lists. "Combobox" allows multi-selection ("one by one"). This setting can be overridden on a per-list basis.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
         <h2><?php _e( 'Visual Style', 'wp-comparison-builder' ); ?></h2>
         <p><?php _e( 'Customize the look and feel of the comparison tool. These colors will override the defaults.', 'wp-comparison-builder' ); ?></p>
         
@@ -2524,4 +2600,188 @@ function wpc_ajax_save_schema_settings() {
     update_option( 'wpc_schema_settings', $clean_settings );
     
     wp_send_json_success( 'Settings saved' );
+}
+
+/**
+ * Text Labels Tab Render Function
+ */
+function wpc_render_texts_tab() {
+    ?>
+    <form method="post" action="options.php">
+        <?php settings_fields( 'wpc_settings_group' ); ?>
+        <?php do_settings_sections( 'wpc_settings_group' ); ?>
+        
+        <h2><?php _e( 'Text Label Customization', 'wp-comparison-builder' ); ?></h2>
+        <p><?php _e( 'Customize the text labels displayed on the frontend. Leave empty to use default values.', 'wp-comparison-builder' ); ?></p>
+        
+        <table class="form-table">
+            <!-- Details / Links -->
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_view_details"><?php _e( 'View Details Button', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_view_details" name="wpc_text_view_details" value="<?php echo esc_attr( get_option( 'wpc_text_view_details', '' ) ); ?>" class="regular-text" placeholder="e.g. Visit {name}" />
+                    <p class="description">Button text for visiting the provider. Use <code>{name}</code> placeholder.</p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_visit"><?php _e( 'Visit Button (Short)', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_visit" name="wpc_text_visit" value="<?php echo esc_attr( get_option( 'wpc_text_visit', '' ) ); ?>" class="regular-text" placeholder="e.g. Visit" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_compare_alternatives"><?php _e( 'Compare Button (Hero)', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_compare_alternatives" name="wpc_text_compare_alternatives" value="<?php echo esc_attr( get_option( 'wpc_text_compare_alternatives', '' ) ); ?>" class="regular-text" placeholder="e.g. Compare Alternatives" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_compare_now"><?php _e( 'Compare Now Button', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_compare_now" name="wpc_text_compare_now" value="<?php echo esc_attr( get_option( 'wpc_text_compare_now', '' ) ); ?>" class="regular-text" placeholder="e.g. Compare Now" />
+                </td>
+            </tr>
+
+            <!-- Navigation -->
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_back_to_reviews"><?php _e( 'Home / Back Link', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_back_to_reviews" name="wpc_text_back_to_reviews" value="<?php echo esc_attr( get_option( 'wpc_text_back_to_reviews', '' ) ); ?>" class="regular-text" placeholder="e.g. Home" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_reviews"><?php _e( 'Reviews Breadcrumb', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_reviews" name="wpc_text_reviews" value="<?php echo esc_attr( get_option( 'wpc_text_reviews', '' ) ); ?>" class="regular-text" placeholder="e.g. Reviews" />
+                </td>
+            </tr>
+
+            <!-- Filters & Search -->
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_filters"><?php _e( 'Filters Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_filters" name="wpc_text_filters" value="<?php echo esc_attr( get_option( 'wpc_text_filters', '' ) ); ?>" class="regular-text" placeholder="e.g. Filters" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_search_placeholder"><?php _e( 'Search Placeholder', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_search_placeholder" name="wpc_text_search_placeholder" value="<?php echo esc_attr( get_option( 'wpc_text_search_placeholder', '' ) ); ?>" class="regular-text" placeholder="e.g. Search by name..." />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_sort_default"><?php _e( 'Sort: Default Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_sort_default" name="wpc_text_sort_default" value="<?php echo esc_attr( get_option( 'wpc_text_sort_default', '' ) ); ?>" class="regular-text" placeholder="e.g. Sort: Default" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_category"><?php _e( 'Category Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_category" name="wpc_text_category" value="<?php echo esc_attr( get_option( 'wpc_text_category', '' ) ); ?>" class="regular-text" placeholder="e.g. Category" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_features"><?php _e( 'Features Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_features" name="wpc_text_features" value="<?php echo esc_attr( get_option( 'wpc_text_features', '' ) ); ?>" class="regular-text" placeholder="e.g. Platform Features" />
+                </td>
+            </tr>
+            
+            <!-- Misc -->
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_items_count"><?php _e( 'Item Count Label (Plural)', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_items_count" name="wpc_text_items_count" value="<?php echo esc_attr( get_option( 'wpc_text_items_count', '' ) ); ?>" class="regular-text" placeholder="e.g. items" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_selected"><?php _e( 'Selected Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_selected" name="wpc_text_selected" value="<?php echo esc_attr( get_option( 'wpc_text_selected', '' ) ); ?>" class="regular-text" placeholder="e.g. Selected:" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_clear_all"><?php _e( 'Clear All Link', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_clear_all" name="wpc_text_clear_all" value="<?php echo esc_attr( get_option( 'wpc_text_clear_all', '' ) ); ?>" class="regular-text" placeholder="e.g. Clear all" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_about"><?php _e( 'About Section Title', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_about" name="wpc_text_about" value="<?php echo esc_attr( get_option( 'wpc_text_about', '' ) ); ?>" class="regular-text" placeholder="e.g. About {name}" />
+                </td>
+            </tr>
+        </table>
+        
+        <?php submit_button(); ?>
+    </form>
+    <?php
+}
+
+/**
+ * Link Behavior Tab Function
+ */
+function wpc_render_links_tab() {
+    ?>
+    <form method="post" action="options.php">
+        <?php settings_fields( 'wpc_settings_group' ); ?>
+        
+        <h2><?php _e( 'Link Target Behavior', 'wp-comparison-builder' ); ?></h2>
+        <p><?php _e( 'Control how different types of links open (New Tab vs Same Tab).', 'wp-comparison-builder' ); ?></p>
+        
+        <table class="form-table">
+            <!-- Details Page Link -->
+            <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_target_details"><?php _e( 'Comparison / Details Button', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <select name="wpc_target_details" id="wpc_target_details">
+                        <option value="_blank" <?php selected( get_option('wpc_target_details', '_blank'), '_blank' ); ?>><?php _e('New Tab (Yes)', 'wp-comparison-builder'); ?></option>
+                        <option value="_self" <?php selected( get_option('wpc_target_details'), '_self' ); ?>><?php _e('Same Tab (No)', 'wp-comparison-builder'); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e( 'Applies to the "Visit Site" / "View Details" buttons in the Comparison Table, Popups, and Item Cards (Comparison Mode using Details Link).', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <!-- Direct Link -->
+            <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_target_direct"><?php _e( 'Direct / Non-Comparison Button', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <select name="wpc_target_direct" id="wpc_target_direct">
+                        <option value="_blank" <?php selected( get_option('wpc_target_direct', '_blank'), '_blank' ); ?>><?php _e('New Tab (Yes)', 'wp-comparison-builder'); ?></option>
+                        <option value="_self" <?php selected( get_option('wpc_target_direct'), '_self' ); ?>><?php _e('Same Tab (No)', 'wp-comparison-builder'); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e( 'Applies to the main button on Item Cards in "List Mode" (when "Compare" is disabled) which uses the Direct Link.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+
+            <!-- Pricing Plan Link -->
+            <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_target_pricing"><?php _e( 'Pricing Plan Buttons', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <select name="wpc_target_pricing" id="wpc_target_pricing">
+                        <option value="_blank" <?php selected( get_option('wpc_target_pricing', '_blank'), '_blank' ); ?>><?php _e('New Tab (Yes)', 'wp-comparison-builder'); ?></option>
+                        <option value="_self" <?php selected( get_option('wpc_target_pricing'), '_self' ); ?>><?php _e('Same Tab (No)', 'wp-comparison-builder'); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e( 'Applies to the "Select Plan" buttons within the Pricing Table and Pricing Popup.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <?php submit_button(); ?>
+    </form>
+    <?php
 }

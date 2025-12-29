@@ -142,6 +142,18 @@ function wpc_render_list_meta_box( $post ) {
                     </select>
                     <p class="description">Choose layout for this list.</p>
                 </div>
+
+                 <!-- Search Type (New) -->
+                <div style="flex: 1;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Search Bar Type</label>
+                    <?php $search_type = get_post_meta($post->ID, '_wpc_list_search_type', true) ?: 'default'; ?>
+                    <select name="wpc_list_search_type" style="width: 100%;">
+                        <option value="default" <?php selected( $search_type, 'default' ); ?>>Default (As Global)</option>
+                        <option value="text" <?php selected( $search_type, 'text' ); ?>>Standard Text Input</option>
+                        <option value="combobox" <?php selected( $search_type, 'combobox' ); ?>>Advanced Combobox</option>
+                    </select>
+                    <p class="description">Override search bar style.</p>
+                </div>
             </div>
 
             <!-- Show All Items Card Settings -->
@@ -610,6 +622,11 @@ function wpc_save_list_meta( $post_id ) {
     // Save Filter Layout
     if ( isset( $_POST['wpc_list_filter_layout'] ) ) {
         update_post_meta( $post_id, '_wpc_list_filter_layout', sanitize_text_field( $_POST['wpc_list_filter_layout'] ) );
+    }
+
+    // Save Search Type
+    if ( isset( $_POST['wpc_list_search_type'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_search_type', sanitize_text_field( $_POST['wpc_list_search_type'] ) );
     }
 
     // Save Button Text

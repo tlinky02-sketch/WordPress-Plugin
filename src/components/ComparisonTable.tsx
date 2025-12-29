@@ -90,7 +90,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
                       </div>
                       <a
                         href={item.details_link || '#'}
-                        target="_blank"
+                        target={(window as any).wpcSettings?.target_details || '_blank'}
                         className="inline-flex items-center justify-center w-full text-white px-3 md:h-10 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap"
                         rel="noreferrer"
                         style={{

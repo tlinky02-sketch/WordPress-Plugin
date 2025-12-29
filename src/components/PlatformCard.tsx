@@ -388,7 +388,10 @@ const PlatformCard = ({ item, isSelected, onSelect, onViewDetails, disabled, isF
                         onClick={(e) => {
                             e.stopPropagation();
                             const url = item.direct_link || item.details_link;
-                            if (url) window.location.href = url;
+                            if (url) {
+                                const target = (window as any).wpcSettings?.target_direct || '_blank';
+                                window.open(url, target);
+                            }
                         }}
                     >
                         {buttonText || item.button_text || "View Details"}

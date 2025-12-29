@@ -214,7 +214,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target="_blank"
+                                                    target={settings?.target_pricing || '_blank'}
                                                     rel="noreferrer"
                                                     className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 w-full shadow-sm"
                                                     style={{
@@ -273,7 +273,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target="_blank"
+                                                    target={settings?.target_pricing || '_blank'}
                                                     rel="noreferrer"
                                                     className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 w-full shadow-sm"
                                                     style={{
@@ -349,7 +349,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target="_blank"
+                                                    target={settings?.target_pricing || '_blank'}
                                                     className="flex w-full items-center justify-center gap-1 py-1.5 rounded-md font-bold text-[10px] shadow-sm transition-all"
                                                     rel="noreferrer"
                                                     style={{
@@ -410,7 +410,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target="_blank"
+                                                    target={settings?.target_pricing || '_blank'}
                                                     className="flex w-full items-center justify-center gap-1 py-1.5 rounded-md font-bold text-[10px] shadow-sm transition-all"
                                                     rel="noreferrer"
                                                     style={{

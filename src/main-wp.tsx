@@ -7,6 +7,7 @@ import PlatformDetails from "@/components/PlatformDetails";
 import PlatformCard, { ComparisonItem } from "@/components/PlatformCard";
 import PricingPopup from "@/components/PricingPopup";
 import { Button } from "@/components/ui/button";
+import { SearchCombobox } from "@/components/SearchCombobox";
 import { ArrowDown, X, Search, ChevronDown } from "lucide-react";
 import { toast, Toaster } from 'sonner';
 import { cn } from "@/lib/utils";
@@ -26,6 +27,12 @@ declare global {
 
 const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) => {
     const config = initialConfig;
+
+    // Helper to get text with global setting override
+    const getText = (key: string, defaultText: string) => {
+        const settings = (window as any).wpcSettings || (window as any).ecommerceGuiderSettings;
+        return settings?.texts?.[key] || defaultText;
+    };
 
     // Helper to get color with override priority: config.colorsOverride > wpcSettings.colors
     const getColor = (colorKey: 'primary' | 'accent' | 'hoverButton' | 'secondary') => {
@@ -75,6 +82,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
 
     // Search & Sort State
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchSelectedItems, setSearchSelectedItems] = useState<string[]>([]);
     const [sortOption, setSortOption] = useState<'default' | 'name-asc' | 'name-desc' | 'rating-desc' | 'price-asc'>('default');
 
     // UI State - use initialConfig directly for initial visible count
@@ -366,8 +374,10 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             result = result.slice(0, config.limit);
         }
 
-        // 7. Search Filter (by name) - case insensitive
-        if (searchQuery.trim()) {
+        // 7. Search Filter (by name) - case insensitive OR Multi-select
+        if (config.searchType === 'combobox' && searchSelectedItems.length > 0) {
+            result = result.filter(item => searchSelectedItems.includes(item.name));
+        } else if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim();
             result = result.filter(item =>
                 item.name.toLowerCase().includes(query) ||
@@ -398,7 +408,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
         }
 
         return result;
-    }, [items, selectedCategories, selectedFeatures, searchQuery, sortOption]);
+    }, [items, selectedCategories, selectedFeatures, searchQuery, searchSelectedItems, sortOption]);
 
     const displayedItems = filteredItems.slice(0, visibleCount);
     const hasMore = filteredItems.length > visibleCount;
@@ -588,6 +598,8 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                             // If user navigates back, we could switch mode, but likely they want to go to the main page
                             window.location.href = '/hosting-reviews'; // or dynamic root
                         }}
+                        hoverColor={getColor('hoverButton')}
+                        primaryColor={getColor('primary')}
                     />
                 </div>
             );
@@ -613,7 +625,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                 <div className="mb-6 p-4 bg-card rounded-xl border border-border shadow-sm sticky top-4 z-50">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground">Selected:</span>
+                            <span className="text-sm font-semibold text-foreground">{getText('selected', 'Selected:')}</span>
                             {selectedItemObjects.map(p => {
                                 const accentColor = getColor('accent');
                                 return (
@@ -652,7 +664,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                 e.currentTarget.style.filter = '';
                             }}
                         >
-                            Compare Now <ArrowDown className="w-4 h-4 ml-2" />
+                            {getText('compareNow', 'Compare Now')} <ArrowDown className="w-4 h-4 ml-2" />
                         </Button>
                     </div>
                 </div>
@@ -670,7 +682,10 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                         onFeatureChange={handleFeatureChange}
                         onClearFilters={() => { setSelectedCategories([]); setSelectedFeatures([]); }}
                         layout="top"
-                        labels={{ categories: config.categoriesLabel, features: config.featuresLabel }}
+                        labels={{
+                            categories: config.categoriesLabel || getText('category', 'Category'),
+                            features: config.featuresLabel || getText('features', 'Platform Features')
+                        }}
                     />
                 </div>
             )}
@@ -738,25 +753,53 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                             {/* Search & Sort Bar */}
                             <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                                 {/* Search Input */}
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search by name..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                        style={{
-                                            borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
-                                        }}
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => setSearchQuery('')}
-                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
+                                <div className="relative flex-1">
+                                    {config.searchType === 'combobox' ? (
+                                        <SearchCombobox
+                                            items={items}
+                                            selectedValues={searchSelectedItems}
+                                            onSelect={setSearchSelectedItems}
+                                            placeholder="Search & Select..."
+                                            hoverColor={getColor('hoverButton')}
+                                            primaryColor={getColor('primary')}
+                                            onCompare={() => {
+                                                // Convert selected item names to IDs
+                                                const idsToCompare = items
+                                                    .filter(item => searchSelectedItems.includes(item.name))
+                                                    .map(item => item.id);
+
+                                                if (idsToCompare.length >= 2) {
+                                                    setSelectedItems(idsToCompare);
+                                                    setShowComparison(true);
+                                                    // Scroll to comparison
+                                                    setTimeout(() => {
+                                                        comparisonRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                                    }, 100);
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <>
+                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search by name..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                                style={{
+                                                    borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
+                                                }}
+                                            />
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 

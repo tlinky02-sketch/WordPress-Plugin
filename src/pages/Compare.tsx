@@ -1,15 +1,17 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import HostingCard, { HostingProvider } from "@/components/HostingCard";
+import PlatformCard from "@/components/PlatformCard";
 import ComparisonTable from "@/components/ComparisonTable";
 import ComparisonFilters from "@/components/ComparisonFilters";
-import { hostingProviders, categories, filterableFeatures } from "@/data/hostingProviders";
+import { comparisonItems as hostingProviders, categories, filterableFeatures } from "@/data/platformProviders";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Compare = () => {
+  const navigate = useNavigate();
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
@@ -191,10 +193,11 @@ const Compare = () => {
                         className="animate-fade-in"
                         style={{ animationDelay: `${index * 0.05}s` }}
                       >
-                        <HostingCard
-                          provider={provider}
+                        <PlatformCard
+                          item={provider}
                           isSelected={selectedProviders.includes(provider.id)}
                           onSelect={handleSelectProvider}
+                          onViewDetails={(id) => navigate(`/platform/${id}`)}
                           disabled={
                             selectedProviders.length >= MAX_COMPARE &&
                             !selectedProviders.includes(provider.id)
@@ -222,7 +225,7 @@ const Compare = () => {
                 </Button>
               </div>
               <ComparisonTable
-                providers={selectedProviderObjects}
+                items={selectedProviderObjects}
                 onRemove={handleRemoveFromComparison}
               />
             </div>

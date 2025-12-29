@@ -84,6 +84,13 @@ function wpc_compare_button_shortcode( $atts ) {
     // Generate unique ID for this button
     $unique_id = 'wpc-compare-' . $item_id . '-' . mt_rand();
 
+    // Get Global Colors
+    $primary_color = get_option( 'wpc_primary_color', '#6366f1' );
+    $hover_color = get_option( 'wpc_button_hover_color', '' );
+    
+    // Fallback if no hover color set (darken primary logic or static fallback)
+    $hover_color_css = !empty($hover_color) ? $hover_color : '#4f46e5'; // Default fallback if empty
+
     ob_start();
     ?>
 
@@ -92,9 +99,9 @@ function wpc_compare_button_shortcode( $atts ) {
             <button 
                 onclick="toggleCompareDropdown('<?php echo $unique_id; ?>')" 
                 class="wpc-compare-btn"
-                style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: #6366f1; color: white; border: none; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s;"
-                onmouseover="this.style.background='#4f46e5';"
-                onmouseout="this.style.background='#6366f1';"
+                style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: <?php echo esc_attr($primary_color); ?>; color: white; border: none; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.2s;"
+                onmouseover="this.style.background='<?php echo esc_attr($hover_color_css); ?>';"
+                onmouseout="this.style.background='<?php echo esc_attr($primary_color); ?>';"
             >
                 <?php echo esc_html( $attributes['text'] ); ?>
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="chevron">
@@ -115,7 +122,9 @@ function wpc_compare_button_shortcode( $atts ) {
                     <button 
                         class="mobile-compare-btn"
                         onclick="handleFinalCompare('<?php echo $unique_id; ?>', <?php echo $item_id; ?>)"
-                        style="display: none; padding: 6px 12px; background: #6366f1; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;"
+                        style="display: none; padding: 6px 12px; background: <?php echo esc_attr($primary_color); ?>; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;"
+                        onmouseover="this.style.background='<?php echo esc_attr($hover_color_css); ?>';"
+                        onmouseout="this.style.background='<?php echo esc_attr($primary_color); ?>';"
                     >
                         Compare Now
                     </button>

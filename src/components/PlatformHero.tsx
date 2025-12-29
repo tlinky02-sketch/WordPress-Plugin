@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Check, ExternalLink, Star } from "lucide-react";
 import { ComparisonItem } from "./PlatformCard";
@@ -8,13 +8,18 @@ interface PlatformHeroProps {
     item: ComparisonItem;
     onBack?: () => void;
     onScrollToCompare?: () => void;
+    hoverColor?: string;
+    primaryColor?: string;
 }
 
-const PlatformHero: React.FC<PlatformHeroProps> = ({ item, onBack, onScrollToCompare }) => {
+const PlatformHero: React.FC<PlatformHeroProps> = ({ item, onBack, onScrollToCompare, hoverColor, primaryColor }) => {
+    const [isHovered, setIsHovered] = useState(false);
 
     const handleVisit = () => {
         if (item.details_link) {
-            window.open(item.details_link, '_blank');
+            const settings = (window as any).wpcSettings || (window as any).ecommerceGuiderSettings;
+            const shouldOpenNewTab = settings?.openNewTab !== false; // Default to true
+            window.open(item.details_link, shouldOpenNewTab ? '_blank' : '_self');
         }
     };
 
@@ -78,7 +83,19 @@ const PlatformHero: React.FC<PlatformHeroProps> = ({ item, onBack, onScrollToCom
                         </Button>
 
                         {onScrollToCompare && (
-                            <Button variant="outline" size="lg" className="h-12 px-8 text-base bg-background" onClick={onScrollToCompare}>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="h-12 px-8 text-base bg-background transition-colors duration-200 border-primary text-primary wpc-compare-btn mobile-compare-btn"
+                                onClick={onScrollToCompare}
+                                onMouseEnter={() => setIsHovered(true)}
+                                onMouseLeave={() => setIsHovered(false)}
+                                style={{
+                                    borderColor: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                                    color: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
+                                    backgroundColor: isHovered && hoverColor ? `${hoverColor}10` : undefined
+                                }}
+                            >
                                 Compare Alternatives
                             </Button>
                         )}

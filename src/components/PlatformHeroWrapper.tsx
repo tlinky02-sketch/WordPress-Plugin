@@ -59,6 +59,14 @@ const PlatformHeroWrapper: React.FC<PlatformHeroWrapperProps> = ({ itemId }) => 
                 const root = document.querySelector('.wpc-root') || document.getElementById('ecommerce-guider-root');
                 root?.scrollIntoView({ behavior: 'smooth' });
             }}
+            hoverColor={
+                (window as any).wpcSettings?.colors?.hoverButton ||
+                (window as any).ecommerceGuiderSettings?.colors?.hoverButton
+            }
+            primaryColor={
+                (window as any).wpcSettings?.colors?.primary ||
+                (window as any).ecommerceGuiderSettings?.colors?.primary
+            }
         />
     );
 };
