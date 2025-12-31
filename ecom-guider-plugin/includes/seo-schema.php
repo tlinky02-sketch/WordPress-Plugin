@@ -235,6 +235,40 @@ function wpc_generate_item_schema( $post_id, $include_wrapper = true ) {
         $schema['category'] = implode( ', ', $categories );
     }
     
+    // Add features as additionalProperty
+    $features = wp_get_post_terms( $post_id, 'comparison_feature', array( 'fields' => 'names' ) );
+    if ( ! empty( $features ) && ! is_wp_error( $features ) ) {
+        $feature_properties = [];
+        foreach ( $features as $feature ) {
+            $feature_properties[] = array(
+                '@type' => 'PropertyValue',
+                'name' => 'Feature',
+                'value' => $feature,
+            );
+        }
+        if ( ! isset( $schema['additionalProperty'] ) ) {
+            $schema['additionalProperty'] = [];
+        }
+        $schema['additionalProperty'] = array_merge( $schema['additionalProperty'], $feature_properties );
+    }
+    
+    // Add custom fields as additionalProperty
+    $custom_fields = get_post_meta( $post_id, '_wpc_custom_fields', true );
+    if ( ! empty( $custom_fields ) && is_array( $custom_fields ) ) {
+        if ( ! isset( $schema['additionalProperty'] ) ) {
+            $schema['additionalProperty'] = [];
+        }
+        foreach ( $custom_fields as $field ) {
+            if ( ! empty( $field['name'] ) && ! empty( $field['value'] ) ) {
+                $schema['additionalProperty'][] = array(
+                    '@type' => 'PropertyValue',
+                    'name' => $field['name'],
+                    'value' => $field['value'],
+                );
+            }
+        }
+    }
+    
     if ( $include_wrapper ) {
         return '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) . '</script>';
     }

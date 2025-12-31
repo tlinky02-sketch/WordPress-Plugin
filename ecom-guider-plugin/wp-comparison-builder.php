@@ -918,6 +918,11 @@ function wpc_list_shortcode( $atts ) {
         'selectProvider'  => ['meta' => '_wpc_list_txt_sel_prov', 'global' => 'wpc_text_sel_prov', 'default' => 'Select provider...'],
         'noItemFound'     => ['meta' => '_wpc_list_txt_no_item', 'global' => 'wpc_text_no_item', 'default' => 'No item found.'],
         'more'            => ['meta' => '_wpc_list_txt_more', 'global' => 'wpc_text_more', 'default' => 'more'],
+        
+        // Additional UI Texts
+        'showAllItems'    => ['meta' => '_wpc_list_txt_show_all', 'global' => 'wpc_text_show_all', 'default' => 'Show All Items'],
+        'revealMore'      => ['meta' => '_wpc_list_txt_reveal_more', 'global' => 'wpc_text_reveal_more', 'default' => 'Click to reveal'],
+        'noLogo'          => ['meta' => '_wpc_list_txt_no_logo', 'global' => 'wpc_text_no_logo', 'default' => 'No Logo'],
     ];
 
     $labels = [];
@@ -977,6 +982,18 @@ function wpc_list_shortcode( $atts ) {
 
         // Configurable Texts
         'labels' => $labels,
+        
+        // Configurable Colors (Per-List > Global > Default)
+        'colors' => [
+            'prosBg'      => get_post_meta($post_id, '_wpc_list_color_pros_bg', true) ?: get_option('wpc_color_pros_bg', '#f0fdf4'),
+            'prosText'    => get_post_meta($post_id, '_wpc_list_color_pros_text', true) ?: get_option('wpc_color_pros_text', '#166534'),
+            'consBg'      => get_post_meta($post_id, '_wpc_list_color_cons_bg', true) ?: get_option('wpc_color_cons_bg', '#fef2f2'),
+            'consText'    => get_post_meta($post_id, '_wpc_list_color_cons_text', true) ?: get_option('wpc_color_cons_text', '#991b1b'),
+            'couponBg'    => get_post_meta($post_id, '_wpc_list_color_coupon_bg', true) ?: get_option('wpc_color_coupon_bg', '#fef3c7'),
+            'couponText'  => get_post_meta($post_id, '_wpc_list_color_coupon_text', true) ?: get_option('wpc_color_coupon_text', '#92400e'),
+            'couponHover' => get_post_meta($post_id, '_wpc_list_color_coupon_hover', true) ?: get_option('wpc_color_coupon_hover', '#fde68a'),
+            'copied'      => get_post_meta($post_id, '_wpc_list_color_copied', true) ?: get_option('wpc_color_copied', '#10b981'),
+        ],
     );
     
     $config_json = htmlspecialchars(json_encode($config), ENT_QUOTES, 'UTF-8');

@@ -106,6 +106,21 @@ function wpc_register_settings() {
     register_setting( 'wpc_settings_group', 'wpc_text_sel_prov' );
     register_setting( 'wpc_settings_group', 'wpc_text_no_item' );
     register_setting( 'wpc_settings_group', 'wpc_text_more' );
+    
+    // Additional UI Texts (Show All card)
+    register_setting( 'wpc_settings_group', 'wpc_text_show_all' );
+    register_setting( 'wpc_settings_group', 'wpc_text_reveal_more' );
+    register_setting( 'wpc_settings_group', 'wpc_text_no_logo' );
+    
+    // Color Settings
+    register_setting( 'wpc_settings_group', 'wpc_color_pros_bg' );
+    register_setting( 'wpc_settings_group', 'wpc_color_pros_text' );
+    register_setting( 'wpc_settings_group', 'wpc_color_cons_bg' );
+    register_setting( 'wpc_settings_group', 'wpc_color_cons_text' );
+    register_setting( 'wpc_settings_group', 'wpc_color_coupon_bg' );
+    register_setting( 'wpc_settings_group', 'wpc_color_coupon_text' );
+    register_setting( 'wpc_settings_group', 'wpc_color_coupon_hover' );
+    register_setting( 'wpc_settings_group', 'wpc_color_copied' );
 }
 
 /**
@@ -2921,6 +2936,78 @@ function wpc_render_texts_tab() {
                 <td>
                     <input type="text" id="wpc_text_more" name="wpc_text_more" value="<?php echo esc_attr( get_option( 'wpc_text_more', '' ) ); ?>" class="regular-text" placeholder="e.g. more" />
                     <p class="description">Used in "+2 more" labels.</p>
+                </td>
+            </tr>
+            
+            <!-- Additional UI Texts -->
+            <tr valign="top"><th colspan="2"><h3 style="margin:0;">Additional UI Texts</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_show_all"><?php _e( '"Show All Items"', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_show_all" name="wpc_text_show_all" value="<?php echo esc_attr( get_option( 'wpc_text_show_all', '' ) ); ?>" class="regular-text" placeholder="e.g. Show All Items" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_reveal_more"><?php _e( '"Click to reveal X more"', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_reveal_more" name="wpc_text_reveal_more" value="<?php echo esc_attr( get_option( 'wpc_text_reveal_more', '' ) ); ?>" class="regular-text" placeholder="e.g. Click to reveal" />
+                    <p class="description"><?php _e( 'The number will be appended automatically (e.g. "Click to reveal 14 more")', 'wp-comparison-builder' ); ?></p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_no_logo"><?php _e( '"No Logo" Fallback', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_no_logo" name="wpc_text_no_logo" value="<?php echo esc_attr( get_option( 'wpc_text_no_logo', '' ) ); ?>" class="regular-text" placeholder="e.g. No Logo" />
+                </td>
+            </tr>
+            
+            <!-- Color Settings -->
+            <tr valign="top"><th colspan="2"><h3 style="margin:0;">Color Settings</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Pros Colors (Comparison Table)', 'wp-comparison-builder' ); ?></label></th>
+                <td style="display: flex; gap: 20px;">
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Background</label>
+                        <input type="color" name="wpc_color_pros_bg" value="<?php echo esc_attr( get_option( 'wpc_color_pros_bg', '#f0fdf4' ) ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Text</label>
+                        <input type="color" name="wpc_color_pros_text" value="<?php echo esc_attr( get_option( 'wpc_color_pros_text', '#166534' ) ); ?>" />
+                    </div>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Cons Colors (Comparison Table)', 'wp-comparison-builder' ); ?></label></th>
+                <td style="display: flex; gap: 20px;">
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Background</label>
+                        <input type="color" name="wpc_color_cons_bg" value="<?php echo esc_attr( get_option( 'wpc_color_cons_bg', '#fef2f2' ) ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Text</label>
+                        <input type="color" name="wpc_color_cons_text" value="<?php echo esc_attr( get_option( 'wpc_color_cons_text', '#991b1b' ) ); ?>" />
+                    </div>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Coupon Colors', 'wp-comparison-builder' ); ?></label></th>
+                <td style="display: flex; gap: 20px;">
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Background</label>
+                        <input type="color" name="wpc_color_coupon_bg" value="<?php echo esc_attr( get_option( 'wpc_color_coupon_bg', '#fef3c7' ) ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Text</label>
+                        <input type="color" name="wpc_color_coupon_text" value="<?php echo esc_attr( get_option( 'wpc_color_coupon_text', '#92400e' ) ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Hover</label>
+                        <input type="color" name="wpc_color_coupon_hover" value="<?php echo esc_attr( get_option( 'wpc_color_coupon_hover', '#fde68a' ) ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block; margin-bottom: 2px;">Copied State</label>
+                        <input type="color" name="wpc_color_copied" value="<?php echo esc_attr( get_option( 'wpc_color_copied', '#10b981' ) ); ?>" />
+                    </div>
                 </td>
             </tr>
         </table>

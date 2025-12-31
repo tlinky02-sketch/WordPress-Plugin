@@ -56,6 +56,20 @@ export interface ComparisonItem {
     featured_badge_color?: string;
     direct_link?: string;
     content?: string;
+    product_details?: {
+        category?: string;
+        brand?: string;
+        sku?: string;
+        gtin?: string;
+        condition?: string;
+        availability?: string;
+        mfg_date?: string;
+        exp_date?: string;
+        service_type?: string;
+        area_served?: string;
+        duration?: string;
+    };
+    custom_fields?: Array<{ name: string; value: string; }>;
     design_overrides?: {
         enabled: boolean | string;
         primary?: string;

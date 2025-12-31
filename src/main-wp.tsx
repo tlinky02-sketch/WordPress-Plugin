@@ -962,9 +962,9 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                                                     <ArrowDown className="w-6 h-6 text-primary" />
                                                 </div>
-                                                <h3 className="font-bold text-lg mb-1">Show All Items</h3>
+                                                <h3 className="font-bold text-lg mb-1">{config.labels?.showAllItems || 'Show All Items'}</h3>
                                                 <p className="text-sm text-muted-foreground">
-                                                    Click to reveal {filteredItems.length - visibleCount} more
+                                                    {config.labels?.revealMore || 'Click to reveal'} {filteredItems.length - visibleCount} more
                                                 </p>
                                             </div>
                                         )}

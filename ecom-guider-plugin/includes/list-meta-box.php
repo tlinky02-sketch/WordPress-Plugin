@@ -694,6 +694,20 @@ function wpc_render_list_meta_box( $post ) {
                         <input type="text" name="wpc_list_txt_more" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_more', true) ?: 'more' ); ?>" style="width: 100%;" />
                     </div>
                 </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Show All Items" Card Title</label>
+                        <input type="text" name="wpc_list_txt_show_all" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_show_all', true) ?: 'Show All Items' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Click to reveal X more" Text</label>
+                        <input type="text" name="wpc_list_txt_reveal_more" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_reveal_more', true) ?: 'Click to reveal' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"No Logo" Fallback Text</label>
+                        <input type="text" name="wpc_list_txt_no_logo" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_no_logo', true) ?: 'No Logo' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
             </div>
             
             </div>
@@ -720,6 +734,48 @@ function wpc_render_list_meta_box( $post ) {
                     <div>
                         <label>Header BG</label> <input type="color" name="wpc_list_pt_header_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_pt_header_bg', true) ?: '#f8fafc' ); ?>" />
                          <label><input type="checkbox" name="wpc_list_use_pt_header_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_header_bg', true), '1' ); ?> /> Apply</label>
+                    </div>
+                </div>
+                
+                <!-- Comparison Table Colors -->
+                <h4 style="margin-top: 20px; margin-bottom: 10px;">Comparison Table Colors</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="font-size: 11px; display: block;">Pros Background</label>
+                        <input type="color" name="wpc_list_color_pros_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_bg', true) ?: '#f0fdf4' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Pros Text</label>
+                        <input type="color" name="wpc_list_color_pros_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_text', true) ?: '#166534' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Cons Background</label>
+                        <input type="color" name="wpc_list_color_cons_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_bg', true) ?: '#fef2f2' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Cons Text</label>
+                        <input type="color" name="wpc_list_color_cons_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_text', true) ?: '#991b1b' ); ?>" />
+                    </div>
+                </div>
+                
+                <!-- Coupon Colors -->
+                <h4 style="margin-top: 20px; margin-bottom: 10px;">Coupon Button Colors</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="font-size: 11px; display: block;">Background</label>
+                        <input type="color" name="wpc_list_color_coupon_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_bg', true) ?: '#fef3c7' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Text</label>
+                        <input type="color" name="wpc_list_color_coupon_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_text', true) ?: '#92400e' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Hover</label>
+                        <input type="color" name="wpc_list_color_coupon_hover" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_hover', true) ?: '#fde68a' ); ?>" />
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; display: block;">Copied State</label>
+                        <input type="color" name="wpc_list_color_copied" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_copied', true) ?: '#10b981' ); ?>" />
                     </div>
                 </div>
             </div>
@@ -1089,7 +1145,11 @@ function wpc_save_list_meta( $post_id ) {
         '_wpc_list_txt_clear',
         '_wpc_list_txt_sel_prov',
         '_wpc_list_txt_no_item',
-        '_wpc_list_txt_more'
+        '_wpc_list_txt_more',
+        // Additional UI Texts
+        '_wpc_list_txt_show_all',
+        '_wpc_list_txt_reveal_more',
+        '_wpc_list_txt_no_logo'
     ];
 
     foreach ($text_fields as $field) {
@@ -1165,6 +1225,18 @@ function wpc_save_list_meta( $post_id ) {
             update_post_meta($post_id, $use_key, '1');
         } else {
             delete_post_meta($post_id, $use_key);
+        }
+    }
+    
+    // Save Comparison Table Colors (Pros/Cons/Coupon)
+    $table_color_fields = [
+        'color_pros_bg', 'color_pros_text', 'color_cons_bg', 'color_cons_text',
+        'color_coupon_bg', 'color_coupon_text', 'color_coupon_hover', 'color_copied'
+    ];
+    foreach ($table_color_fields as $field) {
+        $key = "_wpc_list_{$field}";
+        if (isset($_POST["wpc_list_{$field}"])) {
+            update_post_meta($post_id, $key, sanitize_hex_color($_POST["wpc_list_{$field}"]));
         }
     }
     

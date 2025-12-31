@@ -14,16 +14,39 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
   const getText = (key: string, def: string) => labels?.[key] || def;
   const target = config?.targetDetails || (window as any).wpcSettings?.target_details || '_blank';
 
+  const colors = config?.colors || (window as any).wpcSettings?.colors || {};
+  const couponBg = colors.couponBg || '#fef3c7';
+  const couponText = colors.couponText || '#92400e';
+  const couponHover = colors.couponHover || '#fde68a';
+  const copiedColor = colors.copied || '#10b981';
+  const prosBg = colors.prosBg || '#f0fdf4';
+  const prosText = colors.prosText || '#166534';
+  const consBg = colors.consBg || '#fef2f2';
+  const consText = colors.consText || '#991b1b';
+
   const copyCoupon = (code: string, btn: HTMLButtonElement) => {
+    const originalText = btn.innerHTML;
+    const originalStyle = btn.getAttribute('style') || '';
+
+    // Apply Copied Style
+    const applyCopiedStyle = () => {
+      btn.innerHTML = `<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ${getText('copied', 'Copied!')}`;
+      btn.style.backgroundColor = copiedColor + '15'; // Very light bg
+      btn.style.borderColor = copiedColor;
+      btn.style.color = copiedColor;
+    };
+
+    const restoreOriginal = () => {
+      btn.innerHTML = originalText;
+      if (originalStyle) btn.setAttribute('style', originalStyle);
+      else btn.removeAttribute('style');
+      // Restore default colors logic if handled by render
+    };
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(code).then(() => {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ${getText('copied', 'Copied!')}`;
-        btn.classList.add('text-green-600', 'bg-green-50');
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-          btn.classList.remove('text-green-600', 'bg-green-50');
-        }, 2000);
+        applyCopiedStyle();
+        setTimeout(restoreOriginal, 2000);
       });
     } else {
       // Fallback
@@ -33,13 +56,8 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      const originalText = btn.innerHTML;
-      btn.innerHTML = `<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ${getText('copied', 'Copied!')}`;
-      btn.classList.add('text-green-600', 'bg-green-50');
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('text-green-600', 'bg-green-50');
-      }, 2000);
+      applyCopiedStyle();
+      setTimeout(restoreOriginal, 2000);
     }
   };
   if (items.length === 0) {
@@ -125,7 +143,14 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
                       {/* Coupon in Header if Main Item has one */}
                       {item.coupon_code && (
                         <button
-                          className="bg-primary/5 border border-primary/20 text-primary text-[10px] px-2 py-1 rounded mb-2 w-full flex items-center justify-center gap-1 hover:bg-primary/10 transition-colors"
+                          className="px-2 py-1 rounded mb-2 w-full flex items-center justify-center gap-1 transition-colors text-[10px]"
+                          style={{
+                            backgroundColor: couponBg,
+                            color: couponText,
+                            border: `1px solid ${couponText}40`
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = couponHover; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = couponBg; }}
                           onClick={(e) => { e.stopPropagation(); copyCoupon(item.coupon_code || '', e.currentTarget); }}
                         >
                           <Tag className="w-3 h-3" /> {getText('getCoupon', 'Code')}: {item.coupon_code}
@@ -185,14 +210,15 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
               </tr>
             ))}
             {/* Pros */}
-            <tr className="bg-green-500/5 hover:bg-green-500/10 transition-colors">
+            <tr className="transition-colors" style={{ backgroundColor: prosBg }}>
               <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">{getText('prosLabel', "Pros")}</td>
               {items.map((item) => (
                 <td key={item.id} className="p-5 align-top break-words whitespace-normal min-w-0">
-                  <ul className="space-y-2 text-left bg-green-500/5 p-4 rounded-xl border border-green-500/10 w-full min-w-0">
+                  <ul className="space-y-2 text-left p-4 rounded-xl border w-full min-w-0"
+                    style={{ backgroundColor: `${prosBg}80`, borderColor: `${prosText}20` }}>
                     {item.pros.slice(0, 3).map((pro, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-foreground break-words whitespace-normal">
-                        <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: prosText }} />
                         <span className="min-w-0">{pro}</span>
                       </li>
                     ))}
@@ -201,14 +227,15 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
               ))}
             </tr>
             {/* Cons */}
-            <tr className="bg-red-500/5 hover:bg-red-500/10 transition-colors">
+            <tr className="transition-colors" style={{ backgroundColor: consBg }}>
               <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">{getText('consLabel', "Cons")}</td>
               {items.map((item) => (
                 <td key={item.id} className="p-5 align-top break-words whitespace-normal min-w-0">
-                  <ul className="space-y-2 text-left bg-red-500/5 p-4 rounded-xl border border-red-500/10 w-full min-w-0">
+                  <ul className="space-y-2 text-left p-4 rounded-xl border w-full min-w-0"
+                    style={{ backgroundColor: `${consBg}80`, borderColor: `${consText}20` }}>
                     {item.cons.slice(0, 3).map((con, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-foreground break-words whitespace-normal">
-                        <X className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                        <X className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: consText }} />
                         <span className="min-w-0">{con}</span>
                       </li>
                     ))}

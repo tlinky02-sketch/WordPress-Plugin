@@ -156,7 +156,7 @@ const PlatformListRow: React.FC<PlatformListRowProps> = ({
                             className="w-full h-full object-contain"
                         />
                     ) : (
-                        <div className="w-full h-full bg-muted/20 flex items-center justify-center rounded text-xs text-muted-foreground">No Logo</div>
+                        <div className="w-full h-full bg-muted/20 flex items-center justify-center rounded text-xs text-muted-foreground">{config?.labels?.noLogo || 'No Logo'}</div>
                     )}
                 </div>
             </div>

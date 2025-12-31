@@ -131,6 +131,116 @@ function wpc_render_meta_box( $post ) {
                 }
                 </script>
 
+            <!-- MOVED FROM SEO TAB -->
+            <div class="wpc-row" style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 20px;">
+                <div class="wpc-col">
+                    <h3 class="wpc-section-title">Product & Schema Data</h3>
+                    <?php $current_schema_cat = get_post_meta( $post->ID, '_wpc_product_category', true ) ?: 'SoftwareApplication'; ?>
+                    <label class="wpc-label"><?php _e( 'Product Category', 'wp-comparison-builder' ); ?></label>
+                    <select name="wpc_product_category" id="wpc_product_category" class="wpc-input" style="margin-bottom: 15px;">
+                        <option value="SoftwareApplication" <?php selected( $current_schema_cat, 'SoftwareApplication' ); ?>>Digital / Software (Default)</option>
+                        <option value="Product" <?php selected( $current_schema_cat, 'Product' ); ?>>Physical Product</option>
+                        <option value="Service" <?php selected( $current_schema_cat, 'Service' ); ?>>Service</option>
+                        <option value="Course" <?php selected( $current_schema_cat, 'Course' ); ?>>Course</option>
+                    </select>
+                    
+                    <!-- Dynamic Fields Container -->
+                    <div id="wpc-schema-fields">
+                        <div class="wpc-field-group" data-show-for="SoftwareApplication Product Service Course">
+                            <label class="wpc-label">Provider / Brand Name</label>
+                            <input type="text" name="wpc_brand" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_brand', true ) ); ?>" class="wpc-input" placeholder="e.g. Sony, Coursera, Hostinger" />
+                        </div>
+                        
+                        <div class="wpc-field-group" data-show-for="Product" style="display:none; margin-top: 10px; border-left: 3px solid #6366f1; padding-left: 10px;">
+                            <h4 style="margin: 5px 0 10px;">Physical Product Details</h4>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex:1;">
+                                    <label class="wpc-label">SKU</label>
+                                    <input type="text" name="wpc_sku" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_sku', true ) ); ?>" class="wpc-input" />
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="wpc-label">GTIN / MPN</label>
+                                    <input type="text" name="wpc_gtin" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_gtin', true ) ); ?>" class="wpc-input" />
+                                </div>
+                            </div>
+                             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <div style="flex:1;">
+                                    <label class="wpc-label">Condition</label>
+                                    <select name="wpc_condition" class="wpc-input">
+                                        <?php $cond = get_post_meta( $post->ID, '_wpc_condition', true ) ?: 'NewCondition'; ?>
+                                        <option value="NewCondition" <?php selected($cond, 'NewCondition'); ?>>New</option>
+                                        <option value="UsedCondition" <?php selected($cond, 'UsedCondition'); ?>>Used</option>
+                                        <option value="RefurbishedCondition" <?php selected($cond, 'RefurbishedCondition'); ?>>Refurbished</option>
+                                    </select>
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="wpc-label">Availability</label>
+                                    <select name="wpc_availability" class="wpc-input">
+                                        <?php $avail = get_post_meta( $post->ID, '_wpc_availability', true ) ?: 'InStock'; ?>
+                                        <option value="InStock" <?php selected($avail, 'InStock'); ?>>In Stock</option>
+                                        <option value="OutOfStock" <?php selected($avail, 'OutOfStock'); ?>>Out of Stock</option>
+                                        <option value="PreOrder" <?php selected($avail, 'PreOrder'); ?>>Pre-Order</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <div style="flex:1;">
+                                    <label class="wpc-label">MFG Date</label>
+                                    <input type="date" name="wpc_mfg_date" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_mfg_date', true ) ); ?>" class="wpc-input" />
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="wpc-label">Expiry Date</label>
+                                    <input type="date" name="wpc_exp_date" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_exp_date', true ) ); ?>" class="wpc-input" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="wpc-field-group" data-show-for="Service" style="display:none; margin-top: 10px; border-left: 3px solid #10b981; padding-left: 10px;">
+                            <h4 style="margin: 5px 0 10px;">Service Details</h4>
+                            <div style="margin-bottom: 10px;">
+                                <label class="wpc-label">Service Type</label>
+                                <input type="text" name="wpc_service_type" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_service_type', true ) ); ?>" class="wpc-input" placeholder="e.g. Plumbing, Web Hosting, Consulting" />
+                            </div>
+                            <div>
+                                <label class="wpc-label">Area Served (City/Country)</label>
+                                <input type="text" name="wpc_area_served" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_area_served', true ) ); ?>" class="wpc-input" />
+                            </div>
+                        </div>
+
+                        <div class="wpc-field-group" data-show-for="Course" style="display:none; margin-top: 10px; border-left: 3px solid #f59e0b; padding-left: 10px;">
+                            <h4 style="margin: 5px 0 10px;">Course Details</h4>
+                            <div style="margin-bottom: 10px;">
+                                 <label class="wpc-label">Duration (ISO 8601)</label>
+                                 <input type="text" name="wpc_duration" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_duration', true ) ); ?>" class="wpc-input" placeholder="e.g. PT10H (10 Hours)" />
+                                 <p class="description"><a href="https://en.wikipedia.org/wiki/ISO_8601#Durations" target="_blank">ISO 8601 Format</a> required for Schema.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <script>
+                jQuery(document).ready(function($) {
+                    const catSelect = $('#wpc_product_category');
+                    const fieldGroups = $('.wpc-field-group');
+                    
+                    function updateFields() {
+                        const selected = catSelect.val();
+                        fieldGroups.each(function() {
+                            const showFor = $(this).data('show-for').split(' ');
+                            if (showFor.includes(selected)) {
+                                $(this).slideDown(200);
+                            } else {
+                                $(this).slideUp(200);
+                            }
+                        });
+                    }
+                    
+                    catSelect.on('change', updateFields);
+                    updateFields(); // Init
+                });
+                </script>
+            </div>
+
             <h3 class="wpc-section-title">Basic Information</h3>
             <div class="wpc-row">
                 <div class="wpc-col">
@@ -405,6 +515,47 @@ function wpc_render_meta_box( $post ) {
                     <input type="text" name="wpc_footer_button_text" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_footer_button_text', true ) ); ?>" class="wpc-input" placeholder="Button Text (e.g. Visit Website)" />
                 </div>
             </div>
+            
+            <!-- Custom Fields Repeater -->
+            <h3 class="wpc-section-title" style="margin-top:20px;">Custom Fields <span style="font-weight: normal; font-size: 12px; color: #666;">(Add your own custom data)</span></h3>
+            <p class="description" style="margin-bottom: 10px;">Add custom name/value pairs to store any additional data for this item. These will be included in schema output.</p>
+            
+            <?php 
+            $custom_fields = get_post_meta( $post->ID, '_wpc_custom_fields', true );
+            if ( ! is_array( $custom_fields ) ) $custom_fields = [];
+            ?>
+            
+            <div id="wpc-custom-fields-container">
+                <?php if ( ! empty( $custom_fields ) ) : ?>
+                    <?php foreach ( $custom_fields as $index => $field ) : ?>
+                        <div class="wpc-custom-field-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
+                            <input type="text" name="wpc_custom_fields[<?php echo $index; ?>][name]" value="<?php echo esc_attr( $field['name'] ?? '' ); ?>" placeholder="Field Name" style="flex: 1;" />
+                            <input type="text" name="wpc_custom_fields[<?php echo $index; ?>][value]" value="<?php echo esc_attr( $field['value'] ?? '' ); ?>" placeholder="Field Value" style="flex: 2;" />
+                            <button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">×</button>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <button type="button" class="button" id="wpc-add-custom-field">+ Add Custom Field</button>
+            
+            <script>
+            (function() {
+                var container = document.getElementById('wpc-custom-fields-container');
+                var addBtn = document.getElementById('wpc-add-custom-field');
+                var index = <?php echo max(0, count($custom_fields)); ?>;
+                
+                addBtn.addEventListener('click', function() {
+                    var row = document.createElement('div');
+                    row.className = 'wpc-custom-field-row';
+                    row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 8px; align-items: center;';
+                    row.innerHTML = '<input type="text" name="wpc_custom_fields[' + index + '][name]" placeholder="Field Name" style="flex: 1;" />' +
+                                    '<input type="text" name="wpc_custom_fields[' + index + '][value]" placeholder="Field Value" style="flex: 2;" />' +
+                                    '<button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">×</button>';
+                    container.appendChild(row);
+                    index++;
+                });
+            })();
+            </script>
         </div>
 
         <!-- TAB: TAXONOMY -->
@@ -600,9 +751,9 @@ function wpc_render_meta_box( $post ) {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; color: #166534;">Schema SEO Preview</h3>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button type="button" class="button" id="wpc-copy-schema-btn">ðŸ“‹ Copy Schema</button>
-                        <span id="wpc-copy-status" style="color: #16a34a; font-size: 12px; display: none;">âœ“ Copied!</span>
-                        <a href="https://search.google.com/test/rich-results" target="_blank" class="button">ðŸ” Test with Google</a>
+                        <button type="button" class="button" id="wpc-copy-schema-btn" onclick="wpcCopySchema()">&#128203; Copy Schema</button>
+                        <span id="wpc-copy-status" style="color: #16a34a; font-size: 12px; display: none;">&#10003; Copied!</span>
+                        <a href="https://search.google.com/test/rich-results" target="_blank" class="button">&#128269; Test with Google</a>
                     </div>
                 </div>
                 <p style="margin: 0 0 10px 0; color: #15803d; font-size: 13px;">
@@ -615,6 +766,48 @@ function wpc_render_meta_box( $post ) {
                         echo '// Schema preview not available. Make sure seo-schema.php is loaded.';
                     }
                 ?></pre>
+                
+                <script>
+                function wpcCopySchema() {
+                    var schemaText = document.getElementById('wpc-schema-preview').textContent;
+                    var btn = document.getElementById('wpc-copy-schema-btn');
+                    // Removed statusEl as it was redundant
+                    
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(schemaText).then(function() {
+                            var originalText = btn.innerHTML;
+                            btn.innerHTML = '&#10003; Copied!';
+                            setTimeout(function() {
+                                btn.innerHTML = originalText;
+                            }, 2000);
+                        }).catch(function() {
+                            fallbackCopy(schemaText, btn);
+                        });
+                    } else {
+                        fallbackCopy(schemaText, btn);
+                    }
+                }
+                
+                function fallbackCopy(text, btn) {
+                    var textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    try {
+                        document.execCommand('copy');
+                        var originalText = btn.innerHTML;
+                        btn.innerHTML = '&#10003; Copied!';
+                        setTimeout(function() {
+                            btn.innerHTML = originalText;
+                        }, 2000);
+                    } catch(e) {
+                        alert('Copy failed. Please select and copy manually.');
+                    }
+                    document.body.removeChild(textarea);
+                }
+                </script>
             </div>
             
             <?php endif; ?>
@@ -1023,6 +1216,22 @@ function wpc_save_meta_box( $post_id ) {
         // If empty, clear terms
         wp_set_post_terms( $post_id, array(), 'comparison_feature' );
     }
+    
+    // Save Custom Fields
+    if ( isset( $_POST['wpc_custom_fields'] ) && is_array( $_POST['wpc_custom_fields'] ) ) {
+        $custom_fields = [];
+        foreach ( $_POST['wpc_custom_fields'] as $field ) {
+            if ( ! empty( $field['name'] ) ) {
+                $custom_fields[] = [
+                    'name' => sanitize_text_field( $field['name'] ),
+                    'value' => sanitize_text_field( $field['value'] ?? '' )
+                ];
+            }
+        }
+        update_post_meta( $post_id, '_wpc_custom_fields', $custom_fields );
+    } else {
+        delete_post_meta( $post_id, '_wpc_custom_fields' );
+    }
 }
 add_action( 'save_post', 'wpc_save_meta_box' );
 
@@ -1072,7 +1281,7 @@ function wpc_item_custom_column($column, $post_id) {
             break;
         case 'rating':
             $rating = get_post_meta($post_id, '_wpc_rating', true);
-            echo '<span style="color: #f59e0b; font-weight: bold;">â˜… ' . esc_html($rating) . '</span>';
+            echo '<span style="color: #f59e0b; font-weight: bold;">&#9733; ' . esc_html($rating) . '</span>';
             break;
         case 'type':
             $terms = get_the_terms($post_id, 'comparison_category');
@@ -1080,7 +1289,7 @@ function wpc_item_custom_column($column, $post_id) {
                 $names = wp_list_pluck($terms, 'name');
                 echo implode(', ', $names);
             } else {
-                echo 'â€”';
+                echo '&mdash;';
             }
             break;
     }
