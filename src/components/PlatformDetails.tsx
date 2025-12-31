@@ -20,9 +20,10 @@ interface PlatformDetailsProps {
     onBack?: () => void;
     hoverColor?: string;
     primaryColor?: string;
+    labels?: any;
 }
 
-const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: PlatformDetailsProps) => {
+const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor, labels }: PlatformDetailsProps) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedAlts, setSelectedAlts] = useState<ComparisonItem[]>([]);
     const [showWarning, setShowWarning] = useState(false);
@@ -80,7 +81,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: P
                 {selectedAlts.length > 0 && (
                     <div className="mb-8 p-4 bg-card border border-border rounded-2xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-muted-foreground mr-2">Selected for comparison:</span>
+                            <span className="text-sm font-semibold text-muted-foreground mr-2">{labels?.selected || "Selected:"}</span>
                             <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
                                 {item.name}
                             </Badge>
@@ -103,7 +104,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: P
                             onClick={handleCompare}
                             className="w-full md:w-auto font-bold shadow-lg"
                         >
-                            Compare Now <BarChart className="w-4 h-4 ml-2" />
+                            {(labels?.compareNow || "Compare Now")} <BarChart className="w-4 h-4 ml-2" />
                         </DynamicButton>
                     </div>
                 )}
@@ -144,7 +145,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: P
                                 const shouldOpenNewTab = settings?.openNewTab !== false;
                                 window.open(item.details_link, shouldOpenNewTab ? '_blank' : '_self');
                             }}>
-                                Visit {item.name} <ExternalLink className="w-4 h-4 ml-2" />
+                                {(labels?.visitPlat ? labels.visitPlat.replace('%s', item.name) : `Visit ${item.name}`)} <ExternalLink className="w-4 h-4 ml-2" />
                             </Button>
 
                             <DropdownMenu>
@@ -234,7 +235,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: P
                                                     size="sm"
                                                     className="w-full"
                                                 >
-                                                    Compare ({selectedAlts.length + 1}) Now
+                                                    {(labels?.compareNow || "Compare Now")} ({selectedAlts.length + 1})
                                                 </DynamicButton>
                                             </div>
                                         </>
@@ -250,15 +251,15 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor }: P
                                 <div className="text-2xl font-bold text-primary">{item.price}</div>
                             </div>
                             <div className="p-4 bg-secondary/10 rounded-xl">
-                                <div className="text-sm text-muted-foreground mb-1">Transaction Fees</div>
+                                <div className="text-sm text-muted-foreground mb-1">{labels?.featureFees || "Transaction Fees"}</div>
                                 <div className="text-2xl font-bold text-primary">{item.features.fees || 'Varies'}</div>
                             </div>
                             <div className="p-4 bg-secondary/10 rounded-xl">
-                                <div className="text-sm text-muted-foreground mb-1">Products</div>
+                                <div className="text-sm text-muted-foreground mb-1">{labels?.featureProducts || "Products"}</div>
                                 <div className="text-2xl font-bold text-primary">{item.features.products || 'Unlimited'}</div>
                             </div>
                             <div className="p-4 bg-secondary/10 rounded-xl">
-                                <div className="text-sm text-muted-foreground mb-1">Support</div>
+                                <div className="text-sm text-muted-foreground mb-1">{labels?.featureSupport || "Support"}</div>
                                 <div className="text-xl font-bold text-primary">{item.features.support || '24/7'}</div>
                             </div>
                         </div>

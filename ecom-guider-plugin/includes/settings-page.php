@@ -49,6 +49,9 @@ function wpc_register_settings() {
     // Legacy (keep for fallback if needed, or remove if migrated? Keeping for now)
     // register_setting( 'wpc_settings_group', 'wpc_open_links_new_tab' );
 
+    // List Style Global Default
+    register_setting( 'wpc_settings_group', 'wpc_default_list_style' );
+
     // Pricing Table Visuals
     register_setting( 'wpc_settings_group', 'wpc_pt_header_bg' );
     register_setting( 'wpc_settings_group', 'wpc_pt_header_text' );
@@ -527,7 +530,10 @@ function wpc_reset_settings() {
         'wpc_pt_btn_pos_popup' => 'after_price',
         'wpc_target_details' => '_blank',
         'wpc_target_direct' => '_blank',
+        'wpc_target_details' => '_blank',
+        'wpc_target_direct' => '_blank',
         'wpc_target_pricing' => '_blank',
+        'wpc_default_list_style' => 'grid',
     );
 
     foreach ( $defaults as $key => $value ) {
@@ -758,6 +764,50 @@ function wpc_render_general_tab() {
                     </select>
                     <p class="description">
                         <?php _e( 'Select the default search bar style for comparison lists. "Combobox" allows multi-selection ("one by one"). This setting can be overridden on a per-list basis.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row">
+                    <?php _e( 'Show Search Bar', 'wp-comparison-builder' ); ?>
+                </th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="wpc_show_search" value="1" <?php checked( '1', get_option( 'wpc_show_search', '1' ) ); ?> />
+                        <?php _e( 'Enable Search Bar by default', 'wp-comparison-builder' ); ?>
+                    </label>
+                    <p class="description">
+                        <?php _e( 'Toggle the visibility of the search input and sort dropdown.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row">
+                    <?php _e( 'Show Filters', 'wp-comparison-builder' ); ?>
+                </th>
+                <td>
+                    <label>
+                        <input type="checkbox" name="wpc_show_filters" value="1" <?php checked( '1', get_option( 'wpc_show_filters', '1' ) ); ?> />
+                        <?php _e( 'Enable Filter Sidebar/Top Bar by default', 'wp-comparison-builder' ); ?>
+                    </label>
+                    <p class="description">
+                        <?php _e( 'Toggle the visibility of the category and feature filters.', 'wp-comparison-builder' ); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row">
+                    <label for="wpc_default_list_style"><?php _e( 'Default List Style', 'wp-comparison-builder' ); ?></label>
+                </th>
+                <td>
+                    <select name="wpc_default_list_style" id="wpc_default_list_style">
+                        <option value="grid" <?php selected( get_option('wpc_default_list_style', 'grid'), 'grid' ); ?>><?php _e('Grid (Cards)', 'wp-comparison-builder'); ?></option>
+                        <option value="list" <?php selected( get_option('wpc_default_list_style'), 'list' ); ?>><?php _e('List (Horizontal Row)', 'wp-comparison-builder'); ?></option>
+                        <option value="detailed" <?php selected( get_option('wpc_default_list_style'), 'detailed' ); ?>><?php _e('Detailed (Table Row)', 'wp-comparison-builder'); ?></option>
+                        <option value="compact" <?php selected( get_option('wpc_default_list_style'), 'compact' ); ?>><?php _e('Compact (Minimal)', 'wp-comparison-builder'); ?></option>
+                    </select>
+                    <p class="description">
+                        <?php _e( 'Choose the default layout for your comparison lists. This can be overridden per list.', 'wp-comparison-builder' ); ?>
                     </p>
                 </td>
             </tr>

@@ -1,80 +1,13 @@
-import React from "react";
-import { Check, Star, ShoppingCart, Tag } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { ComparisonItem } from './PlatformCard';
+import { Check, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export interface PricingPlan {
-    name: string;
-    price: string;
-    period: string;
-    features: string;
-    link: string;
-    show_button?: string;
-    button_text?: string;
-    show_banner?: string;
-    banner_text?: string;
-    banner_color?: string;
-}
-
-export interface ComparisonItem {
-    id: string;
-    name: string;
-    logo: string;
-    rating: number;
-    category: string[];
-    primary_categories?: string[];
-    price: string;
-    period: string;
-    features: {
-        [key: string]: any; // Generic features
-        ssl: boolean;
-        support: string;
-    };
-    pricing_plans?: PricingPlan[];
-    hide_plan_features?: boolean;
-    show_plan_links?: boolean;
-    show_coupon?: boolean;
-    coupon_code?: string;
-    pros: string[];
-    cons: string[];
-    raw_features?: string[];
-    details_link?: string;
-    button_text?: string;
-    permalink?: string;
-    description?: string;
-    dashboard_image?: string;
-    badge?: {
-        text: string;
-        color: string;
-    };
-    // Top-level visibility override (independent of design overrides)
-    show_footer_popup?: boolean | string;
-    show_footer_table?: boolean | string;
-    footer_button_text?: string;
-    featured_badge_text?: string;
-    featured_badge_color?: string;
-    direct_link?: string;
-    content?: string;
-    design_overrides?: {
-        enabled: boolean | string;
-        primary?: string;
-        accent?: string;
-        border?: string;
-        show_footer?: boolean | string;
-        show_footer_popup?: boolean | string;
-        show_footer_table?: boolean | string;
-        footer_text?: string;
-    };
-}
-
-interface PlatformCardProps {
+interface PlatformCompactCardProps {
     item: ComparisonItem;
+    onToggleCompare: (id: string, selected: boolean) => void;
     isSelected: boolean;
-    onSelect: (id: string) => void;
-    onViewDetails: (id: string) => void;
-    disabled?: boolean;
-    isFeatured?: boolean;
-    activeCategories?: string[];
+    onViewDetails?: (id: string) => void;
     enableComparison?: boolean;
     buttonText?: string;
     badgeText?: string;
@@ -84,7 +17,7 @@ interface PlatformCardProps {
     showPrice?: boolean;
     showCheckboxes?: boolean;
     viewAction?: 'popup' | 'link';
-    index?: number;
+    activeCategories?: string[];
     labels?: {
         selectToCompare?: string;
         copied?: string;
@@ -97,14 +30,11 @@ interface PlatformCardProps {
     };
 }
 
-const PlatformCard = ({
+const PlatformCompactCard: React.FC<PlatformCompactCardProps> = ({
     item,
+    onToggleCompare,
     isSelected,
-    onSelect,
     onViewDetails,
-    disabled,
-    isFeatured,
-    activeCategories,
     enableComparison = true,
     buttonText,
     badgeText,
@@ -114,17 +44,25 @@ const PlatformCard = ({
     showPrice = true,
     showCheckboxes = true,
     viewAction = 'popup',
-    index,
+    activeCategories,
     labels,
-}: PlatformCardProps) => {
+}) => {
 
-    const handleTrackClick = () => {
-        // Analytics tracking if needed
+    const getBadgeColor = () => {
+        return badgeColor || item.featured_badge_color || (window as any).wpcSettings?.colors?.primary || '#6366f1';
     };
 
-    const handleDetailsClick = (e: React.MouseEvent) => {
+    // Normalize comparison props to handle string inputs from PHP
+    const isComparisonEnabled = enableComparison !== false && (enableComparison as any) !== '0';
+    const isCheckboxesVisible = showCheckboxes !== false && (showCheckboxes as any) !== '0';
+
+    const isFloating = badgeStyle !== 'flush';
+    const finalBadgeText = badgeText || item.featured_badge_text;
+
+    // Handle View Click
+    const handleViewClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (viewAction === 'popup') {
+        if (viewAction === 'popup' && onViewDetails) {
             onViewDetails(item.id);
         } else {
             const url = item.direct_link || item.details_link;
@@ -133,141 +71,107 @@ const PlatformCard = ({
                 window.open(url, target);
             }
         }
-        handleTrackClick();
     };
-
-    // Determine badge styling
-    const hasCustomBadge = !!item.badge?.text;
-    const featuredText = badgeText || item.featured_badge_text || (isFeatured ? "Featured" : null);
-    const featuredColor = badgeColor || item.featured_badge_color || ((window as any).wpcSettings?.colors?.primary) || "#6366f1";
-
-    // Logic for Badge Style
-    const badgeStyleInfo = (window as any).wpcSettings?.design_overrides?.badge_style || badgeStyle;
-    const isFlush = badgeStyle === 'flush';
-
-    // Normalize comparison props to handle string inputs from PHP
-    const isComparisonEnabled = enableComparison !== false && (enableComparison as any) !== '0';
-    const isCheckboxesVisible = showCheckboxes !== false && (showCheckboxes as any) !== '0';
 
     return (
         <div
             onClick={(e) => {
-                // Allow text selection
                 if (window.getSelection()?.toString()) return;
-
-                // STRICT INTERACTION: Only clickable for SELECTION when comparison is ON.
-                // When OFF, card body does NOTHING.
+                // Strict Interaction: Select if enabled, otherwise do nothing
                 if (isComparisonEnabled) {
-                    if (!disabled) onSelect(item.id);
+                    onToggleCompare(item.id, !isSelected); // Compact uses onToggleCompare
                 }
             }}
             className={cn(
-                "relative bg-card rounded-2xl p-5 transition-all duration-300 group flex flex-col h-full",
-                // Pointer only if selectable
-                isComparisonEnabled ? "cursor-pointer" : "cursor-default",
-
-                // Active State (Selected) vs Default State (Normal + Hover)
-                // Hover effects should applied ALWAYS for visual feedback, even if selection is disabled via master switch
-                (isComparisonEnabled && isSelected)
-                    ? "border-primary shadow-lg ring-2 ring-primary/20 scale-[1.02]"
-                    : "border-border hover:border-primary/50 hover:shadow-xl hover:-translate-y-1",
-
-                disabled && !isSelected && "opacity-50 cursor-not-allowed",
-                isFeatured ? "border-4" : "border-2",
-                isFeatured && !isSelected && "bg-amber-50/10",
-                isFlush && featuredText ? "overflow-hidden" : ""
+                "group relative flex flex-col p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md h-full",
+                isComparisonEnabled ? "cursor-pointer" : "cursor-default", // Pointer only if selectable
+                isFloating ? '' : 'overflow-hidden'
             )}
             style={{
-                borderColor: isFeatured && !isSelected // Only override border color if NOT selected (selected uses primary)
-                    ? featuredColor
-                    : ((isComparisonEnabled && isSelected) ? undefined : (window as any).wpcSettings?.colors?.border)
+                borderColor: (window as any).wpcSettings?.colors?.border || undefined
             }}
         >
-            {/* Custom Badge (Overrides Featured if present, or stacks) */}
-            {hasCustomBadge ? (
-                <div className={cn(
-                    "absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm z-10 border",
-                    badgeStyleInfo
-                )}>
-                    {item.badge?.text}
-                </div>
-            ) : (
-                // Featured Badge logic
-                featuredText && (
-                    isFlush ? (
-                        <div className="absolute top-0 left-0">
-                            <span
-                                className="inline-block px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white rounded-br-lg"
-                                style={{ backgroundColor: featuredColor }}
-                            >
-                                {featuredText}
-                            </span>
-                        </div>
-                    ) : (
-                        <div
-                            className="absolute -top-3 -right-3 px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-bold shadow-lg z-10"
-                            style={{ backgroundColor: featuredColor }}
+            {/* Badge */}
+            {finalBadgeText && (
+                isFloating ? (
+                    <div className="absolute -top-3 left-4 z-10">
+                        <span
+                            className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shadow-sm"
+                            style={{ backgroundColor: getBadgeColor() }}
                         >
-                            {featuredText}
-                        </div>
-                    )
+                            {finalBadgeText}
+                        </span>
+                    </div>
+                ) : (
+                    <div className="absolute top-0 left-0">
+                        <span
+                            className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-br-lg rounded-tl-xl shadow-sm"
+                            style={{ backgroundColor: getBadgeColor() }}
+                        >
+                            {finalBadgeText}
+                        </span>
+                    </div>
                 )
             )}
 
-            {/* Selection Indicator - Conditional on Comparison Enabled */}
+            {/* Selection Indicator */}
             {isComparisonEnabled && isCheckboxesVisible && (
                 <div
+                    className={`absolute top-2 right-2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors z-20 cursor-pointer ${isSelected ? 'bg-primary border-primary' : 'border-border bg-background group-hover:border-primary'}`}
+                    style={{
+                        backgroundColor: isSelected ? ((window as any).wpcSettings?.colors?.primary || undefined) : undefined,
+                        borderColor: isSelected ? ((window as any).wpcSettings?.colors?.primary || undefined) : undefined
+                    }}
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (!disabled) onSelect(item.id);
+                        if (enableComparison) {
+                            onToggleCompare(item.id, !isSelected);
+                        }
                     }}
-                    className={cn(
-                        "absolute top-4 right-4 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-20 cursor-pointer",
-                        isSelected
-                            ? "bg-primary border-primary"
-                            : "border-border bg-background group-hover:border-primary hover:border-primary"
-                    )}
                 >
-                    {isSelected && <Check className="w-4 h-4 text-primary-foreground" />}
+                    {isSelected && (
+                        <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    )}
                 </div>
             )}
 
-            {/* Header: Logo + Name + Rating */}
-            <div className="flex items-center gap-3 mb-4 pt-2">
-                <div className="w-12 h-12 rounded-xl bg-white p-1 shadow-sm border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="flex items-center gap-3 mb-3 pt-2">
+                {/* Small Logo */}
+                <div className="w-10 h-10 flex-shrink-0 bg-muted/10 rounded-lg p-1 flex items-center justify-center">
                     {item.logo ? (
                         <img src={item.logo} alt={item.name} className="w-full h-full object-contain" />
                     ) : (
-                        <div className="w-full h-full bg-muted/10 flex items-center justify-center text-xs text-muted-foreground">Logo</div>
+                        <div className="w-full h-full bg-muted/20 rounded"></div>
                     )}
                 </div>
-                <div className="min-w-0">
-                    <h3 className="font-display font-bold text-lg text-foreground leading-tight truncate">{item.name}</h3>
+
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm leading-tight truncate">{item.name}</h3>
                     {showRating && (
                         <div className="flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                            <span className="text-sm font-medium text-muted-foreground">{item.rating}</span>
+                            <span className="text-yellow-400 text-xs">★</span>
+                            <span className="text-xs font-medium">{item.rating}</span>
                         </div>
                     )}
                 </div>
+
+                {showPrice && (
+                    <div className="text-right">
+                        <span
+                            className="block font-bold text-lg leading-none text-primary"
+                            style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }}
+                        >
+                            {item.price}
+                        </span>
+                    </div>
+                )}
             </div>
 
-            {/* Price Block */}
-            {showPrice && (
-                <div className="mb-4 p-3 bg-muted/30 rounded-lg text-center backdrop-blur-sm">
-                    <span
-                        className="text-3xl font-display font-bold text-primary"
-                        style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }}
-                    >
-                        {item.price}
-                    </span>
-                    {item.period && <span className="text-sm text-muted-foreground ml-1">{item.period}</span>}
-                </div>
-            )}
-
-            {/* Coupon Button (If enabled) */}
+            {/* Use Coupon Button if exists and enabled */}
             {item.show_coupon && item.coupon_code && (
-                <div className="mb-4 w-full">
+                <div className="mb-4">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -284,7 +188,7 @@ const PlatformCard = ({
                                     target.innerHTML = '<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"/></svg> ' + copiedText;
                                     target.style.background = successColor;
                                     target.style.borderColor = successColor;
-                                    target.style.color = '#ffffff'; // Keep white text for contrast on colored background
+                                    target.style.color = '#ffffff';
 
                                     setTimeout(() => {
                                         target.innerHTML = originalHTML;
@@ -387,14 +291,12 @@ const PlatformCard = ({
                 })()}
             </div>
 
-            {/* Features Preview */}
-            <ul className="space-y-2 mb-6 flex-1">
+            {/* Key Features */}
+            <ul className="space-y-2 mb-2">
                 {item.raw_features && item.raw_features.length > 0 ? (
                     item.raw_features.slice(0, 3).map((feature, i) => (
                         <li key={i} className="flex items-center gap-2 text-sm text-foreground/80">
-                            <Check className="w-4 h-4 text-primary shrink-0"
-                                style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }}
-                            />
+                            <Check className="w-4 h-4 text-primary flex-shrink-0" />
                             <span className="truncate">{feature}</span>
                         </li>
                     ))
@@ -402,37 +304,32 @@ const PlatformCard = ({
                     <>
                         {item.features.products && (
                             <li className="flex items-center gap-2 text-sm text-foreground/80">
-                                <Tag className="w-4 h-4 text-primary shrink-0"
-                                    style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }} />
+                                <Tag className="w-4 h-4 text-primary flex-shrink-0" />
                                 <span className="truncate">{item.features.products} {labels?.featureProducts || "Products"}</span>
                             </li>
                         )}
                         {item.features.fees && (
                             <li className="flex items-center gap-2 text-sm text-foreground/80">
-                                <Check className="w-4 h-4 text-primary shrink-0"
-                                    style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }} />
-                                <span className="truncate">{item.features.fees} Trans. Fees</span>
+                                <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                                <span className="truncate">{item.features.fees} {labels?.featureFees || "Trans. Fees"}</span>
                             </li>
                         )}
                         <li className="flex items-center gap-2 text-sm text-foreground/80">
-                            <Check className="w-4 h-4 text-primary shrink-0"
-                                style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }} />
-                            <span className="truncate">{item.features.support} Support</span>
+                            <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="truncate">{item.features.support} {labels?.featureSupport || "Support"}</span>
                         </li>
                     </>
                 )}
             </ul>
 
-            {/* Footer Actions */}
-            {/* Footer Actions */}
-            <div className="mt-auto space-y-3 pt-4 border-t border-border/50 text-center">
-                <Button
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent card click
-                        handleDetailsClick(e);
+            {/* Minimal Actions */}
+            <div className="mt-auto grid grid-cols-2 gap-2">
+                <button
+                    type="button"
+                    className="col-span-2 bg-primary text-primary-foreground h-8 px-3 rounded-md text-xs font-bold transition-colors hover:opacity-90"
+                    style={{
+                        backgroundColor: (window as any).wpcSettings?.colors?.primary || undefined
                     }}
-                    className="w-full gap-2 font-display font-bold shadow-sm hover:shadow-md transition-all relative z-20 cursor-pointer text-primary-foreground"
-                    style={{ backgroundColor: (window as any).wpcSettings?.colors?.primary || undefined }}
                     onMouseEnter={(e) => {
                         const hoverColor = (window as any).wpcSettings?.colors?.hoverButton;
                         if (hoverColor) e.currentTarget.style.backgroundColor = hoverColor;
@@ -440,12 +337,13 @@ const PlatformCard = ({
                     onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = (window as any).wpcSettings?.colors?.primary || '';
                     }}
+                    onClick={handleViewClick}
                 >
-                    {buttonText || (viewAction === 'link' ? (labels?.visitSite || "Visit Site") : (labels?.viewDetails || "View Details"))}
-                </Button>
+                    {buttonText || (viewAction === 'link' ? (labels?.visitSite || "Visit") : (labels?.viewDetails || "View"))}
+                </button>
             </div>
         </div>
     );
 };
 
-export default PlatformCard;
+export default PlatformCompactCard;

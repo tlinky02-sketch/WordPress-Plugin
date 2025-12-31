@@ -26,6 +26,7 @@ interface SearchComboboxProps {
     placeholder?: string
     hoverColor?: string
     primaryColor?: string
+    compareLabel?: string
     onCompare?: () => void
 }
 
@@ -36,6 +37,7 @@ export function SearchCombobox({
     placeholder = "Select provider...",
     hoverColor,
     primaryColor,
+    compareLabel,
     onCompare
 }: SearchComboboxProps) {
     const [open, setOpen] = React.useState(false)
@@ -178,6 +180,7 @@ export function SearchCombobox({
                                 setOpen={setOpen}
                                 primaryColor={primaryColor}
                                 hoverColor={hoverColor}
+                                label={compareLabel}
                             />
                         </div>
                     )}
@@ -192,15 +195,20 @@ function CompareButton({
     onCompare,
     setOpen,
     primaryColor,
-    hoverColor
+    hoverColor,
+    label
 }: {
     count: number,
     onCompare: () => void,
     setOpen: (open: boolean) => void,
     primaryColor?: string,
-    hoverColor?: string
+    hoverColor?: string,
+    label?: string
 }) {
     const [isHovered, setIsHovered] = React.useState(false);
+
+    // Format label if it contains %s
+    const buttonText = label ? label.replace('%s', count.toString()) : `Compare (${count}) Items`;
 
     return (
         <Button
@@ -217,7 +225,7 @@ function CompareButton({
                 color: 'white'
             }}
         >
-            Compare ({count}) Items
+            {buttonText}
         </Button>
     );
 }

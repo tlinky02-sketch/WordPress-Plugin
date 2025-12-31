@@ -109,359 +109,505 @@ function wpc_render_list_meta_box( $post ) {
     
     ?>
     <div class="wpc-list-config">
-        
-        <!-- General Settings -->
-        <div style="background: #fff; padding: 15px; border: 1px solid #ccd0d4; margin-bottom: 20px;">
-            <h2 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">List Settings</h2>
+        <style>
+            .wpc-tab-nav { border-bottom: 1px solid #c3c4c7; margin: 0 0 20px 0; padding: 0; list-style: none; display: flex; gap: 5px; }
+            .wpc-tab-nav li { margin: 0; }
+            .wpc-tab-nav li a { display: block; padding: 10px 15px; text-decoration: none; border: 1px solid transparent; border-bottom: none; color: #50575e; font-weight: 600; background: #eaeaea; border-radius: 4px 4px 0 0; }
+            .wpc-tab-nav li.active a { border-color: #c3c4c7; border-bottom-color: #f0f0f1; background: #f0f0f1; color: #1d2327; }
+            .wpc-tab-content { display: none; padding: 10px 0; }
+            .wpc-tab-content.active { display: block; }
+            .wpc-field-group { margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; }
+            .wpc-field-label { font-weight: bold; display: block; margin-bottom: 5px; }
+            .wpc-flex-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px; }
+            .wpc-flex-item { flex: 1; min-width: 200px; }
+        </style>
+        <script>
+            jQuery(document).ready(function($) {
+                // Tab Switching Logic
+                $('.wpc-tab-nav a').on('click', function(e) {
+                    e.preventDefault();
+                    var target = $(this).attr('href');
+                    $('.wpc-tab-nav li').removeClass('active');
+                    $(this).parent().addClass('active');
+                    $('.wpc-tab-content').removeClass('active');
+                    $(target).addClass('active');
+                });
+
+                // Dynamic Field Visibility
+                function updateVisibility() {
+                    // Master Comparison Toggle
+                    var masterOn = $('input[name="wpc_list_enable_comparison"]').is(':checked');
+                    $('.wpc-comparison-options').toggle(masterOn);
+                    
+                    // Search Visibility Toggle
+                    var searchOpt = $('select[name="wpc_list_show_search_opt"]').val();
+                    var searchVisible = (searchOpt === 'show' || searchOpt === 'default');
+                    $('select[name="wpc_list_search_type"]').closest('.wpc-flex-item').toggle(searchVisible);
+
+                    // Filter Visibility Toggle
+                    var filterOpt = $('select[name="wpc_list_show_filters_opt"]').val();
+                    var filterVisible = (filterOpt === 'show' || filterOpt === 'default');
+                    $('select[name="wpc_list_filter_layout"]').closest('.wpc-flex-item').toggle(filterVisible);
+                    // Targeted hide of the Custom Filters group (which is now in General)
+                    $('.wpc-custom-filters-group').toggle(filterVisible); 
+                }
+
+                // Delegated Event Listeners for Robustness
+                $(document).on('change', 'input[name="wpc_list_enable_comparison"], select[name="wpc_list_show_search_opt"], select[name="wpc_list_show_filters_opt"]', function() {
+                    updateVisibility();
+                });
+
+                // Initial run
+                updateVisibility();
+            }); // Close document.ready
+        </script>
+
+        <ul class="wpc-tab-nav">
+            <li class="active"><a href="#wpc-tab-general">General Items</a></li>
+            <li><a href="#wpc-tab-layout">Layout & Style</a></li>
+            <li><a href="#wpc-tab-text">Language & Labels</a></li>
+            <li><a href="#wpc-tab-comparison">Comparison & Actions</a></li>
+        </ul>
+
+        <!-- TAB 1: GENERAL -->
+        <div id="wpc-tab-general" class="wpc-tab-content active">
+            <p class="description">
+                <?php _e( 'Select items to include. <strong>Drag and drop rows to reorder them (selected items first).</strong>', 'wp-comparison-builder' ); ?>
+            </p>
             
-            <div style="display: flex; gap: 30px; margin-bottom: 15px;">
-                <!-- Enable Comparison -->
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Comparison Functionality</label>
-                    <label>
-                        <input type="checkbox" name="wpc_list_enable_comparison" value="1" <?php checked( $enable_comparison, '1' ); ?> />
-                        Enable "Compare" checkbox and popup
-                    </label>
-                    <p class="description">If disabled, checkboxes are hidden and "View Details" can link directly to a URL.</p>
-                </div>
-
-                <!-- Custom Button Text -->
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">"View Details" Button Text</label>
-                    <input type="text" name="wpc_list_button_text" value="<?php echo esc_attr( $custom_button_text ); ?>" placeholder="View Details" style="width: 100%;" />
-                    <p class="description">Override the default button text for this list.</p>
-                </div>
-
-                <!-- Filter Layout -->
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Filter Layout</label>
-                    <select name="wpc_list_filter_layout" style="width: 100%;">
-                        <option value="default" <?php selected( $filter_layout, 'default' ); ?>>Default (As Global)</option>
-                        <option value="top" <?php selected( $filter_layout, 'top' ); ?>>Horizontal (Top)</option>
-                        <option value="sidebar" <?php selected( $filter_layout, 'sidebar' ); ?>>Vertical (Sidebar)</option>
-                    </select>
-                    <p class="description">Choose layout for this list.</p>
-                </div>
-
-                 <!-- Search Type (New) -->
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Search Bar Type</label>
-                    <?php $search_type = get_post_meta($post->ID, '_wpc_list_search_type', true) ?: 'default'; ?>
-                    <select name="wpc_list_search_type" style="width: 100%;">
-                        <option value="default" <?php selected( $search_type, 'default' ); ?>>Default (As Global)</option>
-                        <option value="text" <?php selected( $search_type, 'text' ); ?>>Standard Text Input</option>
-                        <option value="combobox" <?php selected( $search_type, 'combobox' ); ?>>Advanced Combobox</option>
-                    </select>
-                    <p class="description">Override search bar style.</p>
-                </div>
+            <div style="background: #fff; border: 1px solid #c3c4c7;">
+                <table class="widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"><span class="dashicons dashicons-menu" title="Drag to reorder"></span></th>
+                            <th style="width: 60px;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                    <input type="checkbox" id="wpc-select-all" title="Select All / Deselect All" />
+                                    <span style="font-size: 11px;"><?php _e( 'All', 'wp-comparison-builder' ); ?></span>
+                                </label>
+                            </th>
+                            <th><?php _e( 'Item Name', 'wp-comparison-builder' ); ?></th>
+                            <th style="width: 100px; text-align: center;"><?php _e( 'Featured?', 'wp-comparison-builder' ); ?></th>
+                            <th style="width: 180px;"><?php _e( 'Featured Badge Text', 'wp-comparison-builder' ); ?></th>
+                            <th style="width: 120px;"><?php _e( 'Badge Color', 'wp-comparison-builder' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody class="wpc-sortable-list">
+                        <?php if ( $sorted_items ) : ?>
+                            <?php foreach ( $sorted_items as $item ) :
+                                $is_selected = in_array( $item->ID, $selected_ids );
+                                $is_featured = in_array( $item->ID, $featured_ids );
+                                $badge_text = isset( $badge_texts[ $item->ID ] ) ? $badge_texts[ $item->ID ] : '';
+                                $badge_color = isset( $badge_colors[ $item->ID ] ) ? $badge_colors[ $item->ID ] : '#6366f1';
+                                $row_style = $is_selected ? 'background-color: #f0f6fc;' : '';
+                            ?>
+                                <tr class="wpc-item-row <?php echo $is_selected ? 'selected-row' : ''; ?>" style="<?php echo $row_style; ?>" data-id="<?php echo $item->ID; ?>">
+                                    <td class="drag-handle" style="cursor: move; color: #ccc;">
+                                        <span class="dashicons dashicons-menu"></span>
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" name="item_ids[]" value="<?php echo esc_attr( $item->ID ); ?>" class="wpc-item-select" <?php checked( $is_selected ); ?> />
+                                    </td>
+                                    <td><strong><?php echo esc_html( $item->post_title ); ?></strong></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" name="featured_ids[]" value="<?php echo esc_attr( $item->ID ); ?>" <?php checked( $is_featured ); ?> />
+                                    </td>
+                                    <td>
+                                        <input type="text" name="badge_texts[<?php echo esc_attr( $item->ID ); ?>]" value="<?php echo esc_attr( $badge_text ); ?>" placeholder="e.g., Top Choice" style="width: 100%; border: 1px solid #ddd; border-radius: 3px;" />
+                                    </td>
+                                    <td>
+                                        <input type="color" name="badge_colors[<?php echo esc_attr( $item->ID ); ?>]" value="<?php echo esc_attr( $badge_color ); ?>" style="width: 60px; height: 32px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer;" />
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr><td colspan="6"><?php _e( 'No items found.', 'wp-comparison-builder' ); ?></td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Show All Items Card Settings -->
-            <div style="display: flex; gap: 30px; margin-top: 15px; padding: 15px; background: #f9f9f9; border-radius: 4px;">
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">"Show All Items" Card</label>
-                    <label>
-                        <input type="checkbox" name="wpc_list_show_all_enabled" value="1" <?php checked( $show_all_enabled, '1' ); ?> />
-                        Show "Show All Items" card after initial visible count
-                    </label>
-                    <p class="description">If unchecked, no "Show All" card will appear.</p>
-                </div>
-                
-                <div style="flex: 1;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Initial Visible Count</label>
-                    <input type="number" name="wpc_list_initial_visible" value="<?php echo esc_attr( $initial_visible_count ); ?>" min="3" max="100" style="width: 80px;" />
-                    <p class="description">How many cards to show before the "Show All Items" card appears. (Min: 3, Default: 8)</p>
-                </div>
-            </div>
-
-            <!-- Custom Filters -->
-            <div style="margin-top: 20px;">
-                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Custom Filter Visibility (Optional)</label>
-                <p class="description" style="margin-bottom: 10px;">Select specific categories/features to show in the sidebar filters. Leave empty to show all relevant ones automatically.</p>
-                
+            <!-- Custom Filters (Moved to General) -->
+            <div class="wpc-field-group wpc-custom-filters-group">
+                <label class="wpc-field-label">Custom Filter Terms (Optional)</label>
                 <div style="display: flex; gap: 20px;">
-                    <!-- Categories -->
                     <div style="flex: 1; border: 1px solid #ddd; padding: 10px; max-height: 150px; overflow-y: auto;">
                         <strong>Categories</strong>
                         <?php if ( ! empty( $all_cats ) && ! is_wp_error( $all_cats ) ) : ?>
                             <?php foreach ( $all_cats as $cat ) : ?>
-                                <label style="display:block;">
-                                    <input type="checkbox" name="wpc_list_filter_cats[]" value="<?php echo esc_attr( $cat->term_id ); ?>" <?php checked( in_array( $cat->term_id, $filter_cats ) ); ?> />
-                                    <?php echo esc_html( $cat->name ); ?>
-                                </label>
+                                <label style="display:block;"><input type="checkbox" name="wpc_list_filter_cats[]" value="<?php echo esc_attr( $cat->term_id ); ?>" <?php checked( in_array( $cat->term_id, $filter_cats ) ); ?> /> <?php echo esc_html( $cat->name ); ?></label>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
-
-                    <!-- Features -->
                     <div style="flex: 1; border: 1px solid #ddd; padding: 10px; max-height: 150px; overflow-y: auto;">
                         <strong>Features</strong>
                         <?php if ( ! empty( $all_feats ) && ! is_wp_error( $all_feats ) ) : ?>
                             <?php foreach ( $all_feats as $feat ) : ?>
-                                <label style="display:block;">
-                                    <input type="checkbox" name="wpc_list_filter_feats[]" value="<?php echo esc_attr( $feat->term_id ); ?>" <?php checked( in_array( $feat->term_id, $filter_feats ) ); ?> />
-                                    <?php echo esc_html( $feat->name ); ?>
-                                </label>
+                                <label style="display:block;"><input type="checkbox" name="wpc_list_filter_feats[]" value="<?php echo esc_attr( $feat->term_id ); ?>" <?php checked( in_array( $feat->term_id, $filter_feats ) ); ?> /> <?php echo esc_html( $feat->name ); ?></label>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
                 </div>
-            </div>
-            
-            <hr style="margin: 20px 0;">
-
-            <!-- RENAME LABELS -->
-            <div style="margin-top: 20px;">
-                 <h3 style="margin-top: 0; margin-bottom: 15px;">Rename Labels</h3>
-                 <div style="display: flex; gap: 30px;">
-                    <div style="flex: 1;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Categories Label</label>
-                        <input type="text" name="wpc_list_cat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_cat_label', true) ); ?>" placeholder="Default: Categories" style="width: 100%;" />
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Features Label</label>
-                        <input type="text" name="wpc_list_feat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_feat_label', true) ); ?>" placeholder="Default: Features" style="width: 100%;" />
-                    </div>
-                 </div>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                     <input type="text" name="wpc_list_cat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_cat_label', true) ); ?>" placeholder="Label: Categories" />
+                     <input type="text" name="wpc_list_feat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_feat_label', true) ); ?>" placeholder="Label: Features" />
+                </div>
             </div>
 
-            <hr style="margin: 20px 0;">
-
-            <!-- COMPARISON BUILDER SETTINGS (OVERRIDES) -->
-            <div style="margin-top: 20px;">
-                 <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="jQuery('#wpc_visual_settings').slideToggle();">
-                     <h3 style="margin: 0;">Comparison Builder Settings (Override Global)</h3>
-                     <span class="dashicons dashicons-arrow-down-alt2"></span>
-                 </div>
-                 
-                 <div id="wpc_visual_settings" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-                    <p class="description" style="margin-bottom: 15px;">Leave fields empty to use global default settings.</p>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        
-                        <!-- Primary Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Primary Color (Buttons, Badges)</label>
-                            <input type="color" name="wpc_list_primary_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_primary_color', true) ?: '#6366f1' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_primary" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_primary', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-
-                        <!-- Accent Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Accent Color (Active Filters)</label>
-                            <input type="color" name="wpc_list_accent_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_accent_color', true) ?: '#0d9488' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_accent" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_accent', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-
-                        <!-- Secondary Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Secondary Color (Dark Accents)</label>
-                            <input type="color" name="wpc_list_secondary_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_secondary_color', true) ?: '#1e293b' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_secondary" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_secondary', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-                        
-                        <!-- Card Border Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Card Border Color</label>
-                            <input type="color" name="wpc_list_border_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_border_color', true) ?: '#e2e8f0' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_border" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_border', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-
-                         <!-- Pricing Banner Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Pricing Banner Color</label>
-                            <input type="color" name="wpc_list_banner_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_banner_color', true) ?: '#10b981' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_banner" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_banner', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-
-                        <!-- Button Hover Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Button Hover Color</label>
-                            <input type="color" name="wpc_list_hover_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_hover_color', true) ?: '#059669' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_hover" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_hover', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-
+            <div class="wpc-field-group">
+                <label class="wpc-field-label">List Functionality</label>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label><strong>Limit Items:</strong></label>
+                        <input type="number" name="wpc_list_limit" value="<?php echo $limit ? esc_attr( $limit ) : ''; ?>" style="width: 80px;" />
+                        <span class="description">Leave empty for no limit.</span>
                     </div>
-                    
-                    <hr style="margin: 20px 0;">
-                    
-                    <!-- Pricing Table Visual Style -->
-                    <h4 style="margin: 0 0 15px 0; color: #1e40af;">Pricing Table Visual Style</h4>
-                    <p class="description" style="margin-bottom: 15px;">Customize the pricing table header and button appearance for this list.</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <!-- Header Background -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Header Background</label>
-                            <?php $pt_header_bg = get_post_meta($post->ID, '_wpc_list_pt_header_bg', true); ?>
-                            <input type="color" name="wpc_list_pt_header_bg" value="<?php echo esc_attr( $pt_header_bg ?: '#f8fafc' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_pt_header_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_header_bg', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-                        
-                        <!-- Header Text Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Header Text Color</label>
-                            <?php $pt_header_text = get_post_meta($post->ID, '_wpc_list_pt_header_text', true); ?>
-                            <input type="color" name="wpc_list_pt_header_text" value="<?php echo esc_attr( $pt_header_text ?: '#0f172a' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_pt_header_text" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_header_text', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-                        
-                        <!-- Button Background -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Button Background</label>
-                            <?php $pt_btn_bg = get_post_meta($post->ID, '_wpc_list_pt_btn_bg', true); ?>
-                            <input type="color" name="wpc_list_pt_btn_bg" value="<?php echo esc_attr( $pt_btn_bg ?: '#6366f1' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_pt_btn_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_btn_bg', true), '1' ); ?> /> Apply Override</label>
-                        </div>
-                        
-                        <!-- Button Text Color -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Button Text Color</label>
-                            <?php $pt_btn_text = get_post_meta($post->ID, '_wpc_list_pt_btn_text', true); ?>
-                            <input type="color" name="wpc_list_pt_btn_text" value="<?php echo esc_attr( $pt_btn_text ?: '#ffffff' ); ?>" style="height: 30px; vertical-align: middle;" />
-                            <label><input type="checkbox" name="wpc_list_use_pt_btn_text" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_btn_text', true), '1' ); ?> /> Apply Override</label>
-                        </div>
+                    <div class="wpc-flex-item">
+                        <label><strong>Initial Visible Count:</strong></label>
+                        <input type="number" name="wpc_list_initial_visible" value="<?php echo esc_attr( $initial_visible_count ); ?>" min="3" max="100" style="width: 80px;" />
                     </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                        <!-- Table Button Position -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Table Button Position</label>
-                            <?php $pt_btn_pos_table = get_post_meta($post->ID, '_wpc_list_pt_btn_pos_table', true); ?>
-                            <select name="wpc_list_pt_btn_pos_table" style="width: 100%;">
-                                <option value="" <?php selected($pt_btn_pos_table, ''); ?>>Default (Global)</option>
-                                <option value="after_price" <?php selected($pt_btn_pos_table, 'after_price'); ?>>After Price</option>
-                                <option value="after_features" <?php selected($pt_btn_pos_table, 'after_features'); ?>>After Features</option>
-                            </select>
-                            <p class="description">Where to show "Select Plan" button in inline tables.</p>
-                        </div>
-                        
-                        <!-- Popup Button Position -->
-                        <div>
-                            <label style="display: block; margin-bottom: 5px;">Popup Button Position</label>
-                            <?php $pt_btn_pos_popup = get_post_meta($post->ID, '_wpc_list_pt_btn_pos_popup', true); ?>
-                            <select name="wpc_list_pt_btn_pos_popup" style="width: 100%;">
-                                <option value="" <?php selected($pt_btn_pos_popup, ''); ?>>Default (Global)</option>
-                                <option value="after_price" <?php selected($pt_btn_pos_popup, 'after_price'); ?>>After Price</option>
-                                <option value="after_features" <?php selected($pt_btn_pos_popup, 'after_features'); ?>>After Features</option>
-                            </select>
-                            <p class="description">Where to show "Select Plan" button in popups.</p>
-                        </div>
-                    </div>
-                    
-                    <hr style="margin: 20px 0;">
-                    
-                    <div style="margin-top: 20px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Settings</label>
-                         <label style="display: block; margin-bottom: 5px;">
-                            <input type="hidden" name="wpc_list_show_plans_set" value="1">
-                            <?php $show_plans = get_post_meta($post->ID, '_wpc_list_show_plans', true); ?>
-                            <!-- Use a select for 3 states: Default, Yes, No -->
-                            <select name="wpc_list_show_plans">
-                                <option value="" <?php selected($show_plans, ''); ?>>Default (Global Setting)</option>
-                                <option value="1" <?php selected($show_plans, '1'); ?>>Yes (Show Buttons)</option>
-                                <option value="0" <?php selected($show_plans, '0'); ?>>No (Hide Buttons)</option>
-                            </select>
-                            Show "Select Plan" buttons in pricing popups
+                    <div class="wpc-flex-item">
+                        <label>
+                            <input type="checkbox" name="wpc_list_show_all_enabled" value="1" <?php checked( $show_all_enabled, '1' ); ?> />
+                            Show "Show All Items" card
                         </label>
                     </div>
-
-                 </div>
+                </div>
+                
+                <div style="background: #f0f0f1; border: 1px solid #ccd0d4; padding: 10px;">
+                    <strong>Shortcode:</strong>
+                    <code style="font-size: 1.2em; margin-left: 10px; user-select: all;">[wpc_list id="<?php echo $post->ID; ?>"]</code>
+                </div>
             </div>
         </div>
 
-        <p class="description">
-            <?php _e( 'Select items to include. <strong>Drag and drop rows to reorder them (selected items first).</strong>', 'wp-comparison-builder' ); ?>
-        </p>
-        
-        <table class="widefat fixed striped">
-            <thead>
-                <tr>
-                    <th style="width: 30px;"><span class="dashicons dashicons-menu" title="Drag to reorder"></span></th>
-                    <th style="width: 60px;">
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="checkbox" id="wpc-select-all" title="Select All / Deselect All" />
-                            <span style="font-size: 11px;"><?php _e( 'All', 'wp-comparison-builder' ); ?></span>
+        <!-- TAB 2: LAYOUT & STYLE -->
+        <div id="wpc-tab-layout" class="wpc-tab-content">
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Appearance</h3>
+                
+                <div class="wpc-flex-row">
+                    <!-- List Style -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">List Style</label>
+                        <?php $list_style = get_post_meta($post->ID, '_wpc_list_style', true) ?: 'default'; ?>
+                        <select name="wpc_list_style" style="width: 100%;">
+                            <option value="default" <?php selected( $list_style, 'default' ); ?>>Default (As Global)</option>
+                            <option value="grid" <?php selected( $list_style, 'grid' ); ?>>Grid (Cards)</option>
+                            <option value="list" <?php selected( $list_style, 'list' ); ?>>List (Horizontal)</option>
+                            <option value="detailed" <?php selected( $list_style, 'detailed' ); ?>>Detailed (Row)</option>
+                            <option value="compact" <?php selected( $list_style, 'compact' ); ?>>Compact (Minimal)</option>
+                        </select>
+                    </div>
+
+                    <!-- Badge Style -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Badge Style</label>
+                        <?php $badge_style = get_post_meta($post->ID, '_wpc_list_badge_style', true) ?: 'floating'; ?>
+                        <select name="wpc_list_badge_style" style="width: 100%;">
+                            <option value="floating" <?php selected( $badge_style, 'floating' ); ?>>Floating (Pill)</option>
+                            <option value="flush" <?php selected( $badge_style, 'flush' ); ?>>Flush (Corner Ribbon)</option>
+                        </select>
+                    </div>
+
+                    <!-- Element Visibility -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Visible Elements</label>
+                        <?php 
+                        $show_rating = get_post_meta($post->ID, '_wpc_list_show_rating', true); if($show_rating === '') $show_rating = '1';
+                        $show_price = get_post_meta($post->ID, '_wpc_list_show_price', true); if($show_price === '') $show_price = '1';
+                        ?>
+                        <label style="display: block;"><input type="checkbox" name="wpc_list_show_rating" value="1" <?php checked('1', $show_rating); ?> /> Show Rating</label>
+                        <label style="display: block;"><input type="checkbox" name="wpc_list_show_price" value="1" <?php checked('1', $show_price); ?> /> Show Price</label>
+                    </div>
+                </div>
+
+                <div class="wpc-flex-row">
+                     <!-- Filter Layout -->
+                     <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Filter Layout</label>
+                        <select name="wpc_list_filter_layout" style="width: 100%;">
+                            <option value="default" <?php selected( $filter_layout, 'default' ); ?>>Default (As Global)</option>
+                            <option value="top" <?php selected( $filter_layout, 'top' ); ?>>Horizontal (Top)</option>
+                            <option value="sidebar" <?php selected( $filter_layout, 'sidebar' ); ?>>Vertical (Sidebar)</option>
+                        </select>
+                    </div>
+                    <!-- Show Filters -->
+                    <div class="wpc-flex-item">
+                         <label class="wpc-field-label">Filter Visibility</label>
+                         <?php $show_filters_opt = get_post_meta($post->ID, '_wpc_list_show_filters_opt', true) ?: 'default'; ?>
+                         <select name="wpc_list_show_filters_opt" style="width: 100%;">
+                            <option value="default" <?php selected( $show_filters_opt, 'default' ); ?>>Default</option>
+                            <option value="show" <?php selected( $show_filters_opt, 'show' ); ?>>Show</option>
+                            <option value="hide" <?php selected( $show_filters_opt, 'hide' ); ?>>Hide</option>
+                         </select>
+                    </div>
+                </div>
+                 <div class="wpc-flex-row">
+                     <!-- Show Search -->
+                    <div class="wpc-flex-item">
+                         <label class="wpc-field-label">Search Visibility</label>
+                         <?php $show_search_opt = get_post_meta($post->ID, '_wpc_list_show_search_opt', true) ?: 'default'; ?>
+                         <select name="wpc_list_show_search_opt" style="width: 100%;">
+                            <option value="default" <?php selected( $show_search_opt, 'default' ); ?>>Default</option>
+                            <option value="show" <?php selected( $show_search_opt, 'show' ); ?>>Show</option>
+                            <option value="hide" <?php selected( $show_search_opt, 'hide' ); ?>>Hide</option>
+                         </select>
+                    </div>
+                    <!-- Search Type -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Search Bar Type</label>
+                        <?php $search_type = get_post_meta($post->ID, '_wpc_list_search_type', true) ?: 'default'; ?>
+                        <select name="wpc_list_search_type" style="width: 100%;">
+                            <option value="default" <?php selected( $search_type, 'default' ); ?>>Default</option>
+                            <option value="text" <?php selected( $search_type, 'text' ); ?>>Standard Text Input</option>
+                            <option value="combobox" <?php selected( $search_type, 'combobox' ); ?>>Advanced Combobox</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Language & Labels TAB -->
+        </div>
+
+        <div id="wpc-tab-text" class="wpc-tab-content">
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Global UI Labels</h3>
+                <div class="wpc-flex-row">
+                    <!-- Search Placeholder -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Search Placeholder</label>
+                        <input type="text" name="wpc_list_txt_search_ph" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_search_ph', true) ?: 'Search & Select...' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <!-- Active Filters -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Active filters:" Label</label>
+                        <input type="text" name="wpc_list_txt_active_filt" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_active_filt', true) ?: 'Active filters:' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Clear All -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Clear all" Label</label>
+                        <input type="text" name="wpc_list_txt_clear_all" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_clear_all', true) ?: 'Clear all' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                 <div class="wpc-flex-row">
+                    <!-- No Results -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"No items match" Message</label>
+                        <input type="text" name="wpc_list_txt_no_results" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_no_results', true) ?: 'No items match your filters.' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Selected: -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Selected:" Label</label>
+                        <input type="text" name="wpc_list_txt_selected" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_selected', true) ?: 'Selected:' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Sorting Options</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Default Sort</label>
+                        <input type="text" name="wpc_list_txt_sort_def" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sort_def', true) ?: 'Sort: Default' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Name (A-Z)</label>
+                        <input type="text" name="wpc_list_txt_sort_asc" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sort_asc', true) ?: 'Name (A-Z)' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Name (Z-A)</label>
+                        <input type="text" name="wpc_list_txt_sort_desc" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sort_desc', true) ?: 'Name (Z-A)' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Highest Rated</label>
+                        <input type="text" name="wpc_list_txt_sort_rating" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sort_rating', true) ?: 'Highest Rated' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Lowest Price</label>
+                        <input type="text" name="wpc_list_txt_sort_price" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sort_price', true) ?: 'Lowest Price' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Card & Feature Labels</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Get Coupon:" Label</label>
+                        <input type="text" name="wpc_list_txt_get_coupon" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_get_coupon', true) ?: 'Get Coupon:' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Featured" Badge Text</label>
+                        <input type="text" name="wpc_list_txt_featured" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_featured', true) ?: 'Featured' ); ?>" style="width: 100%;" />
+                         <span class="description">Fallback if no specific badge set.</span>
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Products" Suffix</label>
+                        <input type="text" name="wpc_list_txt_feat_prod" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_prod', true) ?: 'Products' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Trans. Fees" Suffix</label>
+                        <input type="text" name="wpc_list_txt_feat_fees" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_fees', true) ?: 'Trans. Fees' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Support" Suffix</label>
+                        <input type="text" name="wpc_list_txt_feat_supp" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_supp', true) ?: 'Support' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Comparison Logic Labels</h3>
+                <div class="wpc-flex-row">
+                    <!-- Select to Compare Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Select to Compare" Text</label>
+                        <input type="text" name="wpc_list_txt_compare" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_compare', true) ?: 'Select to Compare' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Copied! Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Copied!" Text</label>
+                        <input type="text" name="wpc_list_txt_copied" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_copied', true) ?: 'Copied!' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                 <div class="wpc-flex-row">
+                    <!-- View Details Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"View Details" Text</label>
+                        <input type="text" name="wpc_list_txt_view" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_view', true) ?: 'View Details' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Visit Site Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Visit Site" Text</label>
+                        <input type="text" name="wpc_list_txt_visit" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_visit', true) ?: 'Visit Site' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <!-- Compare Button Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Compare (X) Items" Text</label>
+                        <input type="text" name="wpc_list_txt_compare_btn" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_compare_btn', true) ?: 'Compare (%s) Items' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <!-- Compare Now Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Compare Now" Text</label>
+                        <input type="text" name="wpc_list_txt_compare_now" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_compare_now', true) ?: 'Compare Now' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Visit Platform Text -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Visit Platform" Text</label>
+                        <input type="text" name="wpc_list_txt_visit_plat" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_visit_plat', true) ?: 'Visit %s' ); ?>" style="width: 100%;" />
+                    </div>
+                    <!-- Comparison Header -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Detailed Comparison" Header</label>
+                        <input type="text" name="wpc_list_txt_comp_header" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_comp_header', true) ?: 'Detailed Comparison' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colors & Overrides -->
+
+            <!-- Colors & Overrides -->
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Color & Visual Overrides</h3>
+                <p class="description">Global overrides for this specific list.</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                     <div>
+                        <label>Primary Color</label> <input type="color" name="wpc_list_primary_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_primary_color', true) ?: '#6366f1' ); ?>" />
+                        <label><input type="checkbox" name="wpc_list_use_primary" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_primary', true), '1' ); ?> /> Apply</label>
+                    </div>
+                    <div>
+                        <label>Accent Color</label> <input type="color" name="wpc_list_accent_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_accent_color', true) ?: '#0d9488' ); ?>" />
+                        <label><input type="checkbox" name="wpc_list_use_accent" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_accent', true), '1' ); ?> /> Apply</label>
+                    </div>
+                    <div>
+                        <label>Button Hover</label> <input type="color" name="wpc_list_hover_color" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_hover_color', true) ?: '#059669' ); ?>" />
+                         <label><input type="checkbox" name="wpc_list_use_hover" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_hover', true), '1' ); ?> /> Apply</label>
+                    </div>
+                    <div>
+                        <label>Header BG</label> <input type="color" name="wpc_list_pt_header_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_pt_header_bg', true) ?: '#f8fafc' ); ?>" />
+                         <label><input type="checkbox" name="wpc_list_use_pt_header_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pt_header_bg', true), '1' ); ?> /> Apply</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: COMPARISON & ACTIONS -->
+        <div id="wpc-tab-comparison" class="wpc-tab-content">
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Split Comparison Settings</h3>
+                <?php 
+                    // Retrieve Settings
+                    $enable_comparison = get_post_meta( $post->ID, '_wpc_list_enable_comparison', true );
+                    if ($enable_comparison === '') $enable_comparison = '1';
+
+                    $show_checkboxes = get_post_meta($post->ID, '_wpc_list_show_checkboxes', true);
+                    if ($show_checkboxes === '') $show_checkboxes = '1'; 
+                    
+                    $view_action = get_post_meta($post->ID, '_wpc_list_view_action', true) ?: 'popup'; 
+                ?>
+
+                <h3 style="margin-top:0;">Comparison Master Switch</h3>
+                
+                <div style="background: #fdfdfd; padding: 20px; border: 1px solid #e5e7eb; border-left: 4px solid #6366f1; border-radius: 4px; margin-bottom: 25px;">
+                    <label style="font-weight: bold; font-size: 15px; display: block; margin-bottom: 10px;">
+                        <input type="checkbox" name="wpc_list_enable_comparison" value="1" <?php checked( $enable_comparison, '1' ); ?> />
+                        Enable Comparison Feature (Master Switch)
+                    </label>
+                    <p class="description" style="margin-left: 25px;">
+                        <strong>ON</strong>: Users can select cards to compare. Selection circles and Footer bar can be enabled.<br>
+                        <strong>OFF</strong>: All comparison features are disabled. Selection is blocked. Cards only allow "Details".
+                    </p>
+                </div>
+
+                <div class="wpc-comparison-options" style="margin-bottom: 20px; padding-left: 25px; <?php echo ($enable_comparison === '1') ? '' : 'opacity:0.6; pointer-events:none;'; ?>">
+                    <label class="wpc-field-label" style="font-weight:600;">UI Settings (Only if Master is ON)</label>
+                    <div style="margin-bottom: 15px;">
+                        <label>
+                            <input type="checkbox" name="wpc_list_show_checkboxes" value="1" <?php checked('1', $show_checkboxes); ?> />
+                            Show Selection Checkboxes (Circles) on Cards
                         </label>
-                    </th>
-                    <th><?php _e( 'Item Name', 'wp-comparison-builder' ); ?></th>
-                    <th style="width: 100px; text-align: center;"><?php _e( 'Featured?', 'wp-comparison-builder' ); ?></th>
-                    <th style="width: 180px;"><?php _e( 'Featured Badge Text', 'wp-comparison-builder' ); ?></th>
-                    <th style="width: 120px;"><?php _e( 'Badge Color', 'wp-comparison-builder' ); ?></th>
-                </tr>
-            </thead>
-            <tbody class="wpc-sortable-list">
-                <?php if ( $sorted_items ) : ?>
-                    <?php foreach ( $sorted_items as $item ) :
-                        $is_selected = in_array( $item->ID, $selected_ids );
-                        $is_featured = in_array( $item->ID, $featured_ids );
-                        $badge_text = isset( $badge_texts[ $item->ID ] ) ? $badge_texts[ $item->ID ] : '';
-                        $badge_color = isset( $badge_colors[ $item->ID ] ) ? $badge_colors[ $item->ID ] : '#6366f1';
-                        
-                        $row_style = $is_selected ? 'background-color: #f0f6fc;' : '';
-                    ?>
-                        <tr class="wpc-item-row <?php echo $is_selected ? 'selected-row' : ''; ?>" style="<?php echo $row_style; ?>" data-id="<?php echo $item->ID; ?>">
-                            <td class="drag-handle" style="cursor: move; color: #ccc;">
-                                <span class="dashicons dashicons-menu"></span>
-                            </td>
-                            <td>
-                                <input 
-                                    type="checkbox" 
-                                    name="item_ids[]" 
-                                    value="<?php echo esc_attr( $item->ID ); ?>"
-                                    class="wpc-item-select"
-                                    <?php checked( $is_selected ); ?>
-                                />
-                            </td>
-                            <td>
-                                <strong><?php echo esc_html( $item->post_title ); ?></strong>
-                            </td>
-                            <td style="text-align: center;">
-                                <input 
-                                    type="checkbox" 
-                                    name="featured_ids[]" 
-                                    value="<?php echo esc_attr( $item->ID ); ?>"
-                                    <?php checked( $is_featured ); ?>
-                                />
-                            </td>
-                            <td>
-                                <input 
-                                    type="text" 
-                                    name="badge_texts[<?php echo esc_attr( $item->ID ); ?>]" 
-                                    value="<?php echo esc_attr( $badge_text ); ?>"
-                                    placeholder="e.g., Top Choice"
-                                    style="width: 100%; padding: 4px 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px;"
-                                />
-                                <small style="display: block; color: #666; margin-top: 2px; font-size: 10px;">Only if Featured</small>
-                            </td>
-                            <td>
-                                <input 
-                                    type="color" 
-                                    name="badge_colors[<?php echo esc_attr( $item->ID ); ?>]" 
-                                    value="<?php echo esc_attr( $badge_color ); ?>"
-                                    style="width: 60px; height: 32px; border: 1px solid #ddd; border-radius: 3px; cursor: pointer;"
-                                    title="Choose badge color"
-                                />
-                                <small style="display: block; color: #666; margin-top: 2px; font-size: 10px;">Badge color</small>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else : ?>
-                    <tr><td colspan="6"><?php _e( 'No items found.', 'wp-comparison-builder' ); ?></td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    </div>
+                </div>
 
-        <p style="margin-top: 20px;">
-            <label><strong><?php _e( 'Limit Number of Items:', 'wp-comparison-builder' ); ?></strong></label>
-            <input type="number" name="wpc_list_limit" value="<?php echo $limit ? esc_attr( $limit ) : ''; ?>" style="width: 80px;" />
-            <span class="description"><?php _e( '(Leave empty for no limit)', 'wp-comparison-builder' ); ?></span>
-        </p>
+                <div style="margin-bottom: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+                     <label class="wpc-field-label">"View" Button Behavior (When comparison is OFF or not focused)</label>
+                     <select name="wpc_list_view_action" style="width: 100%; max-width: 400px;">
+                        <option value="popup" <?php selected($view_action, 'popup'); ?>>Open Product Details Popup</option>
+                        <option value="link" <?php selected($view_action, 'link'); ?>>Open Affiliate Link (Direct)</option>
+                     </select>
+                     <p class="description">Choose what happens when the user clicks "View" or "View Details".</p>
+                </div>
+            </div>
 
-        <div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border: 1px solid #ccd0d4;">
-            <strong><?php _e( 'Shortcode:', 'wp-comparison-builder' ); ?></strong>
-            <code style="font-size: 1.2em; display: inline-block; margin-left: 10px; user-select: all;">[wpc_list id="<?php echo $post->ID; ?>"]</code>
-            <p class="description" style="margin-top: 5px;"><?php _e( 'Copy and paste this shortcode to display this specific list.', 'wp-comparison-builder' ); ?></p>
+            <div class="wpc-field-group">
+                 <h3 style="margin-top:0;">Additional Options</h3>
+                 <div class="wpc-flex-row">
+                     <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Button Text Override</label>
+                        <input type="text" name="wpc_list_button_text" value="<?php echo esc_attr( $custom_button_text ); ?>" placeholder="e.g. Visit Site" style="width:100%;" />
+                     </div>
+                     <div class="wpc-flex-item">
+                         <label class="wpc-field-label">Show Plans in Popup</label>
+                         <?php $show_plans = get_post_meta($post->ID, '_wpc_list_show_plans', true); ?>
+                         <select name="wpc_list_show_plans" style="width:100%;">
+                             <option value="" <?php selected($show_plans, ''); ?>>Default</option>
+                             <option value="1" <?php selected($show_plans, '1'); ?>>Yes</option>
+                             <option value="0" <?php selected($show_plans, '0'); ?>>No</option>
+                         </select>
+                     </div>
+                 </div>
+            </div>
         </div>
     </div>
     <script>
@@ -619,6 +765,21 @@ function wpc_save_list_meta( $post_id ) {
         update_post_meta( $post_id, '_wpc_list_enable_comparison', '0' );
     }
 
+    // Save Show Checkboxes (Selection Circles)
+    if ( isset( $_POST['wpc_list_show_checkboxes'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_show_checkboxes', '1' );
+    } else {
+        // Default to enabled if not present? No, checkbox presence determines state. 
+        // But for backward compatibility, if field is missing (e.g. older form submit?), we might want default?
+        // But nonce ensures form submission. So safe to disable if unchecked.
+        update_post_meta( $post_id, '_wpc_list_show_checkboxes', '0' );
+    }
+
+    // Save View Action (Popup vs Link)
+    if ( isset( $_POST['wpc_list_view_action'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_view_action', sanitize_text_field( $_POST['wpc_list_view_action'] ) );
+    }
+
     // Save Filter Layout
     if ( isset( $_POST['wpc_list_filter_layout'] ) ) {
         update_post_meta( $post_id, '_wpc_list_filter_layout', sanitize_text_field( $_POST['wpc_list_filter_layout'] ) );
@@ -627,6 +788,30 @@ function wpc_save_list_meta( $post_id ) {
     // Save Search Type
     if ( isset( $_POST['wpc_list_search_type'] ) ) {
         update_post_meta( $post_id, '_wpc_list_search_type', sanitize_text_field( $_POST['wpc_list_search_type'] ) );
+    }
+
+    // Save Show Search Bar Option
+    if ( isset( $_POST['wpc_list_show_search_opt'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_show_search_opt', sanitize_text_field( $_POST['wpc_list_show_search_opt'] ) );
+    }
+
+    // Save Show Filters Option
+    if ( isset( $_POST['wpc_list_show_filters_opt'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_show_filters_opt', sanitize_text_field( $_POST['wpc_list_show_filters_opt'] ) );
+    }
+
+    // Save Badge Style
+    if ( isset( $_POST['wpc_list_badge_style'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_badge_style', sanitize_text_field( $_POST['wpc_list_badge_style'] ) );
+    }
+
+    // Save Visibility Flags
+    update_post_meta( $post_id, '_wpc_list_show_rating', isset($_POST['wpc_list_show_rating']) ? '1' : '0' );
+    update_post_meta( $post_id, '_wpc_list_show_price', isset($_POST['wpc_list_show_price']) ? '1' : '0' );
+    
+    // Save List Style
+    if ( isset( $_POST['wpc_list_style'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_style', sanitize_text_field( $_POST['wpc_list_style'] ) );
     }
 
     // Save Button Text
@@ -652,6 +837,52 @@ function wpc_save_list_meta( $post_id ) {
         update_post_meta( $post_id, '_wpc_list_filter_feats', [] );
     }
 
+    // --- SAVE TEXT LABELS ---
+    $text_fields = [
+        '_wpc_list_txt_compare',
+        '_wpc_list_txt_copied',
+        '_wpc_list_txt_view',
+        '_wpc_list_txt_visit',
+        '_wpc_list_txt_compare_btn',
+        '_wpc_list_txt_compare_now',
+        '_wpc_list_txt_visit_plat',
+        '_wpc_list_txt_search_ph',
+        '_wpc_list_txt_active_filt',
+        '_wpc_list_txt_clear_all',
+        '_wpc_list_txt_no_results',
+        '_wpc_list_txt_selected',
+        '_wpc_list_txt_comp_header',
+        '_wpc_list_txt_sort_def',
+        '_wpc_list_txt_sort_asc',
+        '_wpc_list_txt_sort_desc',
+        '_wpc_list_txt_sort_rating',
+        '_wpc_list_txt_sort_price',
+        '_wpc_list_txt_get_coupon',
+        '_wpc_list_txt_featured',
+        '_wpc_list_txt_feat_prod',
+        '_wpc_list_txt_feat_fees',
+        '_wpc_list_txt_feat_supp',
+        '_wpc_list_cat_label',
+        '_wpc_list_feat_label'
+    ];
+
+    foreach ($text_fields as $field) {
+        // Strip the leading underscore for the POST key if naming convention differs, 
+        // BUT our inputs use 'wpc_list_txt_...' which matches meta key without initial underscore if we are careful.
+        // Actually inputs are named 'wpc_list_txt_search_ph' and meta is '_wpc_list_txt_search_ph'.
+        // So we strip first char '_' from meta key to get POST key.
+        $post_key = substr($field, 1); 
+        
+        if ( isset( $_POST[$post_key] ) ) {
+             update_post_meta( $post_id, $field, sanitize_text_field( $_POST[$post_key] ) );
+        }
+    }
+
+    // Save Visbility Options (New)
+    if ( isset( $_POST['wpc_list_show_plans'] ) ) {
+        update_post_meta( $post_id, '_wpc_list_show_plans', sanitize_text_field( $_POST['wpc_list_show_plans'] ) );
+    }
+
     // --- NEW SETTINGS ---
 
     // Show All Items settings
@@ -670,6 +901,14 @@ function wpc_save_list_meta( $post_id ) {
     // Labels
     update_post_meta($post_id, '_wpc_list_cat_label', sanitize_text_field($_POST['wpc_list_cat_label']));
     update_post_meta($post_id, '_wpc_list_feat_label', sanitize_text_field($_POST['wpc_list_feat_label']));
+    
+    // Configurable Texts
+    update_post_meta($post_id, '_wpc_list_txt_compare', sanitize_text_field($_POST['wpc_list_txt_compare']));
+    update_post_meta($post_id, '_wpc_list_txt_copied', sanitize_text_field($_POST['wpc_list_txt_copied']));
+    update_post_meta($post_id, '_wpc_list_txt_visit', sanitize_text_field($_POST['wpc_list_txt_visit']));
+    update_post_meta($post_id, '_wpc_list_txt_compare_btn', sanitize_text_field($_POST['wpc_list_txt_compare_btn']));
+    update_post_meta($post_id, '_wpc_list_txt_compare_now', sanitize_text_field($_POST['wpc_list_txt_compare_now']));
+    update_post_meta($post_id, '_wpc_list_txt_visit_plat', sanitize_text_field($_POST['wpc_list_txt_visit_plat']));
 
     // Colors & Overrides
     $colors = ['primary', 'accent', 'secondary', 'border', 'banner', 'hover'];

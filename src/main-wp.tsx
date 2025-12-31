@@ -5,6 +5,9 @@ import ComparisonTable from "@/components/ComparisonTable";
 import ComparisonFilters from "@/components/ComparisonFilters";
 import PlatformDetails from "@/components/PlatformDetails";
 import PlatformCard, { ComparisonItem } from "@/components/PlatformCard";
+import PlatformListRow from "@/components/PlatformListRow";
+import PlatformDetailedRow from "@/components/PlatformDetailedRow";
+import PlatformCompactCard from "@/components/PlatformCompactCard";
 import PricingPopup from "@/components/PricingPopup";
 import { Button } from "@/components/ui/button";
 import { SearchCombobox } from "@/components/SearchCombobox";
@@ -27,9 +30,15 @@ declare global {
 
 const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) => {
     const config = initialConfig;
+    console.log('AG_DEBUG: Config:', config);
+    console.log('AG_DEBUG: EnableComparison:', config.enableComparison, typeof config.enableComparison);
 
     // Helper to get text with global setting override
     const getText = (key: string, defaultText: string) => {
+        // 1. Check Config Labels (List Specific)
+        if (config.labels && config.labels[key]) return config.labels[key];
+
+        // 2. Check Global Settings (Legacy/Global)
         const settings = (window as any).wpcSettings || (window as any).ecommerceGuiderSettings;
         return settings?.texts?.[key] || defaultText;
     };
@@ -215,6 +224,8 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
 
     // Check URL parameters on mount for compare_ids
     useEffect(() => {
+        if (config.enableComparison === false) return; // Master Switch block
+
         const urlParams = new URLSearchParams(window.location.search);
         const compareIds = urlParams.get('compare_ids');
 
@@ -413,8 +424,15 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
     const displayedItems = filteredItems.slice(0, visibleCount);
     const hasMore = filteredItems.length > visibleCount;
 
-    // Handlers
+    // Handle item selection/deselection
     const handleSelectItem = (id: string) => {
+        // STRICT MASTER SWITCH: Block selection if comparison is disabled
+        // Handle both boolean and string "0" from PHP
+        if (config.enableComparison === false || config.enableComparison === '0') return;
+
+        // ALLOW selection even if showCheckboxes is false (User Request: Clean UI but selectable)
+        // Checks removed.
+
         if (selectedItems.includes(id)) {
             const newSelection = selectedItems.filter((p) => p !== id);
             setSelectedItems(newSelection);
@@ -427,6 +445,14 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             setSelectedItems((prev) => [...prev, id]);
         }
     };
+
+    // Auto-clear selection if master switch is turned off
+    useEffect(() => {
+        if ((config.enableComparison === false || (config.enableComparison as any) === '0') && selectedItems.length > 0) {
+            setSelectedItems([]);
+            setShowComparison(false);
+        }
+    }, [config.enableComparison, selectedItems.length]);
 
     const handleCategoryChange = (category: string) => {
         setSelectedCategories((prev) =>
@@ -600,6 +626,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                         }}
                         hoverColor={getColor('hoverButton')}
                         primaryColor={getColor('primary')}
+                        labels={config.labels}
                     />
                 </div>
             );
@@ -671,7 +698,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             )}
 
             {/* Filters Section - Top Layout Only */}
-            {filterStyle === 'top' && (showComparison || !shouldHideFilters) && (
+            {config.showFilters !== false && filterStyle === 'top' && (showComparison || !shouldHideFilters) && (
                 <div className="mb-8 p-4 bg-card rounded-xl border border-border shadow-sm">
                     <ComparisonFilters
                         categories={displayedCategories}
@@ -693,10 +720,10 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             {/* Main Content Area */}
             <div className={cn(
                 "w-full",
-                !isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters ? "flex flex-col lg:grid lg:grid-cols-4 lg:gap-8" : "flex flex-col lg:flex-row gap-8"
+                config.showFilters !== false && !isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters ? "flex flex-col lg:grid lg:grid-cols-4 lg:gap-8" : "flex flex-col lg:flex-row gap-8"
             )}>
                 {/* Sidebar Filters - Keep visible even when comparison is shown */}
-                {!isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters && (
+                {config.showFilters !== false && !isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters && (
                     <div className="lg:col-span-1 border border-border rounded-xl p-6 bg-card mb-8 lg:mb-0 h-fit lg:sticky lg:top-24">
                         <ComparisonFilters
                             categories={displayedCategories}
@@ -715,13 +742,13 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                 {/* Main List Area */}
                 <div className={cn(
                     "flex-1",
-                    !isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters ? "lg:col-span-3" : ""
+                    config.showFilters !== false && !isCompareButtonMode && filterStyle === 'sidebar' && !shouldHideFilters ? "lg:col-span-3" : ""
                 )}>
                     {/* Platform Grid Container - Only show if not in compare button mode */}
                     {!isCompareButtonMode && (
                         <div className="w-full">
                             {/* Active Filters Display */}
-                            {(selectedCategories.length > 0 || selectedFeatures.length > 0) && (
+                            {config.showFilters !== false && (selectedCategories.length > 0 || selectedFeatures.length > 0) && (
                                 <div className="mb-6 flex flex-wrap items-center gap-2">
                                     <span className="text-sm font-medium text-muted-foreground mr-2">Active filters:</span>
                                     {selectedCategories.map(cat => (
@@ -750,129 +777,180 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                     </button>
                                 </div>
                             )}
+
                             {/* Search & Sort Bar */}
-                            <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                {/* Search Input */}
-                                <div className="relative flex-1">
-                                    {config.searchType === 'combobox' ? (
-                                        <SearchCombobox
-                                            items={items}
-                                            selectedValues={searchSelectedItems}
-                                            onSelect={setSearchSelectedItems}
-                                            placeholder="Search & Select..."
-                                            hoverColor={getColor('hoverButton')}
-                                            primaryColor={getColor('primary')}
-                                            onCompare={() => {
-                                                // Convert selected item names to IDs
-                                                const idsToCompare = items
-                                                    .filter(item => searchSelectedItems.includes(item.name))
-                                                    .map(item => item.id);
+                            {config.showSearchBar !== false && (
+                                <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                    {/* Search Input */}
+                                    <div className="relative flex-1">
 
-                                                if (idsToCompare.length >= 2) {
-                                                    setSelectedItems(idsToCompare);
-                                                    setShowComparison(true);
-                                                    // Scroll to comparison
-                                                    setTimeout(() => {
-                                                        comparisonRef.current?.scrollIntoView({ behavior: 'smooth' });
-                                                    }, 100);
-                                                }
-                                            }}
-                                        />
-                                    ) : (
-                                        <>
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                            <input
-                                                type="text"
-                                                placeholder="Search by name..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                                style={{
-                                                    borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
-                                                }}
+                                        {config.searchType === 'combobox' ? (
+                                            <SearchCombobox
+                                                items={items}
+                                                selectedValues={searchSelectedItems}
+                                                onSelect={setSearchSelectedItems}
+                                                placeholder="Search & Select..."
+                                                hoverColor={getColor('hoverButton')}
+                                                primaryColor={getColor('primary')}
+                                                compareLabel={config.labels?.compareBtn}
+                                                onCompare={(config.enableComparison !== false && config.showCheckboxes !== false) ? () => {
+                                                    // Convert selected item names to IDs
+                                                    const idsToCompare = items
+                                                        .filter(item => searchSelectedItems.includes(item.name))
+                                                        .map(item => item.id);
+
+                                                    if (idsToCompare.length >= 2) {
+                                                        setSelectedItems(idsToCompare);
+                                                        setShowComparison(true);
+                                                        // Scroll to comparison
+                                                        setTimeout(() => {
+                                                            comparisonRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                                        }, 100);
+                                                    }
+                                                } : undefined}
                                             />
-                                            {searchQuery && (
-                                                <button
-                                                    onClick={() => setSearchQuery('')}
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-
-                                {/* Sort Dropdown */}
-                                <div className="relative min-w-[160px]">
-                                    <select
-                                        value={sortOption}
-                                        onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
-                                        className="w-full appearance-none pl-4 pr-10 py-2.5 bg-card border border-border rounded-xl text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                        style={{
-                                            borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
-                                        }}
-                                    >
-                                        <option value="default">Sort: Default</option>
-                                        <option value="name-asc">Name: A to Z</option>
-                                        <option value="name-desc">Name: Z to A</option>
-                                        <option value="rating-desc">Rating: Highest</option>
-                                        <option value="price-asc">Price: Lowest</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                </div>
-
-                                {/* Results Count */}
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                    {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-                                </span>
-                            </div>
-
-                            <div className={cn(
-                                "grid grid-cols-1 md:grid-cols-2 gap-6",
-                                filterStyle === 'sidebar'
-                                    ? "lg:grid-cols-2 xl:grid-cols-3"
-                                    : "lg:grid-cols-3 xl:grid-cols-4"
-                            )}>
-                                {/* Show cards - display ALL visibleCount cards, Show All card is extra */}
-                                {displayedItems.map(item => {
-                                    // Check if featured
-                                    // Check if featured
-                                    // Config is hoisted, use it directly
-                                    const isFeatured = config.featured && config.featured.includes(item.id);
-
-                                    return (
-                                        <PlatformCard
-                                            key={item.id}
-                                            item={item}
-                                            isSelected={selectedItems.includes(item.id)}
-                                            onSelect={handleSelectItem}
-                                            onViewDetails={handleViewDetails}
-                                            disabled={selectedItems.length >= MAX_COMPARE && !selectedItems.includes(item.id)}
-                                            isFeatured={isFeatured}
-                                            activeCategories={selectedCategories} // Pass filters for dynamic badge display
-                                            enableComparison={config.enableComparison !== false}
-                                            buttonText={config.buttonText}
-                                        />
-                                    );
-                                })}
-
-                                {/* Show More Card - only if showAllEnabled */}
-                                {hasMore && config.showAllEnabled !== false && (
-                                    <div
-                                        onClick={() => setVisibleCount(filteredItems.length)}
-                                        className="bg-card rounded-2xl border-2 border-dashed border-border p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group"
-                                    >
-                                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                            <ArrowDown className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <h3 className="font-bold text-lg mb-1">Show All Items</h3>
-                                        <p className="text-sm text-muted-foreground">
-                                            Click to reveal {filteredItems.length - visibleCount} more
-                                        </p>
+                                        ) : (
+                                            <>
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search by name..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                                    style={{
+                                                        borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
+                                                    }}
+                                                />
+                                                {searchQuery && (
+                                                    <button
+                                                        onClick={() => setSearchQuery('')}
+                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+
+                                    {/* Sort Dropdown */}
+                                    <div className="relative min-w-[160px]">
+                                        <select
+                                            value={sortOption}
+                                            onChange={(e) => setSortOption(e.target.value as typeof sortOption)}
+                                            className="w-full appearance-none pl-4 pr-10 py-2.5 bg-card border border-border rounded-xl text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                            style={{
+                                                borderColor: (window as any).wpcSettings?.colors?.cardBorder || undefined
+                                            }}
+                                        >
+                                            <option value="default">Sort: Default</option>
+                                            <option value="name-asc">Name: A to Z</option>
+                                            <option value="name-desc">Name: Z to A</option>
+                                            <option value="rating-desc">Rating: Highest</option>
+                                            <option value="price-asc">Price: Lowest</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                    </div>
+
+                                    {/* Results Count */}
+                                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                        {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+                                    </span>
+                                </div>
+                            )}
+
+                            {(() => {
+                                // Grid Class Logic
+                                let containerClass = "grid gap-6";
+                                if (config.style === 'list' || config.style === 'detailed') {
+                                    containerClass += " grid-cols-1";
+                                } else {
+                                    containerClass += " grid-cols-1 md:grid-cols-2";
+                                    if (filterStyle === 'sidebar') containerClass += " lg:grid-cols-2 xl:grid-cols-3";
+                                    else containerClass += " lg:grid-cols-3 xl:grid-cols-4";
+                                }
+
+                                const hasNextPage = hasMore && config.showAllEnabled !== false;
+
+                                return (
+                                    <div className={containerClass}>
+                                        {displayedItems.map((item, index) => {
+                                            const isFeatured = config.featured && config.featured.includes(item.id);
+                                            // Props for PlatformCard (Legacy/Grid)
+                                            const gridProps = {
+                                                key: item.id,
+                                                item,
+                                                index,
+                                                isSelected: selectedItems.includes(item.id),
+                                                onSelect: handleSelectItem, // PlatformCard uses onSelect
+                                                onViewDetails: handleViewDetails,
+                                                disabled: selectedItems.length >= MAX_COMPARE && !selectedItems.includes(item.id),
+                                                isFeatured,
+                                                activeCategories: selectedCategories,
+                                                enableComparison: config.enableComparison !== false,
+                                                buttonText: config.buttonText,
+                                                badgeText: config.badgeTexts?.[item.id],
+                                                badgeColor: config.badgeColors?.[item.id],
+                                                badgeStyle: config.badgeStyle,
+                                                showRating: config.showRating,
+                                                showPrice: config.showPrice,
+                                                showCheckboxes: config.showCheckboxes !== false,
+                                                viewAction: config.viewAction || 'popup',
+                                                labels: config.labels // Pass configurable labels
+                                            };
+
+                                            // Props for New Styles
+                                            const listProps = {
+                                                key: item.id,
+                                                item,
+                                                index,
+                                                isSelected: selectedItems.includes(item.id),
+                                                onToggleCompare: handleSelectItem, // New components use onToggleCompare
+                                                onViewDetails: handleViewDetails,
+                                                enableComparison: config.enableComparison !== false,
+                                                buttonText: config.buttonText,
+                                                showRank: true,
+                                                badgeText: config.badgeTexts?.[item.id],
+                                                badgeColor: config.badgeColors?.[item.id],
+                                                badgeStyle: config.badgeStyle,
+                                                showRating: config.showRating,
+                                                showPrice: config.showPrice,
+                                                showCheckboxes: config.showCheckboxes !== false,
+                                                viewAction: config.viewAction || 'popup',
+                                                activeCategories: selectedCategories,
+                                                labels: config.labels // Pass configurable labels
+                                            };
+
+                                            switch (config.style) {
+                                                case 'list': return <PlatformListRow {...listProps} />;
+                                                case 'detailed': return <PlatformDetailedRow {...listProps} />;
+                                                case 'compact': return <PlatformCompactCard {...listProps} />;
+                                                case 'grid': default: return <PlatformCard {...gridProps} />;
+                                            }
+                                        })}
+
+                                        {/* Show More Card - Inside Grid Flow */}
+                                        {hasNextPage && (
+                                            <div
+                                                onClick={() => setVisibleCount(filteredItems.length)}
+                                                className={cn(
+                                                    "bg-card rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group",
+                                                    (config.style === 'list' || config.style === 'detailed') ? "p-4 min-h-[100px]" : "p-6 aspect-square md:aspect-auto min-h-[200px]"
+                                                )}
+                                            >
+                                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                                    <ArrowDown className="w-6 h-6 text-primary" />
+                                                </div>
+                                                <h3 className="font-bold text-lg mb-1">Show All Items</h3>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Click to reveal {filteredItems.length - visibleCount} more
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
 
                             {filteredItems.length === 0 && (
                                 <div className="text-center p-12 bg-muted/20 rounded-xl">
@@ -885,18 +963,22 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             </div>
 
             {/* Inline Comparison Section */}
-            {selectedItems.length > 0 && showComparison && (
-                <div ref={comparisonRef} className="mt-16 pt-8 border-t border-border w-full">
-                    <h2 className="text-2xl font-bold mb-6 px-2">Detailed Comparison</h2>
-                    <ComparisonTable items={selectedItemObjects} onRemove={handleRemoveFromComparison} />
-                </div>
-            )}
+            {
+                selectedItems.length > 0 && showComparison && (
+                    <div ref={comparisonRef} className="mt-16 pt-8 border-t border-border w-full">
+                        <h2 className="text-2xl font-bold mb-6 px-2">Detailed Comparison</h2>
+                        <ComparisonTable items={selectedItemObjects} onRemove={handleRemoveFromComparison} />
+                    </div>
+                )
+            }
 
             {/* Pricing Popup */}
-            {detailsItem && (
-                <PricingPopup item={detailsItem} onClose={handleCloseDetails} showPlanButtons={config.showPlanButtons} />
-            )}
-        </div>
+            {
+                detailsItem && (
+                    <PricingPopup item={detailsItem} onClose={handleCloseDetails} showPlanButtons={config.showPlanButtons} />
+                )
+            }
+        </div >
     );
 };
 

@@ -592,6 +592,7 @@ function wpc_list_shortcode( $atts ) {
 
     $attributes = shortcode_atts( array(
         'id' => '',
+        'style' => '',
     ), $atts );
 
     if ( empty( $attributes['id'] ) ) return '';
@@ -636,6 +637,39 @@ function wpc_list_shortcode( $atts ) {
     $cat_label = get_post_meta( $post_id, '_wpc_list_cat_label', true );
     $feat_label = get_post_meta( $post_id, '_wpc_list_feat_label', true );
     
+    // Resolve Show Filters (Now just Filter Section)
+    $show_filters_opt = get_post_meta( $post_id, '_wpc_list_show_filters_opt', true ) ?: 'default';
+    $show_filters = true;
+    if ($show_filters_opt === 'show') $show_filters = true;
+    elseif ($show_filters_opt === 'hide') $show_filters = false;
+    else {
+        // Default to Global Filter Setting
+        $show_filters = get_option('wpc_show_filters', '1') === '1';
+    }
+
+    // Resolve Show Search Bar
+    $show_search_opt = get_post_meta( $post_id, '_wpc_list_show_search_opt', true ) ?: 'default';
+    $show_search = true;
+    if ($show_search_opt === 'show') $show_search = true;
+    elseif ($show_search_opt === 'hide') $show_search = false;
+    else {
+        // Default to Global Search Setting
+        $show_search = get_option('wpc_show_search', '1') === '1';
+    }
+
+    // --- CONFIGURABLE TEXTS ---
+    $txt_compare = get_post_meta( $post_id, '_wpc_list_txt_compare', true ) ?: 'Select to Compare';
+    $txt_copied = get_post_meta( $post_id, '_wpc_list_txt_copied', true ) ?: 'Copied!';
+    $txt_view = get_post_meta( $post_id, '_wpc_list_txt_view', true ) ?: 'View Details';
+    $txt_visit = get_post_meta( $post_id, '_wpc_list_txt_visit', true ) ?: 'Visit Site';
+
+    // Resolve Display Options
+    $badge_style = get_post_meta( $post_id, '_wpc_list_badge_style', true ) ?: 'floating';
+    $show_rating = get_post_meta( $post_id, '_wpc_list_show_rating', true );
+    if($show_rating === '') $show_rating = '1';
+    $show_price = get_post_meta( $post_id, '_wpc_list_show_price', true );
+    if($show_price === '') $show_price = '1';
+
     $show_plans_override = get_post_meta( $post_id, '_wpc_list_show_plans', true ); 
     $show_plans = true; 
     if ($show_plans_override === '1') $show_plans = true;
@@ -786,6 +820,23 @@ function wpc_list_shortcode( $atts ) {
     $list_search_type = get_post_meta( $post_id, '_wpc_list_search_type', true );
     $final_search_type = ($list_search_type && $list_search_type !== 'default') ? $list_search_type : $global_search_type;
 
+    // Determine List Style (Resolved)
+    $global_style = get_option( 'wpc_default_list_style', 'grid' );
+    $list_style = get_post_meta( $post_id, '_wpc_list_style', true );
+    
+    // 1. Shortcode Attribute
+    if (!empty($attributes['style'])) {
+        $final_style = $attributes['style'];
+    } 
+    // 2. List Settings
+    elseif ($list_style && $list_style !== 'default') {
+        $final_style = $list_style;
+    }
+    // 3. Global Default
+    else {
+        $final_style = $global_style;
+    }
+
 
     $grid_class = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
     if ( $filter_style === 'sidebar' ) {
@@ -794,15 +845,65 @@ function wpc_list_shortcode( $atts ) {
          $grid_class .= " xl:grid-cols-4";
     }
 
-    // Build config
+    // Badge Style & Element Visibility
+    $badge_style_opt = get_post_meta($post_id, '_wpc_list_badge_style', true);
+    $badge_style = ($badge_style_opt && $badge_style_opt !== 'default') ? $badge_style_opt : 'floating';
+
+    // Element Visibility
+    $show_rating = get_post_meta($post_id, '_wpc_list_show_rating', true);
+    $show_price = get_post_meta($post_id, '_wpc_list_show_price', true);
+
+    // --- CONFIGURABLE TEXTS ---
+    $txt_compare = get_post_meta( $post_id, '_wpc_list_txt_compare', true ) ?: 'Select to Compare';
+    $txt_copied = get_post_meta( $post_id, '_wpc_list_txt_copied', true ) ?: 'Copied!';
+    $txt_view = get_post_meta( $post_id, '_wpc_list_txt_view', true ) ?: 'View Details';
+    $txt_visit = get_post_meta( $post_id, '_wpc_list_txt_visit', true ) ?: 'Visit Site';
+    $txt_compare_btn = get_post_meta( $post_id, '_wpc_list_txt_compare_btn', true ) ?: 'Compare (%s) Items';
+    $txt_compare_now = get_post_meta( $post_id, '_wpc_list_txt_compare_now', true ) ?: 'Compare Now';
+    $txt_visit_plat = get_post_meta( $post_id, '_wpc_list_txt_visit_plat', true ) ?: 'Visit %s';
+    
+    // UI Labels
+    $txt_search_ph = get_post_meta( $post_id, '_wpc_list_txt_search_ph', true ) ?: 'Search & Select...';
+    $txt_active_filt = get_post_meta( $post_id, '_wpc_list_txt_active_filt', true ) ?: 'Active filters:';
+    $txt_clear_all = get_post_meta( $post_id, '_wpc_list_txt_clear_all', true ) ?: 'Clear all';
+    $txt_no_results = get_post_meta( $post_id, '_wpc_list_txt_no_results', true ) ?: 'No items match your filters.';
+    $txt_selected = get_post_meta( $post_id, '_wpc_list_txt_selected', true ) ?: 'Selected:';
+    $txt_comp_header = get_post_meta( $post_id, '_wpc_list_txt_comp_header', true ) ?: 'Detailed Comparison';
+
+    // Sort Labels
+    $txt_sort_def = get_post_meta( $post_id, '_wpc_list_txt_sort_def', true ) ?: 'Sort: Default';
+    $txt_sort_asc = get_post_meta( $post_id, '_wpc_list_txt_sort_asc', true ) ?: 'Name (A-Z)';
+    $txt_sort_desc = get_post_meta( $post_id, '_wpc_list_txt_sort_desc', true ) ?: 'Name (Z-A)';
+    $txt_sort_rating = get_post_meta( $post_id, '_wpc_list_txt_sort_rating', true ) ?: 'Highest Rated';
+    $txt_sort_price = get_post_meta( $post_id, '_wpc_list_txt_sort_price', true ) ?: 'Lowest Price';
+
+    // Feature Labels
+    $txt_get_coupon = get_post_meta( $post_id, '_wpc_list_txt_get_coupon', true ) ?: 'Get Coupon:';
+    $txt_featured = get_post_meta( $post_id, '_wpc_list_txt_featured', true ) ?: 'Featured';
+    $txt_feat_prod = get_post_meta( $post_id, '_wpc_list_txt_feat_prod', true ) ?: 'Products';
+    $txt_feat_fees = get_post_meta( $post_id, '_wpc_list_txt_feat_fees', true ) ?: 'Trans. Fees';
+    $txt_feat_supp = get_post_meta( $post_id, '_wpc_list_txt_feat_supp', true ) ?: 'Support';
+
+    // Split Comparison Settings
+    $show_checkboxes_opt = get_post_meta($post_id, '_wpc_list_show_checkboxes', true);
+    // Default to true if not set (backwards compatibility) or explicitly "1"
+    $show_checkboxes = ($show_checkboxes_opt === '' || $show_checkboxes_opt === '1');
+    
+    $view_action = get_post_meta($post_id, '_wpc_list_view_action', true) ?: 'popup';
+
     $config = array(
         'ids'      => $sorted_ids,
+        'style'    => $final_style, // Pass resolved style
         'featured' => !empty($featured_str) ? array_map('trim', explode(',', $featured_str)) : [],
         'category' => '', 
         'limit'    => intval($limit),
-        'enableComparison' => $enable_comparison === '1',
+        'enableComparison' => $enable_comparison === '1', // Footer Bar
+        'showCheckboxes' => $show_checkboxes, // Selection Circles
+        'viewAction' => $view_action, // "popup" or "link"
         'buttonText' => $list_button_text,
         'filterLayout' => $filter_style, // Pass RESOLVED style
+        'showFilters' => $show_filters, // Filter Section Only
+        'showSearchBar' => $show_search, // Search Bar Only
         'searchType' => $final_search_type,
         'filterCats' => $filter_cat_names,
         'filterFeats' => $filter_feat_names,
@@ -813,8 +914,38 @@ function wpc_list_shortcode( $atts ) {
         'showPlanButtons' => $show_plans,
         'showAllEnabled' => $show_all_enabled === '1',
         'initialVisible' => intval($initial_visible),
+        'badgeStyle' => $badge_style,
+        'showRating' => $show_rating === '1',
+        'showPrice' => $show_price === '1',
+        'showPrice' => $show_price === '1',
         'colorsOverride' => !empty($colors_override) ? $colors_override : null,
         'visualsOverride' => !empty($pt_visuals_override) ? $pt_visuals_override : null,
+        // Configurable Texts
+        'labels' => [
+            'selectToCompare' => $txt_compare,
+            'copied' => $txt_copied,
+            'viewDetails' => $txt_view,
+            'visitSite' => $txt_visit,
+            'compareBtn' => $txt_compare_btn,
+            'compareNow' => $txt_compare_now,
+            'visitPlat' => $txt_visit_plat,
+            'searchPlaceholder' => $txt_search_ph,
+            'activeFilters' => $txt_active_filt,
+            'clearAll' => $txt_clear_all,
+            'noResults' => $txt_no_results,
+            'selected' => $txt_selected,
+            'comparisonHeader' => $txt_comp_header,
+            'sortDefault' => $txt_sort_def,
+            'sortNameAsc' => $txt_sort_asc,
+            'sortNameDesc' => $txt_sort_desc,
+            'sortRating' => $txt_sort_rating,
+            'sortPrice' => $txt_sort_price,
+            'getCoupon' => $txt_get_coupon,
+            'featuredBadge' => $txt_featured,
+            'featureProducts' => $txt_feat_prod,
+            'featureFees' => $txt_feat_fees,
+            'featureSupport' => $txt_feat_supp
+        ],
     );
     
     $config_json = htmlspecialchars(json_encode($config), ENT_QUOTES, 'UTF-8');
@@ -948,15 +1079,16 @@ function wpc_list_shortcode( $atts ) {
              
              <?php if ($filter_style === 'top'): ?>
                 <!-- Top Layout -->
-                <?php echo $top_filter_html; ?>
+                <?php if($show_filters) echo $top_filter_html; ?>
                 <div class="w-full flex flex-col lg:flex-row gap-8">
                      <div class="flex-1">
-                        <?php echo $search_bar_html; ?>
+                        <?php if($show_search) echo $search_bar_html; ?>
                         <div class="<?php echo esc_attr($grid_class); ?>">
              <?php else: ?>
                 <!-- Sidebar Layout -->
                 <div class="w-full flex flex-col lg:grid lg:grid-cols-4 lg:gap-8">
                      <!-- Static Sidebar Skeleton -->
+                     <?php if($show_filters): ?>
                      <div class="lg:col-span-1 border border-border rounded-xl p-6 bg-card mb-8 lg:mb-0 h-fit lg:sticky lg:top-24">
                         <div class="flex items-center gap-2 mb-2 pb-2 border-b border-border">
                             <?php echo $icon_filter; ?>
@@ -976,25 +1108,125 @@ function wpc_list_shortcode( $atts ) {
                             </div>
                         </div>
                      </div>
+                     <?php endif; ?>
 
-                     <div class="lg:col-span-3">
-                        <?php echo $search_bar_html; ?>
+                     <div class="<?php echo $show_filters ? 'lg:col-span-3' : 'lg:col-span-4'; ?>">
+                        <?php if($show_search) echo $search_bar_html; ?>
                         <div class="<?php echo esc_attr($grid_class); ?>">
              <?php endif; ?>
                 <?php foreach ( $items as $item ): 
                     // Determine styles
                     $is_featured_in_list = !empty($config['featured']) && in_array($item['id'], $config['featured']);
-                    $border_class = $is_featured_in_list ? "border-4" : "border-2";
                     $bg_class = $is_featured_in_list ? "bg-amber-50/10" : "";
                     $featured_color = !empty($item['featured_badge_color']) ? $item['featured_badge_color'] : (!empty($item['featured_color']) ? $item['featured_color'] : '#6366f1');
-                    $border_style = $is_featured_in_list ? "border-color: " . esc_attr($featured_color) : "";
+                    
+                    // Render Badge HTML
+                    $badge_html = '';
+                    if ($is_featured_in_list) {
+                        $b_text = !empty($item['featured_badge_text']) ? $item['featured_badge_text'] : 'Top Choice';
+                        if ($badge_style === 'floating') {
+                             $badge_html = '<div class="absolute -top-3 left-4 z-10"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-lg" style="background-color: '.esc_attr($featured_color).'; color: white;">'.esc_html($b_text).'</span></div>';
+                        } else {
+                             // Flush style
+                             $badge_html = '<div class="absolute top-0 left-0"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-br-lg rounded-tl-xl shadow-sm" style="background-color: '.esc_attr($featured_color).'; color: white;">'.esc_html($b_text).'</span></div>';
+                        }
+                    }
+
+                    // Determines Overflow Class based on badge style (Flush needs overflow hidden, Floating does not)
+                    $overflow_class = ($badge_style === 'floating') ? '' : 'overflow-hidden';
+                    
+                    // Visibility Checks
+                    $r_style = ($show_rating === '1') ? '' : 'display:none;';
+                    $p_style = ($show_price === '1') ? '' : 'display:none;';
+
+                    // Selection Circle HTML (Unselected state)
+                    $select_circle_html = '<div class="absolute top-2 right-2 w-6 h-6 rounded-full border-2 border-border bg-background flex items-center justify-center transition-colors z-20"></div>';
+                    // For Compact card, it is top-2 right-2 and smaller
+                    $select_circle_compact_html = '<div class="absolute top-2 right-2 w-5 h-5 rounded-full border-2 border-border bg-background flex items-center justify-center transition-colors z-20"></div>';
                 ?>
-                <div class="relative bg-card rounded-2xl p-5 transition-all duration-300 cursor-pointer border-border hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 <?php echo $border_class . ' ' . $bg_class; ?>" style="<?php echo $border_style; ?>">
+                
+                <?php if ($final_style === 'list'): ?>
+                    <!-- LIST STYLE SKELETON -->
+                    <div class="group relative flex flex-col md:flex-row items-center gap-4 md:gap-6 p-4 rounded-xl border bg-card text-card-foreground shadow-sm <?php echo $overflow_class . ' ' . $bg_class; ?>" style="border-color: #e2e8f0;">
+                        <?php echo $badge_html; ?>
+                        <?php echo $select_circle_html; ?>
+                        <div class="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-muted/10 rounded-lg p-2 flex items-center justify-center">
+                            <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
+                        </div>
+                        <div class="flex-1 text-center md:text-left">
+                            <h3 class="font-bold text-lg"><?php echo esc_html($item['name']); ?></h3>
+                            <div class="flex flex-wrap gap-1 justify-center md:justify-start mt-1 opacity-70" style="<?php echo $r_style; ?>">
+                                <?php if(!empty($item['rating'])): ?><span class="text-xs">★ <?php echo esc_html($item['rating']); ?></span><?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="text-center md:text-right md:w-64 flex-shrink-0 flex flex-col gap-3 pt-4 md:pt-10 md:pl-6 md:self-stretch md:justify-between border-t md:border-t-0 md:border-l border-border" style="<?php echo $p_style; ?>">
+                             <span class="block text-2xl font-bold text-primary"><?php echo esc_html($item['price']); ?></span>
+                             <button class="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors">View</button>
+                        </div>
+                    </div>
+
+                <?php elseif ($final_style === 'detailed'): ?>
+                    <!-- DETAILED STYLE SKELETON -->
+                    <div class="group relative grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-xl border bg-card text-card-foreground shadow-sm items-center <?php echo $overflow_class . ' ' . $bg_class; ?>">
+                        <?php echo $badge_html; ?>
+                        <?php echo $select_circle_html; ?>
+                        <div class="md:col-span-3 flex flex-col items-center text-center">
+                           <div class="w-24 h-24 mb-3 bg-muted/10 rounded-lg p-2 flex items-center justify-center">
+                                <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
+                           </div>
+                           <h3 class="font-bold text-lg mb-1"><?php echo esc_html($item['name']); ?></h3>
+                           <span class="text-xs font-medium text-muted-foreground" style="<?php echo $r_style; ?>">Rating: <?php echo esc_html($item['rating']); ?></span>
+                        </div>
+                        <div class="md:col-span-6 border-t md:border-t-0 md:border-l md:border-r border-border py-4 md:px-6">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                                <div class="h-4 bg-muted rounded w-full mb-2"></div>
+                                <div class="h-4 bg-muted rounded w-1/2"></div>
+                                <div class="h-4 bg-muted rounded w-2/3"></div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3 flex flex-col items-center justify-center text-center">
+                            <span class="text-3xl font-bold text-primary mb-1" style="<?php echo $p_style; ?>"><?php echo esc_html($item['price']); ?></span>
+                            <span class="text-sm text-muted-foreground mb-4"><?php echo esc_html($item['period']); ?></span>
+                            <button class="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors">Visit Site</button>
+                        </div>
+                    </div>
+
+                <?php elseif ($final_style === 'compact'): ?>
+                    <!-- COMPACT STYLE SKELETON -->
+                    <div class="group relative flex flex-col p-4 rounded-xl border bg-card text-card-foreground shadow-sm h-full <?php echo $overflow_class . ' ' . $bg_class; ?>">
+                        <?php echo $badge_html; ?>
+                        <?php echo $select_circle_compact_html; ?>
+                        <div class="flex items-center gap-3 mb-3 pt-2">
+                            <div class="w-10 h-10 shrink-0 bg-muted/10 rounded-lg p-1 flex items-center justify-center">
+                                <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-sm leading-tight truncate"><?php echo esc_html($item['name']); ?></h3>
+                                <div class="flex items-center gap-1 text-xs" style="<?php echo $r_style; ?>"><span class="text-yellow-400">★</span> <?php echo esc_html($item['rating']); ?></div>
+                            </div>
+                            <div class="text-right" style="<?php echo $p_style; ?>">
+                                <span class="block font-bold text-lg leading-none text-primary"><?php echo esc_html($item['price']); ?></span>
+                            </div>
+                        </div>
+                        <div class="mt-auto grid grid-cols-2 gap-2">
+                            <button class="col-span-2 bg-primary text-primary-foreground h-8 px-3 rounded-md text-xs font-bold">View</button>
+                        </div>
+                    </div>
+
+                <?php else: ?>
+                    <!-- GRID STYLE SKELETON (Default) -->
+                    <div class="relative bg-card rounded-2xl p-5 transition-all duration-300 cursor-pointer border-border hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 <?php echo $bg_class; ?> <?php echo $is_featured_in_list ? 'border-4' : 'border-2'; ?>" style="<?php echo $is_featured_in_list ? 'border-color:'.esc_attr($featured_color) : ''; ?>">
                     
                     <?php if ( $is_featured_in_list ): ?>
-                        <div class="absolute -top-3 -right-3 px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-bold shadow-lg z-10" style="background-color: <?php echo esc_attr($featured_color); ?>; color: white;">
-                            <?php echo esc_html( !empty($item['featured_badge_text']) ? $item['featured_badge_text'] : 'Top Choice' ); ?>
-                        </div>
+                        <?php if ($badge_style === 'flush'): ?>
+                            <div class="absolute top-0 left-0"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-br-lg rounded-tl-xl shadow-sm" style="background-color: <?php echo esc_attr($featured_color); ?>; color: white;"><?php echo esc_html($b_text); ?></span></div>
+                        <?php else: ?>
+                             <!-- Default Grid Floating -->
+                            <div class="absolute -top-3 -right-3 px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-bold shadow-lg z-10" style="background-color: <?php echo esc_attr($featured_color); ?>; color: white;">
+                                <?php echo esc_html($b_text); ?>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
 
                     <!-- Selection Circle -->
@@ -1009,19 +1241,19 @@ function wpc_list_shortcode( $atts ) {
                         </div>
                         <div>
                             <h3 class="font-display font-bold text-lg text-foreground leading-tight"><?php echo esc_html($item['name']); ?></h3>
-                            <!-- Rating (Static Stars) -->
-                            <div class="flex items-center gap-1">
+                            <!-- Rating -->
+                            <div class="flex items-center gap-1" style="<?php echo $r_style; ?>">
                                 <span class="text-xs font-medium text-muted-foreground">Rating: <?php echo esc_html($item['rating']); ?></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Price -->
-                    <div class="mb-6 p-3 bg-muted/30 rounded-lg text-center">
+                    <div class="mb-6 p-3 bg-muted/30 rounded-lg text-center" style="<?php echo $p_style; ?>">
                         <span class="text-3xl font-display font-bold text-primary"><?php echo esc_html($item['price']); ?></span>
                         <?php if(!empty($item['period'])): ?><span class="text-sm text-muted-foreground"><?php echo esc_html($item['period']); ?></span><?php endif; ?>
                     </div>
-                    
+                
                     <!-- Categories -->
                      <div class="flex flex-wrap gap-2 mb-4">
                         <?php 
@@ -1049,6 +1281,7 @@ function wpc_list_shortcode( $atts ) {
                         <span class="text-xs font-semibold text-muted-foreground block w-full">Select to Compare</span>
                      </div>
                 </div>
+                <?php endif; ?>
                 <?php endforeach; ?>
              </div> <!-- End Grid -->
              
