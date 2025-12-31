@@ -127,13 +127,13 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor, lab
                                         <Star className="w-5 h-5 fill-current" />
                                         <span className="ml-1 text-foreground font-bold">{item.rating}</span>
                                     </div>
-                                    <span className="text-muted-foreground text-sm">(Based on our analysis)</span>
+                                    <span className="text-muted-foreground text-sm">{labels?.analysisBase || "(Based on our analysis)"}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <h2 className="text-xl font-semibold mb-3">About {item.name}</h2>
+                            <h2 className="text-xl font-semibold mb-3">{(labels?.about || "About {name}").replace('{name}', item.name)}</h2>
                             <p className="text-muted-foreground text-lg leading-relaxed">
                                 {item.description || `${item.name} is a leading platform that empowers you to succeed. Designed with powerful features to help you grow.`}
                             </p>
@@ -157,7 +157,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor, lab
                                         size="lg"
                                         className="transition-colors border-primary text-primary"
                                     >
-                                        Compare Alternatives
+                                        {labels?.compareAlternatives || "Compare Alternatives"}
                                     </DynamicButton>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className={`w-72 ${uniqueId}`} align="start">
@@ -247,7 +247,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor, lab
                         {/* Quick Stats Grid */}
                         <div className="grid grid-cols-2 gap-4 pt-4">
                             <div className="p-4 bg-secondary/10 rounded-xl">
-                                <div className="text-sm text-muted-foreground mb-1">Starting Price</div>
+                                <div className="text-sm text-muted-foreground mb-1">{labels?.startingPrice || "Starting Price"}</div>
                                 <div className="text-2xl font-bold text-primary">{item.price}</div>
                             </div>
                             <div className="p-4 bg-secondary/10 rounded-xl">
@@ -288,7 +288,7 @@ const PlatformDetails = ({ item, allItems, onBack, hoverColor, primaryColor, lab
                                 ) : (
                                     <div className="text-center p-8">
                                         <LayoutDashboard className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                                        <p className="text-muted-foreground font-medium">Dashboard Preview</p>
+                                        <p className="text-muted-foreground font-medium">{labels?.dashboardPreview || "Dashboard Preview"}</p>
 
                                         {/* Mock UI Elements for visuals */}
                                         <div className="mt-8 grid grid-cols-3 gap-4 opacity-30">

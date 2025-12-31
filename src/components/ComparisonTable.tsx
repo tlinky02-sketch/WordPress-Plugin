@@ -1,4 +1,4 @@
-import { Check, X, Star, ExternalLink, ShoppingBag } from "lucide-react";
+import { Check, X, Star, ExternalLink, ShoppingBag, Tag } from "lucide-react";
 import { ComparisonItem } from "./PlatformCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -6,26 +6,59 @@ import { cn } from "@/lib/utils";
 interface ComparisonTableProps {
   items: ComparisonItem[];
   onRemove: (id: string) => void;
+  labels?: any;
+  config?: any;
 }
 
-const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
+const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTableProps) => {
+  const getText = (key: string, def: string) => labels?.[key] || def;
+  const target = config?.targetDetails || (window as any).wpcSettings?.target_details || '_blank';
+
+  const copyCoupon = (code: string, btn: HTMLButtonElement) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ${getText('copied', 'Copied!')}`;
+        btn.classList.add('text-green-600', 'bg-green-50');
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('text-green-600', 'bg-green-50');
+        }, 2000);
+      });
+    } else {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> ${getText('copied', 'Copied!')}`;
+      btn.classList.add('text-green-600', 'bg-green-50');
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('text-green-600', 'bg-green-50');
+      }, 2000);
+    }
+  };
   if (items.length === 0) {
     return (
       <div className="bg-card rounded-2xl border border-border p-12 text-center">
-        <p className="text-muted-foreground">Select up to 4 items to compare</p>
+        <p className="text-muted-foreground">{getText('noItemsToCompare', 'Select up to 4 items to compare')}</p>
       </div>
     );
   }
 
   // TODO: Make this dynamic based on backend settings
   const features = [
-    { key: "price", label: "Price" },
-    { key: "rating", label: "Rating" },
-    { key: "products", label: "Products" },
-    { key: "fees", label: "Transaction Fees" },
-    { key: "channels", label: "Sales Channels" },
-    { key: "ssl", label: "Free SSL" },
-    { key: "support", label: "Support" },
+    { key: "price", label: getText('priceLabel', "Price") },
+    { key: "rating", label: getText('ratingLabel', "Rating") },
+    { key: "products", label: getText('featureProducts', "Products") },
+    { key: "fees", label: getText('featureFees', "Transaction Fees") },
+    { key: "channels", label: getText('featureChannels', "Sales Channels") },
+    { key: "ssl", label: getText('featureSsl', "Free SSL") },
+    { key: "support", label: getText('featureSupport', "Support") },
   ];
 
   const renderCell = (key: string, item: ComparisonItem) => {
@@ -67,7 +100,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
           <thead>
             <tr className="border-b border-border bg-muted/40 backdrop-blur">
               <th className="p-2 md:p-6 text-left font-display font-bold text-foreground text-xs md:text-base sticky left-0 bg-background/95 backdrop-blur z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[20%]">
-                Feature
+                {getText('featureHeader', "Feature")}
               </th>
               {items.map((item) => (
                 <th key={item.id} className="p-2 md:p-6 text-center">
@@ -86,11 +119,21 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
                         <span className="font-medium text-xs md:text-base">{item.rating}</span>
                       </div>
                       <div className="text-lg md:text-2xl font-bold text-primary mb-2 md:mb-4">
-                        {item.price}<span className="text-xs md:text-sm text-muted-foreground font-normal">/mo</span>
+                        {item.price}<span className="text-xs md:text-sm text-muted-foreground font-normal">{getText('moSuffix', "/mo")}</span>
                       </div>
+
+                      {/* Coupon in Header if Main Item has one */}
+                      {item.coupon_code && (
+                        <button
+                          className="bg-primary/5 border border-primary/20 text-primary text-[10px] px-2 py-1 rounded mb-2 w-full flex items-center justify-center gap-1 hover:bg-primary/10 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); copyCoupon(item.coupon_code || '', e.currentTarget); }}
+                        >
+                          <Tag className="w-3 h-3" /> {getText('getCoupon', 'Code')}: {item.coupon_code}
+                        </button>
+                      )}
                       <a
                         href={item.details_link || '#'}
-                        target={(window as any).wpcSettings?.target_details || '_blank'}
+                        target={target}
                         className="inline-flex items-center justify-center w-full text-white px-3 md:h-10 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap"
                         rel="noreferrer"
                         style={{
@@ -106,13 +149,13 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
                           e.currentTarget.style.filter = '';
                         }}
                       >
-                        {item.button_text || "Visit Site"} <ExternalLink className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 flex-shrink-0" />
+                        {item.button_text || getText('visitSite', "Visit Site")} <ExternalLink className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 flex-shrink-0" />
                       </a>
                       <button
                         onClick={() => onRemove(item.id)}
                         className="mt-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 w-full"
                       >
-                        <X className="w-3 h-3" /> Remove
+                        <X className="w-3 h-3" /> {getText('remove', 'Remove')}
                       </button>
                     </div>
                   </div>
@@ -143,7 +186,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
             ))}
             {/* Pros */}
             <tr className="bg-green-500/5 hover:bg-green-500/10 transition-colors">
-              <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">Pros</td>
+              <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">{getText('prosLabel', "Pros")}</td>
               {items.map((item) => (
                 <td key={item.id} className="p-5 align-top break-words whitespace-normal min-w-0">
                   <ul className="space-y-2 text-left bg-green-500/5 p-4 rounded-xl border border-green-500/10 w-full min-w-0">
@@ -159,7 +202,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
             </tr>
             {/* Cons */}
             <tr className="bg-red-500/5 hover:bg-red-500/10 transition-colors">
-              <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">Cons</td>
+              <td className="p-5 font-bold text-foreground sticky left-0 bg-inherit shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] z-10 w-[20%]">{getText('consLabel', "Cons")}</td>
               {items.map((item) => (
                 <td key={item.id} className="p-5 align-top break-words whitespace-normal min-w-0">
                   <ul className="space-y-2 text-left bg-red-500/5 p-4 rounded-xl border border-red-500/10 w-full min-w-0">
@@ -207,7 +250,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
         <div className="divide-y divide-border">
           {/* Price Row */}
           <div className="bg-muted/10">
-            <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase bg-muted/20">Price</div>
+            <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase bg-muted/20">{getText('priceLabel', 'Price')}</div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
               {items.map((item) => (
                 <div key={item.id} className="p-2 text-center border-r border-border last:border-r-0">
@@ -219,7 +262,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
 
           {/* Rating Row */}
           <div className="bg-muted/10">
-            <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase bg-muted/20">Rating</div>
+            <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase bg-muted/20">{getText('ratingLabel', 'Rating')}</div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
               {items.map((item) => (
                 <div key={item.id} className="p-2 text-center border-r border-border last:border-r-0 flex justify-center">
@@ -248,7 +291,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
 
           {/* Pros Row */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-bold text-green-700 uppercase bg-green-50/50">Pros</div>
+            <div className="px-2 py-1 text-[10px] font-bold text-green-700 uppercase bg-green-50/50">{getText('prosLabel', 'Pros')}</div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
               {items.map((item) => (
                 <div key={item.id} className="p-2 border-r border-border last:border-r-0 min-w-0">
@@ -267,7 +310,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
 
           {/* Cons Row */}
           <div>
-            <div className="px-2 py-1 text-[10px] font-bold text-red-700 uppercase bg-red-50/50">Cons</div>
+            <div className="px-2 py-1 text-[10px] font-bold text-red-700 uppercase bg-red-50/50">{getText('txt_cons', 'Cons')}</div>
             <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
               {items.map((item) => (
                 <div key={item.id} className="p-2 border-r border-border last:border-r-0 min-w-0">
@@ -307,7 +350,7 @@ const ComparisonTable = ({ items, onRemove }: ComparisonTableProps) => {
                       e.currentTarget.style.filter = '';
                     }}
                   >
-                    {item.button_text || "Visit"} <ExternalLink className="w-3 h-3" />
+                    {item.button_text || getText('visitSite', "Visit")} <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
               ))}

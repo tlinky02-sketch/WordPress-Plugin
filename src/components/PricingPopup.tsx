@@ -7,9 +7,10 @@ interface PricingPopupProps {
     item: ComparisonItem;
     onClose: () => void;
     showPlanButtons?: boolean;
+    config?: any;
 }
 
-const PricingPopup = ({ item, onClose, showPlanButtons }: PricingPopupProps) => {
+const PricingPopup = ({ item, onClose, showPlanButtons, config }: PricingPopupProps) => {
     // Lock body scroll when popup is open
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -48,6 +49,7 @@ const PricingPopup = ({ item, onClose, showPlanButtons }: PricingPopupProps) => 
                     showPlanButtons={showPlanButtons}
                     showHeaders={true}
                     displayContext="popup"
+                    config={config}
                 />
             </div>
         </div>

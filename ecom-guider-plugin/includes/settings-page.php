@@ -77,6 +77,35 @@ function wpc_register_settings() {
     register_setting( 'wpc_settings_group', 'wpc_text_visit' ); // "Visit" (short)
     register_setting( 'wpc_settings_group', 'wpc_text_about' );
     register_setting( 'wpc_settings_group', 'wpc_text_sort_default' );
+    
+    // New Configurable Text Fields
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_header' );
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_prod' );
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_fees' );
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_channels' );
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_ssl' );
+    register_setting( 'wpc_settings_group', 'wpc_text_feat_supp' );
+    register_setting( 'wpc_settings_group', 'wpc_text_pros' );
+    register_setting( 'wpc_settings_group', 'wpc_text_cons' );
+    register_setting( 'wpc_settings_group', 'wpc_text_price' );
+    register_setting( 'wpc_settings_group', 'wpc_text_rating' );
+    register_setting( 'wpc_settings_group', 'wpc_text_mo_suffix' );
+    
+    // New Misc Configurable Texts
+    register_setting( 'wpc_settings_group', 'wpc_text_no_compare' );
+    register_setting( 'wpc_settings_group', 'wpc_text_remove' );
+    register_setting( 'wpc_settings_group', 'wpc_text_logo' );
+    register_setting( 'wpc_settings_group', 'wpc_text_analysis' );
+    register_setting( 'wpc_settings_group', 'wpc_text_start_price' );
+    register_setting( 'wpc_settings_group', 'wpc_text_dash_prev' );
+    
+    // Filter & Search Internal Labels
+    register_setting( 'wpc_settings_group', 'wpc_text_reset_filt' );
+    register_setting( 'wpc_settings_group', 'wpc_text_select_fmt' );
+    register_setting( 'wpc_settings_group', 'wpc_text_clear' );
+    register_setting( 'wpc_settings_group', 'wpc_text_sel_prov' );
+    register_setting( 'wpc_settings_group', 'wpc_text_no_item' );
+    register_setting( 'wpc_settings_group', 'wpc_text_more' );
 }
 
 /**
@@ -1074,6 +1103,10 @@ function wpc_render_general_tab() {
     </div>
     <?php
 }
+
+
+
+
 
 /**
  * Pricing Table Tab
@@ -2706,6 +2739,56 @@ function wpc_render_texts_tab() {
                 </td>
             </tr>
 
+            <!-- Table Headers -->
+            <tr valign="top"><th colspan="2"><h3 style="margin:0;">Comparison Table Headers</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Feature Column Header', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_header" value="<?php echo esc_attr( get_option( 'wpc_text_feat_header', 'Feature' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Pros Row Header', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_pros" value="<?php echo esc_attr( get_option( 'wpc_text_pros', 'Pros' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Cons Row Header', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_cons" value="<?php echo esc_attr( get_option( 'wpc_text_cons', 'Cons' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Price Row Header', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_price" value="<?php echo esc_attr( get_option( 'wpc_text_price', 'Price' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Rating Row Header', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_rating" value="<?php echo esc_attr( get_option( 'wpc_text_rating', 'Rating' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( 'Month Suffix (/mo)', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_mo_suffix" value="<?php echo esc_attr( get_option( 'wpc_text_mo_suffix', '/mo' ) ); ?>" class="regular-text" /></td>
+            </tr>
+
+            <!-- Feature Labels -->
+            <tr valign="top"><th colspan="2"><h3 style="margin:0;">Feature Labels</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( '"Products" Label', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_prod" value="<?php echo esc_attr( get_option( 'wpc_text_feat_prod', 'Products' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( '"Trans. Fees" Label', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_fees" value="<?php echo esc_attr( get_option( 'wpc_text_feat_fees', 'Trans. Fees' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( '"Sales Channels" Label', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_channels" value="<?php echo esc_attr( get_option( 'wpc_text_feat_channels', 'Sales Channels' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( '"Free SSL" Label', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_ssl" value="<?php echo esc_attr( get_option( 'wpc_text_feat_ssl', 'Free SSL' ) ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label><?php _e( '"Support" Label', 'wp-comparison-builder' ); ?></label></th>
+                <td><input type="text" name="wpc_text_feat_supp" value="<?php echo esc_attr( get_option( 'wpc_text_feat_supp', 'Support' ) ); ?>" class="regular-text" /></td>
+            </tr>
+
             <!-- Filters & Search -->
             <tr valign="top">
                 <th scope="row"><label for="wpc_text_filters"><?php _e( 'Filters Label', 'wp-comparison-builder' ); ?></label></th>
@@ -2761,6 +2844,83 @@ function wpc_render_texts_tab() {
                 <th scope="row"><label for="wpc_text_about"><?php _e( 'About Section Title', 'wp-comparison-builder' ); ?></label></th>
                 <td>
                     <input type="text" id="wpc_text_about" name="wpc_text_about" value="<?php echo esc_attr( get_option( 'wpc_text_about', '' ) ); ?>" class="regular-text" placeholder="e.g. About {name}" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_no_compare"><?php _e( '"No Items" Text', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_no_compare" name="wpc_text_no_compare" value="<?php echo esc_attr( get_option( 'wpc_text_no_compare', '' ) ); ?>" class="regular-text" placeholder="e.g. Select up to 4 items to compare" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_remove"><?php _e( '"Remove" Text', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_remove" name="wpc_text_remove" value="<?php echo esc_attr( get_option( 'wpc_text_remove', '' ) ); ?>" class="regular-text" placeholder="e.g. Remove" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_logo"><?php _e( '"Logo" Fallback', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_logo" name="wpc_text_logo" value="<?php echo esc_attr( get_option( 'wpc_text_logo', '' ) ); ?>" class="regular-text" placeholder="e.g. Logo" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_analysis"><?php _e( '"Analysis" Suffix', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_analysis" name="wpc_text_analysis" value="<?php echo esc_attr( get_option( 'wpc_text_analysis', '' ) ); ?>" class="regular-text" placeholder="e.g. (Based on our analysis)" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_start_price"><?php _e( '"Starting Price"', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_start_price" name="wpc_text_start_price" value="<?php echo esc_attr( get_option( 'wpc_text_start_price', '' ) ); ?>" class="regular-text" placeholder="e.g. Starting Price" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_dash_prev"><?php _e( '"Dashboard Preview"', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_dash_prev" name="wpc_text_dash_prev" value="<?php echo esc_attr( get_option( 'wpc_text_dash_prev', '' ) ); ?>" class="regular-text" placeholder="e.g. Dashboard Preview" />
+                </td>
+            </tr>
+
+            <!-- Filter & Search Internal Labels -->
+            <tr valign="top"><th colspan="2"><h3 style="margin:0;">Filter & Search Component Labels</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_reset_filt"><?php _e( '"Reset Filters"', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_reset_filt" name="wpc_text_reset_filt" value="<?php echo esc_attr( get_option( 'wpc_text_reset_filt', '' ) ); ?>" class="regular-text" placeholder="e.g. Reset Filters" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_select_fmt"><?php _e( '"Select %s" Format', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_select_fmt" name="wpc_text_select_fmt" value="<?php echo esc_attr( get_option( 'wpc_text_select_fmt', '' ) ); ?>" class="regular-text" placeholder="e.g. Select %s" />
+                     <p class="description">%s will be replaced by the category name (e.g. "Select Category")</p>
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_clear"><?php _e( '"Clear" Button', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_clear" name="wpc_text_clear" value="<?php echo esc_attr( get_option( 'wpc_text_clear', '' ) ); ?>" class="regular-text" placeholder="e.g. Clear" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_sel_prov"><?php _e( '"Select provider..."', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_sel_prov" name="wpc_text_sel_prov" value="<?php echo esc_attr( get_option( 'wpc_text_sel_prov', '' ) ); ?>" class="regular-text" placeholder="e.g. Select provider..." />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_no_item"><?php _e( '"No item found."', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_no_item" name="wpc_text_no_item" value="<?php echo esc_attr( get_option( 'wpc_text_no_item', '' ) ); ?>" class="regular-text" placeholder="e.g. No item found." />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_more"><?php _e( '"more" Suffix', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_more" name="wpc_text_more" value="<?php echo esc_attr( get_option( 'wpc_text_more', '' ) ); ?>" class="regular-text" placeholder="e.g. more" />
+                    <p class="description">Used in "+2 more" labels.</p>
                 </td>
             </tr>
         </table>

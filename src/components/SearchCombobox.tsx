@@ -28,6 +28,12 @@ interface SearchComboboxProps {
     primaryColor?: string
     compareLabel?: string
     onCompare?: () => void
+    labels?: {
+        selectProvider?: string;
+        search?: string;
+        noItemFound?: string;
+        more?: string;
+    }
 }
 
 export function SearchCombobox({
@@ -38,7 +44,8 @@ export function SearchCombobox({
     hoverColor,
     primaryColor,
     compareLabel,
-    onCompare
+    onCompare,
+    labels,
 }: SearchComboboxProps) {
     const [open, setOpen] = React.useState(false)
     const [isHovered, setIsHovered] = React.useState(false)
@@ -121,21 +128,21 @@ export function SearchCombobox({
                             ))}
                             {selectedValues.length > 2 && (
                                 <span className="text-xs text-muted-foreground ml-1">
-                                    +{selectedValues.length - 2} more
+                                    +{selectedValues.length - 2} {labels?.more || "more"}
                                 </span>
                             )}
                         </div>
                     ) : (
-                        <span className="text-muted-foreground">{placeholder}</span>
+                        <span className="text-muted-foreground">{labels?.selectProvider || placeholder}</span>
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className={`w-[--radix-popover-trigger-width] p-0 ${uniqueId}`} align="start">
                 <Command>
-                    <CommandInput placeholder="Search..." />
+                    <CommandInput placeholder={labels?.search || "Search..."} />
                     <CommandList>
-                        <CommandEmpty>No item found.</CommandEmpty>
+                        <CommandEmpty>{labels?.noItemFound || "No item found."}</CommandEmpty>
                         <CommandGroup>
                             {items.map((item) => {
                                 const isSelected = selectedValues.includes(item.name);

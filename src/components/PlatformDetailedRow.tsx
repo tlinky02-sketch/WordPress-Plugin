@@ -27,9 +27,9 @@ interface PlatformDetailedRowProps {
         visitSite?: string;
         getCoupon?: string;
         featureProducts?: string;
-        featureFees?: string;
         featureSupport?: string;
     };
+    config?: any;
 }
 
 const PlatformDetailedRow: React.FC<PlatformDetailedRowProps> = ({
@@ -50,6 +50,7 @@ const PlatformDetailedRow: React.FC<PlatformDetailedRowProps> = ({
     viewAction = 'popup',
     activeCategories,
     labels,
+    config,
 }) => {
 
     const getBadgeColor = () => {
@@ -71,7 +72,7 @@ const PlatformDetailedRow: React.FC<PlatformDetailedRowProps> = ({
         } else {
             const url = item.direct_link || item.details_link;
             if (url) {
-                const target = (window as any).wpcSettings?.target_direct || '_blank';
+                const target = config?.targetDirect || (window as any).wpcSettings?.target_direct || '_blank';
                 window.open(url, target);
             }
         }

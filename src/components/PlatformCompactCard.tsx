@@ -28,6 +28,7 @@ interface PlatformCompactCardProps {
         featureFees?: string;
         featureSupport?: string;
     };
+    config?: any;
 }
 
 const PlatformCompactCard: React.FC<PlatformCompactCardProps> = ({
@@ -46,6 +47,7 @@ const PlatformCompactCard: React.FC<PlatformCompactCardProps> = ({
     viewAction = 'popup',
     activeCategories,
     labels,
+    config,
 }) => {
 
     const getBadgeColor = () => {
@@ -67,7 +69,7 @@ const PlatformCompactCard: React.FC<PlatformCompactCardProps> = ({
         } else {
             const url = item.direct_link || item.details_link;
             if (url) {
-                const target = (window as any).wpcSettings?.target_direct || '_blank';
+                const target = config?.targetDirect || (window as any).wpcSettings?.target_direct || '_blank';
                 window.open(url, target);
             }
         }

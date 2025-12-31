@@ -30,6 +30,7 @@ interface PlatformListRowProps {
         featureFees?: string;
         featureSupport?: string;
     };
+    config?: any;
 }
 
 const PlatformListRow: React.FC<PlatformListRowProps> = ({
@@ -50,6 +51,7 @@ const PlatformListRow: React.FC<PlatformListRowProps> = ({
     viewAction = 'popup',
     activeCategories, // Destructure prop
     labels,
+    config,
 }) => {
 
     // Helper to get item-specific badge color override
@@ -72,7 +74,7 @@ const PlatformListRow: React.FC<PlatformListRowProps> = ({
         } else {
             const url = item.direct_link || item.details_link;
             if (url) {
-                const target = (window as any).wpcSettings?.target_direct || '_blank';
+                const target = config?.targetDirect || (window as any).wpcSettings?.target_direct || '_blank';
                 window.open(url, target);
             }
         }

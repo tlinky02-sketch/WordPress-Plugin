@@ -14,6 +14,7 @@ export interface PricingPlan {
     show_banner?: string;
     banner_text?: string;
     banner_color?: string;
+    coupon?: string; // Coupon for the specific plan
 }
 
 export interface ComparisonItem {
@@ -94,7 +95,10 @@ interface PlatformCardProps {
         featureProducts?: string;
         featureFees?: string;
         featureSupport?: string;
+        featuredBadge?: string;
+        logoLabel?: string;
     };
+    config?: any;
 }
 
 const PlatformCard = ({
@@ -116,6 +120,7 @@ const PlatformCard = ({
     viewAction = 'popup',
     index,
     labels,
+    config,
 }: PlatformCardProps) => {
 
     const handleTrackClick = () => {
@@ -129,7 +134,7 @@ const PlatformCard = ({
         } else {
             const url = item.direct_link || item.details_link;
             if (url) {
-                const target = (window as any).wpcSettings?.target_direct || '_blank';
+                const target = config?.targetDirect || (window as any).wpcSettings?.target_direct || '_blank';
                 window.open(url, target);
             }
         }
@@ -138,7 +143,7 @@ const PlatformCard = ({
 
     // Determine badge styling
     const hasCustomBadge = !!item.badge?.text;
-    const featuredText = badgeText || item.featured_badge_text || (isFeatured ? "Featured" : null);
+    const featuredText = badgeText || item.featured_badge_text || (isFeatured ? (labels?.featuredBadge || "Featured") : null);
     const featuredColor = badgeColor || item.featured_badge_color || ((window as any).wpcSettings?.colors?.primary) || "#6366f1";
 
     // Logic for Badge Style
@@ -238,7 +243,7 @@ const PlatformCard = ({
                     {item.logo ? (
                         <img src={item.logo} alt={item.name} className="w-full h-full object-contain" />
                     ) : (
-                        <div className="w-full h-full bg-muted/10 flex items-center justify-center text-xs text-muted-foreground">Logo</div>
+                        <div className="w-full h-full bg-muted/10 flex items-center justify-center text-xs text-muted-foreground">{labels?.logoLabel || "Logo"}</div>
                     )}
                 </div>
                 <div className="min-w-0">
@@ -411,13 +416,13 @@ const PlatformCard = ({
                             <li className="flex items-center gap-2 text-sm text-foreground/80">
                                 <Check className="w-4 h-4 text-primary shrink-0"
                                     style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }} />
-                                <span className="truncate">{item.features.fees} Trans. Fees</span>
+                                <span className="truncate">{item.features.fees} {labels?.featureFees || "Trans. Fees"}</span>
                             </li>
                         )}
                         <li className="flex items-center gap-2 text-sm text-foreground/80">
                             <Check className="w-4 h-4 text-primary shrink-0"
                                 style={{ color: (window as any).wpcSettings?.colors?.primary || undefined }} />
-                            <span className="truncate">{item.features.support} Support</span>
+                            <span className="truncate">{item.features.support} {labels?.featureSupport || "Support"}</span>
                         </li>
                     </>
                 )}

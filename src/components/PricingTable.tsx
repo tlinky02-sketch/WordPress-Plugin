@@ -16,6 +16,7 @@ interface PricingTableProps {
     footerButtonText?: string;
     showHeaders?: boolean;
     displayContext?: 'popup' | 'inline'; // New context prop
+    config?: any;
 }
 
 const PricingTable = ({
@@ -24,7 +25,8 @@ const PricingTable = ({
     showFooterButton = true,
     footerButtonText,
     showHeaders = false,
-    displayContext = 'inline' // Default likely inline if not specified
+    displayContext = 'inline', // Default likely inline if not specified
+    config
 }: PricingTableProps) => {
     const plans = item.pricing_plans || [];
     const showFeatures = !item.hide_plan_features;
@@ -63,8 +65,8 @@ const PricingTable = ({
     const visuals = settings?.visuals || {};
     // Button Position Logic
     const positionSetting = displayContext === 'popup'
-        ? visuals.wpc_pt_btn_pos_popup
-        : visuals.wpc_pt_btn_pos_table;
+        ? (config?.ptBtnPosPopup || visuals.wpc_pt_btn_pos_popup)
+        : (config?.ptBtnPosTable || visuals.wpc_pt_btn_pos_table);
     const buttonPosition = positionSetting || 'after_price'; // Default to 'after_price'
 
     const defaultStyles = {
@@ -214,7 +216,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target={settings?.target_pricing || '_blank'}
+                                                    target={config?.targetPricing || settings?.target_pricing || '_blank'}
                                                     rel="noreferrer"
                                                     className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 w-full shadow-sm"
                                                     style={{
@@ -273,7 +275,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target={settings?.target_pricing || '_blank'}
+                                                    target={config?.targetPricing || settings?.target_pricing || '_blank'}
                                                     rel="noreferrer"
                                                     className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 w-full shadow-sm"
                                                     style={{
@@ -349,7 +351,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target={settings?.target_pricing || '_blank'}
+                                                    target={config?.targetPricing || settings?.target_pricing || '_blank'}
                                                     className="flex w-full items-center justify-center gap-1 py-1.5 rounded-md font-bold text-[10px] shadow-sm transition-all"
                                                     rel="noreferrer"
                                                     style={{
@@ -410,7 +412,7 @@ const PricingTable = ({
                                             {shouldShowPlanButton(plan) && plan.link && (
                                                 <a
                                                     href={plan.link}
-                                                    target={settings?.target_pricing || '_blank'}
+                                                    target={config?.targetPricing || settings?.target_pricing || '_blank'}
                                                     className="flex w-full items-center justify-center gap-1 py-1.5 rounded-md font-bold text-[10px] shadow-sm transition-all"
                                                     rel="noreferrer"
                                                     style={{
@@ -464,7 +466,7 @@ const PricingTable = ({
                                 e.currentTarget.style.backgroundColor = 'var(--pt-btn-bg)';
                                 e.currentTarget.style.filter = 'brightness(100%)';
                             }}
-                            onClick={() => window.open(item.details_link, '_blank')}
+                            onClick={() => window.open(item.details_link, config?.targetDetails || settings?.target_details || '_blank')}
                         >
                             {footerButtonText || item.button_text || "Visit Website"} <ExternalLink className="w-4 h-4 ml-2" />
                         </Button>

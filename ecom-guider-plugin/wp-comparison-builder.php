@@ -853,36 +853,82 @@ function wpc_list_shortcode( $atts ) {
     $show_rating = get_post_meta($post_id, '_wpc_list_show_rating', true);
     $show_price = get_post_meta($post_id, '_wpc_list_show_price', true);
 
-    // --- CONFIGURABLE TEXTS ---
-    $txt_compare = get_post_meta( $post_id, '_wpc_list_txt_compare', true ) ?: 'Select to Compare';
-    $txt_copied = get_post_meta( $post_id, '_wpc_list_txt_copied', true ) ?: 'Copied!';
-    $txt_view = get_post_meta( $post_id, '_wpc_list_txt_view', true ) ?: 'View Details';
-    $txt_visit = get_post_meta( $post_id, '_wpc_list_txt_visit', true ) ?: 'Visit Site';
-    $txt_compare_btn = get_post_meta( $post_id, '_wpc_list_txt_compare_btn', true ) ?: 'Compare (%s) Items';
-    $txt_compare_now = get_post_meta( $post_id, '_wpc_list_txt_compare_now', true ) ?: 'Compare Now';
-    $txt_visit_plat = get_post_meta( $post_id, '_wpc_list_txt_visit_plat', true ) ?: 'Visit %s';
-    
-    // UI Labels
-    $txt_search_ph = get_post_meta( $post_id, '_wpc_list_txt_search_ph', true ) ?: 'Search & Select...';
-    $txt_active_filt = get_post_meta( $post_id, '_wpc_list_txt_active_filt', true ) ?: 'Active filters:';
-    $txt_clear_all = get_post_meta( $post_id, '_wpc_list_txt_clear_all', true ) ?: 'Clear all';
-    $txt_no_results = get_post_meta( $post_id, '_wpc_list_txt_no_results', true ) ?: 'No items match your filters.';
-    $txt_selected = get_post_meta( $post_id, '_wpc_list_txt_selected', true ) ?: 'Selected:';
-    $txt_comp_header = get_post_meta( $post_id, '_wpc_list_txt_comp_header', true ) ?: 'Detailed Comparison';
+    // --- CONFIGURABLE TEXTS (List Override > Global Default > Hardcoded Fallback) ---
+    // Map: Frontend Key => [ Meta Key, Global Opt, Default ]
+    $text_fields = [
+        // General UI
+        'viewDetails'     => ['meta' => '_wpc_list_txt_view_details', 'global' => 'wpc_text_view_details', 'default' => 'View Details'],
+        'compareAlternatives' => ['meta' => '_wpc_list_txt_compare_alts', 'global' => 'wpc_text_compare_alternatives', 'default' => 'Compare Alternatives'],
+        'compareNow'      => ['meta' => '_wpc_list_txt_compare_now', 'global' => 'wpc_text_compare_now', 'default' => 'Compare Now'],
+        'readReview'      => ['meta' => '_wpc_list_txt_reviews', 'global' => 'wpc_text_reviews', 'default' => 'Read Review'],
+        'backToReviews'   => ['meta' => '_wpc_list_txt_back_reviews', 'global' => 'wpc_text_back_to_reviews', 'default' => 'Back to Reviews'],
+        'filters'         => ['meta' => '_wpc_list_txt_filters', 'global' => 'wpc_text_filters', 'default' => 'Filters'],
+        'searchPlaceholder'=> ['meta' => '_wpc_list_txt_search_ph', 'global' => 'wpc_text_search_placeholder', 'default' => 'Search...'],
+        'categoryLabel'   => ['meta' => '_wpc_list_cat_label', 'global' => 'wpc_text_category', 'default' => 'Filter by Category'],
+        'featuresLabel'   => ['meta' => '_wpc_list_feat_label', 'global' => 'wpc_text_features', 'default' => 'Features'],
+        'itemsFound'      => ['meta' => '_wpc_list_items_count', 'global' => 'wpc_text_items_count', 'default' => 'items found'],
+        'selected'        => ['meta' => '_wpc_list_txt_selected', 'global' => 'wpc_text_selected', 'default' => 'Selected:'],
+        'clearAll'        => ['meta' => '_wpc_list_txt_clear_all', 'global' => 'wpc_text_clear_all', 'default' => 'Clear All'],
+        'compareBtn'      => ['meta' => '_wpc_list_txt_compare_btn', 'global' => 'wpc_text_compare_btn', 'default' => 'Compare'], 
+        'visitSite'       => ['meta' => '_wpc_list_txt_visit', 'global' => 'wpc_text_visit', 'default' => 'Visit Site'],
+        'visitPlat'       => ['meta' => '_wpc_list_txt_visit_plat', 'global' => 'wpc_text_visit_plat', 'default' => 'Visit %s'],
+        'about'           => ['meta' => '_wpc_list_txt_about', 'global' => 'wpc_text_about', 'default' => 'About'],
+        'comparisonHeader'=> ['meta' => '_wpc_list_txt_comp_header', 'global' => 'wpc_text_comp_header', 'default' => 'Detailed Comparison'],
+        'selectToCompare' => ['meta' => '_wpc_list_txt_compare', 'global' => 'wpc_text_compare', 'default' => 'Select to Compare'],
+        'copied'          => ['meta' => '_wpc_list_txt_copied', 'global' => 'wpc_text_copied', 'default' => 'Copied!'],
+        'noResults'       => ['meta' => '_wpc_list_txt_no_results', 'global' => 'wpc_text_no_results', 'default' => 'No items match your filters.'],
+        'activeFilters'   => ['meta' => '_wpc_list_txt_active_filt', 'global' => 'wpc_text_active_filt', 'default' => 'Active filters:'],
 
-    // Sort Labels
-    $txt_sort_def = get_post_meta( $post_id, '_wpc_list_txt_sort_def', true ) ?: 'Sort: Default';
-    $txt_sort_asc = get_post_meta( $post_id, '_wpc_list_txt_sort_asc', true ) ?: 'Name (A-Z)';
-    $txt_sort_desc = get_post_meta( $post_id, '_wpc_list_txt_sort_desc', true ) ?: 'Name (Z-A)';
-    $txt_sort_rating = get_post_meta( $post_id, '_wpc_list_txt_sort_rating', true ) ?: 'Highest Rated';
-    $txt_sort_price = get_post_meta( $post_id, '_wpc_list_txt_sort_price', true ) ?: 'Lowest Price';
+        // Sorting
+        'sortDefault'     => ['meta' => '_wpc_list_txt_sort_def', 'global' => 'wpc_text_sort_def', 'default' => 'Sort: Default'],
+        'sortNameAsc'     => ['meta' => '_wpc_list_txt_sort_asc', 'global' => 'wpc_text_sort_asc', 'default' => 'Name (A-Z)'],
+        'sortNameDesc'    => ['meta' => '_wpc_list_txt_sort_desc', 'global' => 'wpc_text_sort_desc', 'default' => 'Name (Z-A)'],
+        'sortRating'      => ['meta' => '_wpc_list_txt_sort_rating', 'global' => 'wpc_text_sort_rating', 'default' => 'Highest Rated'],
+        'sortPrice'       => ['meta' => '_wpc_list_txt_sort_price', 'global' => 'wpc_text_sort_price', 'default' => 'Lowest Price'],
+        
+        // Features
+        'getCoupon'       => ['meta' => '_wpc_list_txt_get_coupon', 'global' => 'wpc_text_get_coupon', 'default' => 'Get Coupon:'],
+        'featuredBadge'   => ['meta' => '_wpc_list_txt_featured', 'global' => 'wpc_text_featured', 'default' => 'Featured'],
+        'featureProducts' => ['meta' => '_wpc_list_txt_feat_prod', 'global' => 'wpc_text_feat_prod', 'default' => 'Products'],
+        'featureFees'     => ['meta' => '_wpc_list_txt_feat_fees', 'global' => 'wpc_text_feat_fees', 'default' => 'Trans. Fees'],
+        'featureChannels' => ['meta' => '_wpc_list_txt_feat_channels', 'global' => 'wpc_text_feat_channels', 'default' => 'Sales Channels'],
+        'featureSsl'      => ['meta' => '_wpc_list_txt_feat_ssl', 'global' => 'wpc_text_feat_ssl', 'default' => 'Free SSL'],
+        'featureSupport'  => ['meta' => '_wpc_list_txt_feat_supp', 'global' => 'wpc_text_feat_supp', 'default' => 'Support'],
 
-    // Feature Labels
-    $txt_get_coupon = get_post_meta( $post_id, '_wpc_list_txt_get_coupon', true ) ?: 'Get Coupon:';
-    $txt_featured = get_post_meta( $post_id, '_wpc_list_txt_featured', true ) ?: 'Featured';
-    $txt_feat_prod = get_post_meta( $post_id, '_wpc_list_txt_feat_prod', true ) ?: 'Products';
-    $txt_feat_fees = get_post_meta( $post_id, '_wpc_list_txt_feat_fees', true ) ?: 'Trans. Fees';
-    $txt_feat_supp = get_post_meta( $post_id, '_wpc_list_txt_feat_supp', true ) ?: 'Support';
+        // New Comparison Table Headers (CamelCase for consistency)
+        'featureHeader'   => ['meta' => '_wpc_list_txt_feat_header', 'global' => 'wpc_text_feat_header', 'default' => 'Feature'],
+        'prosLabel'       => ['meta' => '_wpc_list_txt_pros', 'global' => 'wpc_text_pros', 'default' => 'Pros'],
+        'consLabel'       => ['meta' => '_wpc_list_txt_cons', 'global' => 'wpc_text_cons', 'default' => 'Cons'],
+        'priceLabel'      => ['meta' => '_wpc_list_txt_price', 'global' => 'wpc_text_price', 'default' => 'Price'],
+        'ratingLabel'     => ['meta' => '_wpc_list_txt_rating', 'global' => 'wpc_text_rating', 'default' => 'Rating'],
+        'moSuffix'        => ['meta' => '_wpc_list_txt_mo_suffix', 'global' => 'wpc_text_mo_suffix', 'default' => '/mo'],
+        
+        // Missing Frontend Labels
+        'noItemsToCompare'=> ['meta' => '_wpc_list_txt_no_compare', 'global' => 'wpc_text_no_compare', 'default' => 'Select up to 4 items to compare'],
+        'remove'          => ['meta' => '_wpc_list_txt_remove', 'global' => 'wpc_text_remove', 'default' => 'Remove'],
+        'logoLabel'       => ['meta' => '_wpc_list_txt_logo', 'global' => 'wpc_text_logo', 'default' => 'Logo'], // "Logo" fallback text
+        'analysisBase'    => ['meta' => '_wpc_list_txt_analysis', 'global' => 'wpc_text_analysis', 'default' => '(Based on our analysis)'],
+        'startingPrice'   => ['meta' => '_wpc_list_txt_start_price', 'global' => 'wpc_text_start_price', 'default' => 'Starting Price'],
+        'dashboardPreview'=> ['meta' => '_wpc_list_txt_dash_prev', 'global' => 'wpc_text_dash_prev', 'default' => 'Dashboard Preview'],
+        
+        // Filter & Search Internal Labels
+        'resetFilters'    => ['meta' => '_wpc_list_txt_reset_filt', 'global' => 'wpc_text_reset_filt', 'default' => 'Reset Filters'],
+        'select'          => ['meta' => '_wpc_list_txt_select_fmt', 'global' => 'wpc_text_select_fmt', 'default' => 'Select %s'],
+        'clear'           => ['meta' => '_wpc_list_txt_clear', 'global' => 'wpc_text_clear', 'default' => 'Clear'],
+        'selectProvider'  => ['meta' => '_wpc_list_txt_sel_prov', 'global' => 'wpc_text_sel_prov', 'default' => 'Select provider...'],
+        'noItemFound'     => ['meta' => '_wpc_list_txt_no_item', 'global' => 'wpc_text_no_item', 'default' => 'No item found.'],
+        'more'            => ['meta' => '_wpc_list_txt_more', 'global' => 'wpc_text_more', 'default' => 'more'],
+    ];
+
+    $labels = [];
+    foreach ($text_fields as $key => $source) {
+        $val = get_post_meta($post_id, $source['meta'], true);
+        if (empty($val)) {
+            $val = get_option($source['global'], $source['default']);
+            if (empty($val)) $val = $source['default']; // extra safety
+        }
+        $labels[$key] = $val;
+    }
 
     // Split Comparison Settings
     $show_checkboxes_opt = get_post_meta($post_id, '_wpc_list_show_checkboxes', true);
@@ -917,35 +963,20 @@ function wpc_list_shortcode( $atts ) {
         'badgeStyle' => $badge_style,
         'showRating' => $show_rating === '1',
         'showPrice' => $show_price === '1',
-        'showPrice' => $show_price === '1',
         'colorsOverride' => !empty($colors_override) ? $colors_override : null,
+        'ptVisuals' => !empty($pt_visuals_override) ? $pt_visuals_override : null, // Fix key name to match React prop if needed, or use ptVisuals
         'visualsOverride' => !empty($pt_visuals_override) ? $pt_visuals_override : null,
+        
+        // Layout & Behavior (List > Global > Default)
+        'ptBtnPosTable' => ($l_btn = get_post_meta($post_id, '_wpc_list_pt_btn_pos_table', true)) && $l_btn !== 'default' ? $l_btn : get_option('wpc_pt_btn_pos_table', 'after_price'),
+        'ptBtnPosPopup' => ($l_btn_p = get_post_meta($post_id, '_wpc_list_pt_btn_pos_popup', true)) && $l_btn_p !== 'default' ? $l_btn_p : get_option('wpc_pt_btn_pos_popup', 'after_price'),
+        
+        'targetDetails' => ($l_tgt_d = get_post_meta($post_id, '_wpc_list_target_details', true)) && $l_tgt_d !== 'default' ? $l_tgt_d : (get_option('wpc_link_target_details', '1') === '1' ? '_blank' : '_self'),
+        'targetDirect'  => ($l_tgt_dir = get_post_meta($post_id, '_wpc_list_target_direct', true)) && $l_tgt_dir !== 'default' ? $l_tgt_dir : (get_option('wpc_link_target_direct', '1') === '1' ? '_blank' : '_self'),
+        'targetPricing' => ($l_tgt_pr = get_post_meta($post_id, '_wpc_list_target_pricing', true)) && $l_tgt_pr !== 'default' ? $l_tgt_pr : (get_option('wpc_link_target_pricing', '1') === '1' ? '_blank' : '_self'),
+
         // Configurable Texts
-        'labels' => [
-            'selectToCompare' => $txt_compare,
-            'copied' => $txt_copied,
-            'viewDetails' => $txt_view,
-            'visitSite' => $txt_visit,
-            'compareBtn' => $txt_compare_btn,
-            'compareNow' => $txt_compare_now,
-            'visitPlat' => $txt_visit_plat,
-            'searchPlaceholder' => $txt_search_ph,
-            'activeFilters' => $txt_active_filt,
-            'clearAll' => $txt_clear_all,
-            'noResults' => $txt_no_results,
-            'selected' => $txt_selected,
-            'comparisonHeader' => $txt_comp_header,
-            'sortDefault' => $txt_sort_def,
-            'sortNameAsc' => $txt_sort_asc,
-            'sortNameDesc' => $txt_sort_desc,
-            'sortRating' => $txt_sort_rating,
-            'sortPrice' => $txt_sort_price,
-            'getCoupon' => $txt_get_coupon,
-            'featuredBadge' => $txt_featured,
-            'featureProducts' => $txt_feat_prod,
-            'featureFees' => $txt_feat_fees,
-            'featureSupport' => $txt_feat_supp
-        ],
+        'labels' => $labels,
     );
     
     $config_json = htmlspecialchars(json_encode($config), ENT_QUOTES, 'UTF-8');
@@ -1018,6 +1049,9 @@ function wpc_list_shortcode( $atts ) {
     $icon_plus = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle mr-2 h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>';
 
     $icon_chevrons = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down ml-2 h-4 w-4 shrink-0 opacity-50"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5-5"/></svg>';
+    
+    // Text Labels Logic (List Override > Global Default > Hardcoded Fallback)
+    // Text Labels Logic Moved Up
 
     $search_input_html = '';
     if ($final_search_type === 'combobox') {

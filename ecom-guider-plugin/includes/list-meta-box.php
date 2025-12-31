@@ -300,6 +300,29 @@ function wpc_render_list_meta_box( $post ) {
                         </select>
                     </div>
 
+                    <!-- Table Button Position -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Table Button Position</label>
+                        <?php $btn_pos_table = get_post_meta($post->ID, '_wpc_list_pt_btn_pos_table', true) ?: 'default'; ?>
+                        <select name="wpc_list_pt_btn_pos_table" style="width: 100%;">
+                            <option value="default" <?php selected( $btn_pos_table, 'default' ); ?>>Default (As Global)</option>
+                            <option value="after_price" <?php selected( $btn_pos_table, 'after_price' ); ?>>After Pricing</option>
+                            <option value="bottom" <?php selected( $btn_pos_table, 'bottom' ); ?>>Bottom (After Features)</option>
+                        </select>
+                    </div>
+
+                    <!-- Popup Button Position -->
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Popup Button Position</label>
+                        <?php $btn_pos_popup = get_post_meta($post->ID, '_wpc_list_pt_btn_pos_popup', true) ?: 'default'; ?>
+                        <select name="wpc_list_pt_btn_pos_popup" style="width: 100%;">
+                            <option value="default" <?php selected( $btn_pos_popup, 'default' ); ?>>Default (As Global)</option>
+                            <option value="after_price" <?php selected( $btn_pos_popup, 'after_price' ); ?>>After Pricing</option>
+                            <option value="bottom" <?php selected( $btn_pos_popup, 'bottom' ); ?>>Bottom (After Features)</option>
+                        </select>
+                    </div>
+
+
                     <!-- Badge Style -->
                     <div class="wpc-flex-item">
                         <label class="wpc-field-label">Badge Style</label>
@@ -319,6 +342,42 @@ function wpc_render_list_meta_box( $post ) {
                         ?>
                         <label style="display: block;"><input type="checkbox" name="wpc_list_show_rating" value="1" <?php checked('1', $show_rating); ?> /> Show Rating</label>
                         <label style="display: block;"><input type="checkbox" name="wpc_list_show_price" value="1" <?php checked('1', $show_price); ?> /> Show Price</label>
+                    </div>
+                </div>
+
+                <div class="wpc-field-group">
+                    <h3 style="margin-top:0;">Link Target Behavior (New Tab vs Same Tab)</h3>
+                    <div class="wpc-flex-row">
+                        <!-- Details Link Target -->
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">Details / Comparison Button</label>
+                            <?php $target_details = get_post_meta($post->ID, '_wpc_list_target_details', true) ?: 'default'; ?>
+                            <select name="wpc_list_target_details" style="width: 100%;">
+                                <option value="default" <?php selected( $target_details, 'default' ); ?>>Default</option>
+                                <option value="_blank" <?php selected( $target_details, '_blank' ); ?>>New Tab</option>
+                                <option value="_self" <?php selected( $target_details, '_self' ); ?>>Same Tab</option>
+                            </select>
+                        </div>
+                        <!-- Direct Link Target -->
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">Direct / Non-Comparison Button</label>
+                            <?php $target_direct = get_post_meta($post->ID, '_wpc_list_target_direct', true) ?: 'default'; ?>
+                            <select name="wpc_list_target_direct" style="width: 100%;">
+                                <option value="default" <?php selected( $target_direct, 'default' ); ?>>Default</option>
+                                <option value="_blank" <?php selected( $target_direct, '_blank' ); ?>>New Tab</option>
+                                <option value="_self" <?php selected( $target_direct, '_self' ); ?>>Same Tab</option>
+                            </select>
+                        </div>
+                        <!-- Pricing Plan Target -->
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">Pricing Plan Buttons</label>
+                            <?php $target_pricing = get_post_meta($post->ID, '_wpc_list_target_pricing', true) ?: 'default'; ?>
+                            <select name="wpc_list_target_pricing" style="width: 100%;">
+                                <option value="default" <?php selected( $target_pricing, 'default' ); ?>>Default</option>
+                                <option value="_blank" <?php selected( $target_pricing, '_blank' ); ?>>New Tab</option>
+                                <option value="_self" <?php selected( $target_pricing, '_self' ); ?>>Same Tab</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -461,6 +520,26 @@ function wpc_render_list_meta_box( $post ) {
                         <input type="text" name="wpc_list_txt_feat_supp" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_supp', true) ?: 'Support' ); ?>" style="width: 100%;" />
                     </div>
                 </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Sales Channels" Label</label>
+                        <input type="text" name="wpc_list_txt_feat_channels" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_channels', true) ?: 'Sales Channels' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Free SSL" Label</label>
+                        <input type="text" name="wpc_list_txt_feat_ssl" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_ssl', true) ?: 'Free SSL' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                     <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Category Label</label>
+                        <input type="text" name="wpc_list_cat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_cat_label', true) ?: 'Filter by Category' ); ?>" style="width: 100%;" />
+                    </div>
+                     <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Features Label</label>
+                        <input type="text" name="wpc_list_feat_label" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_feat_label', true) ?: 'Features' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
             </div>
 
             <div class="wpc-field-group">
@@ -513,6 +592,110 @@ function wpc_render_list_meta_box( $post ) {
                         <input type="text" name="wpc_list_txt_comp_header" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_comp_header', true) ?: 'Detailed Comparison' ); ?>" style="width: 100%;" />
                     </div>
                 </div>
+            <!-- Comparison Table Headers -->
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Comparison Table Headers</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Feature" Column Header</label>
+                        <input type="text" name="wpc_list_txt_feat_header" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_feat_header', true) ?: 'Feature' ); ?>" style="width: 100%;" />
+                    </div>
+                     <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Price" Row Header</label>
+                        <input type="text" name="wpc_list_txt_price" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_price', true) ?: 'Price' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Pros" Row Header</label>
+                        <input type="text" name="wpc_list_txt_pros" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_pros', true) ?: 'Pros' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Cons" Row Header</label>
+                        <input type="text" name="wpc_list_txt_cons" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_cons', true) ?: 'Cons' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                 <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Rating" Row Header</label>
+                        <input type="text" name="wpc_list_txt_rating" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_rating', true) ?: 'Rating' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">Month Suffix (/mo)</label>
+                        <input type="text" name="wpc_list_txt_mo_suffix" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_mo_suffix', true) ?: '/mo' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Miscellaneous Labels -->
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Miscellaneous Labels</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"No Items to Compare" Text</label>
+                        <input type="text" name="wpc_list_txt_no_compare" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_no_compare', true) ?: 'Select up to 4 items to compare' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Remove" Text</label>
+                        <input type="text" name="wpc_list_txt_remove" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_remove', true) ?: 'Remove' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                 <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                         <label class="wpc-field-label">"Logo" Fallback Text</label>
+                         <input type="text" name="wpc_list_txt_logo" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_logo', true) ?: 'Logo' ); ?>" style="width: 100%;" />
+                     </div>
+                     <div class="wpc-flex-item">
+                         <label class="wpc-field-label">"Analysis" Suffix</label>
+                         <input type="text" name="wpc_list_txt_analysis" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_analysis', true) ?: '(Based on our analysis)' ); ?>" style="width: 100%;" />
+                     </div>
+                 </div>
+                 <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                         <label class="wpc-field-label">"Starting Price" Label</label>
+                         <input type="text" name="wpc_list_txt_start_price" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_start_price', true) ?: 'Starting Price' ); ?>" style="width: 100%;" />
+                     </div>
+                     <div class="wpc-flex-item">
+                         <label class="wpc-field-label">"Dashboard Preview" Label</label>
+                         <input type="text" name="wpc_list_txt_dash_prev" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_dash_prev', true) ?: 'Dashboard Preview' ); ?>" style="width: 100%;" />
+                     </div>
+                 </div>
+            </div>
+            
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Filter & Search Internal Labels</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Reset Filters" Text</label>
+                        <input type="text" name="wpc_list_txt_reset_filt" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_reset_filt', true) ?: 'Reset Filters' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Select %s" Format</label>
+                        <input type="text" name="wpc_list_txt_select_fmt" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_select_fmt', true) ?: 'Select %s' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Clear" Text</label>
+                        <input type="text" name="wpc_list_txt_clear" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_clear', true) ?: 'Clear' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Select provider..." Placeholder</label>
+                        <input type="text" name="wpc_list_txt_sel_prov" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_sel_prov', true) ?: 'Select provider...' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"No item found." Text</label>
+                        <input type="text" name="wpc_list_txt_no_item" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_no_item', true) ?: 'No item found.' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"more" (e.g. +2 more)</label>
+                        <input type="text" name="wpc_list_txt_more" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_more', true) ?: 'more' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+            
             </div>
 
             <!-- Colors & Overrides -->
@@ -800,9 +983,30 @@ function wpc_save_list_meta( $post_id ) {
         update_post_meta( $post_id, '_wpc_list_show_filters_opt', sanitize_text_field( $_POST['wpc_list_show_filters_opt'] ) );
     }
 
-    // Save Badge Style
-    if ( isset( $_POST['wpc_list_badge_style'] ) ) {
-        update_post_meta( $post_id, '_wpc_list_badge_style', sanitize_text_field( $_POST['wpc_list_badge_style'] ) );
+    // Layout & Behavior Settings
+    $layout_fields = [
+        '_wpc_list_pt_btn_pos_table',
+        '_wpc_list_pt_btn_pos_popup',
+        '_wpc_list_target_details',
+        '_wpc_list_target_direct',
+        '_wpc_list_target_pricing',
+        // Existing
+        '_wpc_list_default_style',
+        '_wpc_list_badge_style',
+        '_wpc_list_show_rating',
+        '_wpc_list_show_price',
+        '_wpc_list_filter_layout',
+        '_wpc_list_show_filters_opt',
+        '_wpc_list_show_search_opt',
+        '_wpc_list_search_type'
+    ];
+    
+    foreach ($layout_fields as $field) {
+        $post_key = substr($field, 1); // remove leading underscore for POST key if naming convention matches
+        // Actually for these I used name="wpc_list_..." which matches _wpc_list_... convention minus the underscore
+        if ( isset( $_POST[$post_key] ) ) {
+            update_post_meta( $post_id, $field, sanitize_text_field( $_POST[$post_key] ) );
+        }
     }
 
     // Save Visibility Flags
@@ -861,9 +1065,31 @@ function wpc_save_list_meta( $post_id ) {
         '_wpc_list_txt_featured',
         '_wpc_list_txt_feat_prod',
         '_wpc_list_txt_feat_fees',
+        '_wpc_list_txt_feat_channels', // New
+        '_wpc_list_txt_feat_ssl',      // New
         '_wpc_list_txt_feat_supp',
         '_wpc_list_cat_label',
-        '_wpc_list_feat_label'
+        '_wpc_list_feat_label',
+        '_wpc_list_txt_feat_header',
+        '_wpc_list_txt_pros',
+        '_wpc_list_txt_cons',
+        '_wpc_list_txt_price',
+        '_wpc_list_txt_rating',
+        '_wpc_list_txt_mo_suffix',
+        // New Misc Labels
+        '_wpc_list_txt_no_compare',
+        '_wpc_list_txt_remove',
+        '_wpc_list_txt_logo',
+        '_wpc_list_txt_analysis',
+        '_wpc_list_txt_start_price',
+        '_wpc_list_txt_dash_prev',
+        // Filter & Search Internal Labels
+        '_wpc_list_txt_reset_filt',
+        '_wpc_list_txt_select_fmt',
+        '_wpc_list_txt_clear',
+        '_wpc_list_txt_sel_prov',
+        '_wpc_list_txt_no_item',
+        '_wpc_list_txt_more'
     ];
 
     foreach ($text_fields as $field) {
@@ -898,17 +1124,8 @@ function wpc_save_list_meta( $post_id ) {
         update_post_meta( $post_id, '_wpc_list_initial_visible', $initial_count );
     }
 
-    // Labels
-    update_post_meta($post_id, '_wpc_list_cat_label', sanitize_text_field($_POST['wpc_list_cat_label']));
-    update_post_meta($post_id, '_wpc_list_feat_label', sanitize_text_field($_POST['wpc_list_feat_label']));
-    
-    // Configurable Texts
-    update_post_meta($post_id, '_wpc_list_txt_compare', sanitize_text_field($_POST['wpc_list_txt_compare']));
-    update_post_meta($post_id, '_wpc_list_txt_copied', sanitize_text_field($_POST['wpc_list_txt_copied']));
-    update_post_meta($post_id, '_wpc_list_txt_visit', sanitize_text_field($_POST['wpc_list_txt_visit']));
-    update_post_meta($post_id, '_wpc_list_txt_compare_btn', sanitize_text_field($_POST['wpc_list_txt_compare_btn']));
-    update_post_meta($post_id, '_wpc_list_txt_compare_now', sanitize_text_field($_POST['wpc_list_txt_compare_now']));
-    update_post_meta($post_id, '_wpc_list_txt_visit_plat', sanitize_text_field($_POST['wpc_list_txt_visit_plat']));
+    // Configurable Texts and Colors handled by loop above
+
 
     // Colors & Overrides
     $colors = ['primary', 'accent', 'secondary', 'border', 'banner', 'hover'];

@@ -17,6 +17,10 @@ interface ComparisonFiltersProps {
   labels?: {
     categories?: string;
     features?: string;
+    filters?: string;
+    resetFilters?: string;
+    select?: string;
+    clear?: string;
   };
 }
 
@@ -42,7 +46,7 @@ const ComparisonFilters = ({
         <div>
           <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
             <Filter className="w-5 h-5 text-muted-foreground" />
-            <span className="font-display font-bold text-lg text-foreground">Filters</span>
+            <span className="font-display font-bold text-lg text-foreground">{labels?.filters || "Filters"}</span>
           </div>
           {hasFilters && (
             <Button
@@ -50,7 +54,7 @@ const ComparisonFilters = ({
               onClick={onClearFilters}
               className="px-0 text-xs text-muted-foreground hover:text-primary h-auto mt-1 mb-1 block"
             >
-              Reset Filters
+              {labels?.resetFilters || "Reset Filters"}
             </Button>
           )}
         </div>
@@ -122,7 +126,7 @@ const ComparisonFilters = ({
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-2 mr-2">
         <Filter className="w-5 h-5 text-muted-foreground" />
-        <span className="font-display font-bold text-lg text-foreground">Filters</span>
+        <span className="font-display font-bold text-lg text-foreground">{labels?.filters || "Filters"}</span>
       </div>
 
       {/* Category Filter */}
@@ -160,7 +164,7 @@ const ComparisonFilters = ({
         </PopoverTrigger>
         <PopoverContent className="w-[240px] p-0" align="start">
           <div className="p-2 space-y-1">
-            <h4 className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Select {catLabel}</h4>
+            <h4 className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">{(labels?.select || "Select %s").replace('%s', catLabel)}</h4>
             <Separator className="my-1" />
             <div className="max-h-[300px] overflow-y-auto pr-1">
               {categories.map((category) => {
@@ -201,7 +205,7 @@ const ComparisonFilters = ({
                     });
                   }}
                 >
-                  Clear Types
+                  {labels?.clear || "Clear"} {catLabel}
                 </Button>
               </div>
             </>
@@ -244,7 +248,7 @@ const ComparisonFilters = ({
         </PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           <div className="p-2 space-y-1">
-            <h4 className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Select Features</h4>
+            <h4 className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">{(labels?.select || "Select %s").replace('%s', featLabel)}</h4>
             <Separator className="my-1" />
             <div className="max-h-[300px] overflow-y-auto pr-1">
               {features.map((feature) => {
@@ -283,7 +287,7 @@ const ComparisonFilters = ({
                     });
                   }}
                 >
-                  Clear Features
+                  {labels?.clear || "Clear"} {featLabel}
                 </Button>
               </div>
             </>
@@ -298,7 +302,7 @@ const ComparisonFilters = ({
           onClick={onClearFilters}
           className="h-9 px-2 lg:px-3 text-muted-foreground hover:text-foreground"
         >
-          Reset Filters
+          {labels?.resetFilters || "Reset Filters"}
         </Button>
       )}
     </div>

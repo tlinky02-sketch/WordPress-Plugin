@@ -539,6 +539,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                     footerButtonText={config.footerButtonText}
                     showHeaders={false}
                     displayContext={config.displayContext || 'inline'}
+                    config={config}
                 />
             </div>
         );
@@ -711,7 +712,11 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                         layout="top"
                         labels={{
                             categories: config.categoriesLabel || getText('category', 'Category'),
-                            features: config.featuresLabel || getText('features', 'Platform Features')
+                            features: config.featuresLabel || getText('features', 'Platform Features'),
+                            filters: getText('filters', 'Filters'),
+                            resetFilters: getText('resetFilters', 'Reset Filters'),
+                            select: getText('select', 'Select %s'),
+                            clear: getText('clear', 'Clear')
                         }}
                     />
                 </div>
@@ -734,7 +739,14 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                             onFeatureChange={handleFeatureChange}
                             onClearFilters={() => { setSelectedCategories([]); setSelectedFeatures([]); }}
                             layout="sidebar"
-                            labels={{ categories: config.categoriesLabel, features: config.featuresLabel }}
+                            labels={{
+                                categories: config.categoriesLabel,
+                                features: config.featuresLabel,
+                                filters: getText('filters', 'Filters'),
+                                resetFilters: getText('resetFilters', 'Reset Filters'),
+                                select: getText('select', 'Select %s'),
+                                clear: getText('clear', 'Clear')
+                            }}
                         />
                     </div>
                 )}
@@ -793,6 +805,12 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                                 hoverColor={getColor('hoverButton')}
                                                 primaryColor={getColor('primary')}
                                                 compareLabel={config.labels?.compareBtn}
+                                                labels={{
+                                                    selectProvider: getText('selectProvider', 'Select provider...'),
+                                                    search: getText('searchPlaceholder', 'Search...'),
+                                                    noItemFound: getText('noItemFound', 'No item found.'),
+                                                    more: getText('more', 'more')
+                                                }}
                                                 onCompare={(config.enableComparison !== false && config.showCheckboxes !== false) ? () => {
                                                     // Convert selected item names to IDs
                                                     const idsToCompare = items
@@ -897,7 +915,8 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                                 showPrice: config.showPrice,
                                                 showCheckboxes: config.showCheckboxes !== false,
                                                 viewAction: config.viewAction || 'popup',
-                                                labels: config.labels // Pass configurable labels
+                                                labels: config.labels, // Pass configurable labels
+                                                config // Pass full config for targets/positioning
                                             };
 
                                             // Props for New Styles
@@ -919,7 +938,8 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                                                 showCheckboxes: config.showCheckboxes !== false,
                                                 viewAction: config.viewAction || 'popup',
                                                 activeCategories: selectedCategories,
-                                                labels: config.labels // Pass configurable labels
+                                                labels: config.labels, // Pass configurable labels
+                                                config // Pass full config for targets/positioning
                                             };
 
                                             switch (config.style) {
@@ -967,7 +987,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
                 selectedItems.length > 0 && showComparison && (
                     <div ref={comparisonRef} className="mt-16 pt-8 border-t border-border w-full">
                         <h2 className="text-2xl font-bold mb-6 px-2">Detailed Comparison</h2>
-                        <ComparisonTable items={selectedItemObjects} onRemove={handleRemoveFromComparison} />
+                        <ComparisonTable items={selectedItemObjects} onRemove={handleRemoveFromComparison} labels={config.labels} config={config} />
                     </div>
                 )
             }
@@ -975,7 +995,7 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
             {/* Pricing Popup */}
             {
                 detailsItem && (
-                    <PricingPopup item={detailsItem} onClose={handleCloseDetails} showPlanButtons={config.showPlanButtons} />
+                    <PricingPopup item={detailsItem} onClose={handleCloseDetails} showPlanButtons={config.showPlanButtons} config={config} />
                 )
             }
         </div >
