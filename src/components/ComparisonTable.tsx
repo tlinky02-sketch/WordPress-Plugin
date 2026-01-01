@@ -120,72 +120,77 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
               <th className="p-2 md:p-6 text-left font-display font-bold text-foreground text-xs md:text-base sticky left-0 bg-background/95 backdrop-blur z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[20%]">
                 {getText('featureHeader', "Feature")}
               </th>
-              {items.map((item) => (
-                <th key={item.id} className="p-2 md:p-6 text-center">
-                  <div className="flex flex-col items-center gap-2 md:gap-4">
-                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-white p-1 md:p-2 shadow-sm border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {item.logo ? (
-                        <img src={item.logo} alt={item.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <ShoppingBag className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="w-full">
-                      <h3 className="font-bold text-foreground text-sm md:text-lg mb-1 min-h-[1.75rem] flex items-center justify-center">{item.name}</h3>
-                      <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
-                        <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
-                        <span className="font-medium text-xs md:text-base">{item.rating}</span>
-                      </div>
-                      <div className="text-lg md:text-2xl font-bold text-primary mb-2 md:mb-4">
-                        {item.price}<span className="text-xs md:text-sm text-muted-foreground font-normal">{item.moSuffix || getText('moSuffix', "/mo")}</span>
-                      </div>
+              {items.map((item) => {
+                const itemCouponBg = item.design_overrides?.coupon_bg || couponBg;
+                const itemCouponText = item.design_overrides?.coupon_text || couponText;
 
-                      {/* Coupon in Header if Main Item has one */}
-                      {item.coupon_code && (
-                        <button
-                          className="px-2 py-1 rounded mb-2 w-full flex items-center justify-center gap-1 transition-colors text-[10px]"
+                return (
+                  <th key={item.id} className="p-2 md:p-6 text-center">
+                    <div className="flex flex-col items-center gap-2 md:gap-4">
+                      <div className="w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-white p-1 md:p-2 shadow-sm border border-border/50 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {item.logo ? (
+                          <img src={item.logo} alt={item.name} className="w-full h-full object-contain" />
+                        ) : (
+                          <ShoppingBag className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="w-full">
+                        <h3 className="font-bold text-foreground text-sm md:text-lg mb-1 min-h-[1.75rem] flex items-center justify-center">{item.name}</h3>
+                        <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
+                          <Star className="w-3 h-3 md:w-4 md:h-4 fill-current" />
+                          <span className="font-medium text-xs md:text-base">{item.rating}</span>
+                        </div>
+                        <div className="text-lg md:text-2xl font-bold text-primary mb-2 md:mb-4">
+                          {item.price}<span className="text-xs md:text-sm text-muted-foreground font-normal">{item.moSuffix || getText('moSuffix', "/mo")}</span>
+                        </div>
+
+                        {/* Coupon in Header if Main Item has one */}
+                        {item.coupon_code && (
+                          <button
+                            className="px-2 py-1 rounded mb-2 w-full flex items-center justify-center gap-1 transition-colors text-[10px]"
+                            style={{
+                              backgroundColor: itemCouponBg,
+                              color: itemCouponText,
+                              border: `1px solid ${itemCouponText}40`
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = couponHover; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = itemCouponBg; }}
+                            onClick={(e) => { e.stopPropagation(); copyCoupon(item.coupon_code || '', e.currentTarget); }}
+                          >
+                            <Tag className="w-3 h-3" /> {item.couponLabel || getText('getCoupon', 'Code')}: {item.coupon_code}
+                          </button>
+                        )}
+                        <a
+                          href={item.details_link || '#'}
+                          target={target}
+                          className="inline-flex items-center justify-center w-full text-white px-3 md:h-10 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap"
+                          rel="noreferrer"
                           style={{
-                            backgroundColor: couponBg,
-                            color: couponText,
-                            border: `1px solid ${couponText}40`
+                            backgroundColor: (window as any).wpcSettings?.colors?.primary || '#6366f1',
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = couponHover; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = couponBg; }}
-                          onClick={(e) => { e.stopPropagation(); copyCoupon(item.coupon_code || '', e.currentTarget); }}
+                          onMouseEnter={(e) => {
+                            const hoverColor = (window as any).wpcSettings?.colors?.hoverButton;
+                            if (hoverColor) e.currentTarget.style.backgroundColor = hoverColor;
+                            else e.currentTarget.style.filter = 'brightness(90%)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = (window as any).wpcSettings?.colors?.primary || '#6366f1';
+                            e.currentTarget.style.filter = '';
+                          }}
                         >
-                          <Tag className="w-3 h-3" /> {item.couponLabel || getText('getCoupon', 'Code')}: {item.coupon_code}
+                          {item.button_text || item.visitSiteLabel || getText('visitSite', "Visit Site")} <ExternalLink className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 flex-shrink-0" />
+                        </a>
+                        <button
+                          onClick={() => onRemove(item.id)}
+                          className="mt-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 w-full"
+                        >
+                          <X className="w-3 h-3" /> {getText('remove', 'Remove')}
                         </button>
-                      )}
-                      <a
-                        href={item.details_link || '#'}
-                        target={target}
-                        className="inline-flex items-center justify-center w-full text-white px-3 md:h-10 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap"
-                        rel="noreferrer"
-                        style={{
-                          backgroundColor: (window as any).wpcSettings?.colors?.primary || '#6366f1',
-                        }}
-                        onMouseEnter={(e) => {
-                          const hoverColor = (window as any).wpcSettings?.colors?.hoverButton;
-                          if (hoverColor) e.currentTarget.style.backgroundColor = hoverColor;
-                          else e.currentTarget.style.filter = 'brightness(90%)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = (window as any).wpcSettings?.colors?.primary || '#6366f1';
-                          e.currentTarget.style.filter = '';
-                        }}
-                      >
-                        {item.button_text || item.visitSiteLabel || getText('visitSite', "Visit Site")} <ExternalLink className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 flex-shrink-0" />
-                      </a>
-                      <button
-                        onClick={() => onRemove(item.id)}
-                        className="mt-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 w-full"
-                      >
-                        <X className="w-3 h-3" /> {getText('remove', 'Remove')}
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                </th>
-              ))}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">

@@ -118,7 +118,15 @@ function wpc_register_scripts() {
             'secondary' => $secondary_color,
             'featured' => $featured_color,
             'banner' => $pricing_banner_color,
-            'hoverButton' => $button_hover_color
+            'hoverButton' => $button_hover_color,
+            'prosBg' => get_option( 'wpc_color_pros_bg', '#f0fdf4' ),
+            'prosText' => get_option( 'wpc_color_pros_text', '#166534' ),
+            'consBg' => get_option( 'wpc_color_cons_bg', '#fef2f2' ),
+            'consText' => get_option( 'wpc_color_cons_text', '#991b1b' ),
+            'couponBg' => get_option( 'wpc_color_coupon_bg', '#fef3c7' ),
+            'couponText' => get_option( 'wpc_color_coupon_text', '#92400e' ),
+            'couponHover' => get_option( 'wpc_color_coupon_hover', '#fde68a' ),
+            'copied' => get_option( 'wpc_color_copied', '#10b981' ),
         ),
         'texts' => $text_labels, // <--- NEW TEXTS OBJECT
         'visuals' => array( // New object for PT visuals

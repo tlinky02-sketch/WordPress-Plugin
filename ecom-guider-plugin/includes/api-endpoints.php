@@ -152,6 +152,7 @@ function wpc_get_items() {
                 'moSuffix' => get_post_meta( $id, '_wpc_txt_mo_suffix', true ) ?: '',
                 'visitSiteLabel' => get_post_meta( $id, '_wpc_txt_visit_site', true ) ?: '',
                 'couponLabel' => get_post_meta( $id, '_wpc_txt_coupon_label', true ) ?: '',
+                'copiedLabel' => get_post_meta( $id, '_wpc_txt_copied_label', true ) ?: '',
                 'featureHeader' => get_post_meta( $id, '_wpc_txt_feature_header', true ) ?: '',
                 'raw_features' => $feature_names,
                 'details_link' => $details_link,
@@ -204,6 +205,8 @@ function wpc_get_items() {
                             'primary' => get_post_meta( $id, '_wpc_primary_color', true ),
                             'accent' => get_post_meta( $id, '_wpc_accent_color', true ),
                             'border' => get_post_meta( $id, '_wpc_border_color', true ),
+                            'coupon_bg' => get_post_meta( $id, '_wpc_color_coupon_bg', true ),
+                            'coupon_text' => get_post_meta( $id, '_wpc_color_coupon_text', true ),
                             // Granular control
                             'show_footer_popup' => get_post_meta( $id, '_wpc_show_footer_popup', true ) !== '0',
                             'show_footer_table' => get_post_meta( $id, '_wpc_show_footer_table', true ) !== '0',

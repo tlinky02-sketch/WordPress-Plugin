@@ -742,19 +742,31 @@ function wpc_render_list_meta_box( $post ) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
                     <div>
                         <label style="font-size: 11px; display: block;">Pros Background</label>
-                        <input type="color" name="wpc_list_color_pros_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_bg', true) ?: '#f0fdf4' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_pros_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_bg', true) ?: '#f0fdf4' ); ?>" />
+                            <label><input type="checkbox" name="wpc_list_use_pros_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pros_bg', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Pros Text</label>
-                        <input type="color" name="wpc_list_color_pros_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_text', true) ?: '#166534' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_pros_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_pros_text', true) ?: '#166534' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_pros_text" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_pros_text', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Cons Background</label>
-                        <input type="color" name="wpc_list_color_cons_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_bg', true) ?: '#fef2f2' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_cons_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_bg', true) ?: '#fef2f2' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_cons_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_cons_bg', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Cons Text</label>
-                        <input type="color" name="wpc_list_color_cons_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_text', true) ?: '#991b1b' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_cons_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_cons_text', true) ?: '#991b1b' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_cons_text" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_cons_text', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                 </div>
                 
@@ -763,19 +775,31 @@ function wpc_render_list_meta_box( $post ) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
                     <div>
                         <label style="font-size: 11px; display: block;">Background</label>
-                        <input type="color" name="wpc_list_color_coupon_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_bg', true) ?: '#fef3c7' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_coupon_bg" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_bg', true) ?: '#fef3c7' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_coupon_bg" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_coupon_bg', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Text</label>
-                        <input type="color" name="wpc_list_color_coupon_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_text', true) ?: '#92400e' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_coupon_text" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_text', true) ?: '#92400e' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_coupon_text" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_coupon_text', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Hover</label>
-                        <input type="color" name="wpc_list_color_coupon_hover" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_hover', true) ?: '#fde68a' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_coupon_hover" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_coupon_hover', true) ?: '#fde68a' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_coupon_hover" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_coupon_hover', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                     <div>
                         <label style="font-size: 11px; display: block;">Copied State</label>
-                        <input type="color" name="wpc_list_color_copied" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_copied', true) ?: '#10b981' ); ?>" />
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="color" name="wpc_list_color_copied" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_color_copied', true) ?: '#10b981' ); ?>" />
+                             <label><input type="checkbox" name="wpc_list_use_copied" value="1" <?php checked( get_post_meta($post->ID, '_wpc_list_use_copied', true), '1' ); ?> /> Set</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1230,13 +1254,29 @@ function wpc_save_list_meta( $post_id ) {
     
     // Save Comparison Table Colors (Pros/Cons/Coupon)
     $table_color_fields = [
-        'color_pros_bg', 'color_pros_text', 'color_cons_bg', 'color_cons_text',
-        'color_coupon_bg', 'color_coupon_text', 'color_coupon_hover', 'color_copied'
+        'color_pros_bg' => 'use_pros_bg', 
+        'color_pros_text' => 'use_pros_text', 
+        'color_cons_bg' => 'use_cons_bg', 
+        'color_cons_text' => 'use_cons_text',
+        'color_coupon_bg' => 'use_coupon_bg', 
+        'color_coupon_text' => 'use_coupon_text', 
+        'color_coupon_hover' => 'use_coupon_hover', 
+        'color_copied' => 'use_copied'
     ];
-    foreach ($table_color_fields as $field) {
+    foreach ($table_color_fields as $field => $use_field) {
         $key = "_wpc_list_{$field}";
-        if (isset($_POST["wpc_list_{$field}"])) {
-            update_post_meta($post_id, $key, sanitize_hex_color($_POST["wpc_list_{$field}"]));
+        $use_key = "_wpc_list_{$use_field}";
+        
+        // Check if "Set" checkbox is checked
+        if (isset($_POST["wpc_list_{$use_field}"])) {
+            update_post_meta($post_id, $use_key, '1');
+            if (isset($_POST["wpc_list_{$field}"])) {
+                update_post_meta($post_id, $key, sanitize_hex_color($_POST["wpc_list_{$field}"]));
+            }
+        } else {
+            // Unchecked -> Remove overrides to fallback to Global Defaults
+            delete_post_meta($post_id, $key);
+            delete_post_meta($post_id, $use_key);
         }
     }
     

@@ -332,6 +332,14 @@ function wpc_render_meta_box( $post ) {
                                 <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Border Color</label>
                                 <input type="color" name="wpc_border_color" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_border_color', true ) ?: '#e2e8f0' ); ?>" style="height:35px; width:60px;" />
                             </div>
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Coupon BG</label>
+                                <input type="color" name="wpc_color_coupon_bg" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_coupon_bg', true ) ?: '#fef3c7' ); ?>" style="height:35px; width:60px;" />
+                            </div>
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Coupon Text</label>
+                                <input type="color" name="wpc_color_coupon_text" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_coupon_text', true ) ?: '#92400e' ); ?>" style="height:35px; width:60px;" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -501,6 +509,7 @@ function wpc_render_meta_box( $post ) {
                     $txt_visit_site = get_post_meta( $post->ID, '_wpc_txt_visit_site', true );
                     $txt_coupon_label = get_post_meta( $post->ID, '_wpc_txt_coupon_label', true );
                     $txt_feature_header = get_post_meta( $post->ID, '_wpc_txt_feature_header', true );
+                    $txt_copied_label = get_post_meta( $post->ID, '_wpc_txt_copied_label', true );
                     ?>
                     
                     <div class="wpc-row" style="gap: 10px; margin-bottom: 10px;">
@@ -530,6 +539,12 @@ function wpc_render_meta_box( $post ) {
                         <div class="wpc-col">
                             <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Feature" Header', 'wp-comparison-builder' ); ?></label>
                             <input type="text" name="wpc_txt_feature_header" value="<?php echo esc_attr( $txt_feature_header ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_feat_header', 'Feature' ) ); ?>" />
+                        </div>
+                    </div>
+                     <div class="wpc-row" style="gap: 10px;">
+                        <div class="wpc-col">
+                             <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Copied!" Text', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_copied_label" value="<?php echo esc_attr( $txt_copied_label ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_copied', 'Copied!' ) ); ?>" />
                         </div>
                     </div>
                 </div>
@@ -1423,6 +1438,9 @@ function wpc_save_meta_box( $post_id ) {
     if ( isset( $_POST['wpc_txt_coupon_label'] ) ) {
         update_post_meta( $post_id, '_wpc_txt_coupon_label', sanitize_text_field( $_POST['wpc_txt_coupon_label'] ) );
     }
+    if ( isset( $_POST['wpc_txt_copied_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_copied_label', sanitize_text_field( $_POST['wpc_txt_copied_label'] ) );
+    }
     if ( isset( $_POST['wpc_txt_feature_header'] ) ) {
         update_post_meta( $post_id, '_wpc_txt_feature_header', sanitize_text_field( $_POST['wpc_txt_feature_header'] ) );
     }
@@ -1558,6 +1576,12 @@ function wpc_save_meta_box( $post_id ) {
     }
     if ( isset( $_POST['wpc_border_color'] ) ) {
         update_post_meta( $post_id, '_wpc_border_color', sanitize_hex_color( $_POST['wpc_border_color'] ) );
+    }
+    if ( isset( $_POST['wpc_color_coupon_bg'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_coupon_bg', sanitize_hex_color( $_POST['wpc_color_coupon_bg'] ) );
+    }
+    if ( isset( $_POST['wpc_color_coupon_text'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_coupon_text', sanitize_hex_color( $_POST['wpc_color_coupon_text'] ) );
     }
     if ( isset( $_POST['wpc_show_plan_buttons'] ) ) {
         update_post_meta( $post_id, '_wpc_show_plan_buttons', '1' );

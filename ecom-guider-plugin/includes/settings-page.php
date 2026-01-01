@@ -696,33 +696,48 @@ function wpc_apply_theme_preset() {
             'wpc_secondary_color' => '#1e293b',
             'wpc_card_border_color' => '#e2e8f0',
             'wpc_pricing_banner_color' => '#10b981',
+            // Pricing Table Visuals
             'wpc_pt_header_bg' => '#f8fafc',
             'wpc_pt_header_text' => '#0f172a',
             'wpc_pt_btn_bg' => '#0f172a',
             'wpc_pt_btn_text' => '#ffffff',
+            // Feature Table Defaults
+            'wpc_ft_header_bg' => '#f3f4f6',
+            'wpc_ft_check_color' => '#10b981',
+            'wpc_ft_x_color' => '#ef4444',
+            'wpc_ft_alt_row_bg' => '#f9fafb',
+            // Color Settings
             'wpc_color_pros_bg' => '#f0fdf4',
             'wpc_color_pros_text' => '#166534',
             'wpc_color_cons_bg' => '#fef2f2',
             'wpc_color_cons_text' => '#991b1b',
             'wpc_color_coupon_bg' => '#fef3c7',
             'wpc_color_coupon_text' => '#92400e',
+            'wpc_color_coupon_hover' => '#fde68a',
+            'wpc_color_copied' => '#10b981',
         ),
         'emerald' => array(
             'wpc_primary_color' => '#10b981',
             'wpc_accent_color' => '#3b82f6',
             'wpc_secondary_color' => '#064e3b',
-             'wpc_card_border_color' => '#d1fae5',
+            'wpc_card_border_color' => '#d1fae5',
             'wpc_pricing_banner_color' => '#059669',
             'wpc_pt_header_bg' => '#ecfdf5',
             'wpc_pt_header_text' => '#064e3b',
             'wpc_pt_btn_bg' => '#059669',
             'wpc_pt_btn_text' => '#ffffff',
-             'wpc_color_pros_bg' => '#ecfdf5',
+            'wpc_ft_header_bg' => '#ecfdf5',
+            'wpc_ft_check_color' => '#059669',
+            'wpc_ft_x_color' => '#ef4444',
+            'wpc_ft_alt_row_bg' => '#f0fdf9',
+            'wpc_color_pros_bg' => '#ecfdf5',
             'wpc_color_pros_text' => '#065f46',
             'wpc_color_cons_bg' => '#fff1f2',
             'wpc_color_cons_text' => '#9f1239',
             'wpc_color_coupon_bg' => '#ffedd5',
             'wpc_color_coupon_text' => '#c2410c',
+            'wpc_color_coupon_hover' => '#fed7aa',
+            'wpc_color_copied' => '#059669',
         ),
         'sunset' => array(
             'wpc_primary_color' => '#f97316',
@@ -734,33 +749,45 @@ function wpc_apply_theme_preset() {
             'wpc_pt_header_text' => '#7c2d12',
             'wpc_pt_btn_bg' => '#ea580c',
             'wpc_pt_btn_text' => '#ffffff',
+            'wpc_ft_header_bg' => '#fff7ed',
+            'wpc_ft_check_color' => '#ea580c',
+            'wpc_ft_x_color' => '#ef4444',
+            'wpc_ft_alt_row_bg' => '#fffaf5',
             'wpc_color_pros_bg' => '#fff7ed',
             'wpc_color_pros_text' => '#9a3412',
             'wpc_color_cons_bg' => '#fef2f2',
             'wpc_color_cons_text' => '#991b1b',
             'wpc_color_coupon_bg' => '#fee2e2',
             'wpc_color_coupon_text' => '#991b1b',
+            'wpc_color_coupon_hover' => '#fecaca',
+            'wpc_color_copied' => '#ea580c',
         ),
         'ocean' => array(
-            'wpc_primary_color' => '#0ea5e9', // Sky
-            'wpc_accent_color' => '#6366f1', // Indigo
-            'wpc_secondary_color' => '#0c4a6e', // Sky 900
+            'wpc_primary_color' => '#0ea5e9',
+            'wpc_accent_color' => '#6366f1',
+            'wpc_secondary_color' => '#0c4a6e',
             'wpc_card_border_color' => '#e0f2fe',
             'wpc_pricing_banner_color' => '#0284c7',
             'wpc_pt_header_bg' => '#f0f9ff',
             'wpc_pt_header_text' => '#075985',
             'wpc_pt_btn_bg' => '#0284c7',
             'wpc_pt_btn_text' => '#ffffff',
+            'wpc_ft_header_bg' => '#f0f9ff',
+            'wpc_ft_check_color' => '#0ea5e9',
+            'wpc_ft_x_color' => '#ef4444',
+            'wpc_ft_alt_row_bg' => '#f7fcff',
             'wpc_color_pros_bg' => '#f0f9ff',
             'wpc_color_pros_text' => '#0369a1',
             'wpc_color_cons_bg' => '#fef2f2',
             'wpc_color_cons_text' => '#b91c1c',
             'wpc_color_coupon_bg' => '#e0e7ff',
             'wpc_color_coupon_text' => '#3730a3',
+            'wpc_color_coupon_hover' => '#c7d2fe',
+            'wpc_color_copied' => '#0ea5e9',
         ),
          'minimal' => array(
-            'wpc_primary_color' => '#0f172a', // Slate 900
-            'wpc_accent_color' => '#64748b', // Slate 500
+            'wpc_primary_color' => '#0f172a',
+            'wpc_accent_color' => '#64748b',
             'wpc_secondary_color' => '#334155', 
             'wpc_card_border_color' => '#e2e8f0',
             'wpc_pricing_banner_color' => '#000000',
@@ -768,12 +795,18 @@ function wpc_apply_theme_preset() {
             'wpc_pt_header_text' => '#0f172a',
             'wpc_pt_btn_bg' => '#0f172a',
             'wpc_pt_btn_text' => '#ffffff',
+            'wpc_ft_header_bg' => '#ffffff',
+            'wpc_ft_check_color' => '#0f172a',
+            'wpc_ft_x_color' => '#ef4444',
+            'wpc_ft_alt_row_bg' => '#f8fafc',
             'wpc_color_pros_bg' => '#f8fafc',
             'wpc_color_pros_text' => '#0f172a',
             'wpc_color_cons_bg' => '#f8fafc',
             'wpc_color_cons_text' => '#0f172a',
             'wpc_color_coupon_bg' => '#f1f5f9',
             'wpc_color_coupon_text' => '#0f172a',
+            'wpc_color_coupon_hover' => '#e2e8f0',
+            'wpc_color_copied' => '#0f172a',
         ),
     );
 
@@ -841,15 +874,22 @@ function wpc_render_settings_page() {
                 var m = document.getElementById('wpc-toast-message');
                 var i = t.querySelector('.wpc-toast-icon');
                 
-                t.className = 'wpc-toast ' + type;
+                if (type === 'success-no-icon') {
+                    t.className = 'wpc-toast success';
+                    i.style.display = 'none';
+                } else {
+                    t.className = 'wpc-toast ' + type;
+                    i.innerText = type === 'success' ? '\u2713' : '\u26A0\uFE0F';
+                    i.style.color = type === 'success' ? '#10b981' : '#ef4444';
+                    i.style.display = 'inline';
+                }
+                
                 m.innerText = msg;
-                i.innerText = type === 'success' ? '&#x2713;' : '&#x26A0;&#xFE0F;';
-                i.style.color = type === 'success' ? '#10b981' : '#ef4444';
                 
                 t.style.display = 'flex';
                 setTimeout(function() {
                     t.style.display = 'none';
-                }, 4000);
+                }, 3000);
             },
             
             confirm: function(title, msg, onConfirm, confirmText='Confirm', confirmColor='#6366f1') {
@@ -1171,7 +1211,7 @@ function wpc_render_general_tab() {
                         <strong style="display:block; margin-bottom: 10px; color: #334155;">Global Theme Presets</strong>
                         <p class="description" style="margin-bottom: 10px;">Select a predefined theme to automatically set <strong>ALL</strong> colors (General, Card, Pricing Table, Coupons) to a professional palette.</p>
                         
-                        <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                             <select id="wpc_theme_selector" style="max-width: 200px;">
                                 <option value="indigo">Indigo Modern (Default)</option>
                                 <option value="emerald">Emerald Green</option>
@@ -1180,44 +1220,66 @@ function wpc_render_general_tab() {
                                 <option value="minimal">Minimal Slate</option>
                             </select>
                             <button type="button" id="wpc_apply_theme_btn" class="button button-secondary">Apply Theme</button>
+                            <button type="button" id="wpc_reset_colors_btn" class="button" style="color: #ef4444; border-color: #fca5a5;">Reset Colors</button>
                             <span id="wpc_theme_status" style="margin-left: 10px; font-weight: bold;"></span>
                         </div>
                         
                         <script>
-                        document.getElementById('wpc_apply_theme_btn').addEventListener('click', function() {
-                            var theme = document.getElementById('wpc_theme_selector').value;
-                            var nonce = '<?php echo wp_create_nonce( 'wpc_import_export_nonce' ); ?>';
-                            
-                            wpcAdmin.confirm(
-                                'Apply Theme Preset?',
-                                'This will update <strong>ALL</strong> your color settings (General, Pricing, Coupons) to the "'+theme+'" palette.<br><br>Existing color customizations will be overwritten.',
-                                function() {
-                                    var btn = document.getElementById('wpc_apply_theme_btn');
-                                    var status = document.getElementById('wpc_theme_status');
-                                    
-                                    wpcAdmin.loading(btn, 'Applying...');
-                                    status.innerText = '';
-                                    
-                                    jQuery.post(ajaxurl, {
-                                        action: 'wpc_apply_theme_preset',
-                                        theme: theme,
-                                        nonce: nonce
-                                    }, function(response) {
-                                        if (response.success) {
-                                            wpcAdmin.toast('Theme Applied! Reloading page...', 'success');
-                                            setTimeout(function() {
-                                                window.location.reload();
-                                            }, 1500);
-                                        } else {
-                                            wpcAdmin.toast('Error: ' + (response.data || 'Unknown error'), 'error');
-                                            wpcAdmin.reset(btn);
-                                        }
-                                    });
-                                },
-                                'Apply Theme',
-                                '#6366f1'
-                            );
-                        });
+                        (function() {
+                            const nonce = '<?php echo wp_create_nonce( 'wpc_import_export_nonce' ); ?>';
+
+                            // Apply Theme Handler
+                            document.getElementById('wpc_apply_theme_btn').addEventListener('click', function() {
+                                var theme = document.getElementById('wpc_theme_selector').value;
+                                
+                                wpcAdmin.confirm(
+                                    'Apply Theme Preset?',
+                                    'This will update <strong>ALL</strong> your color settings (General, Pricing, Features, Coupons) to the "'+theme+'" palette.<br><br>Existing color customizations will be overwritten.',
+                                    function() {
+                                        applyTheme(theme, document.getElementById('wpc_apply_theme_btn'));
+                                    },
+                                    'Apply Theme',
+                                    '#6366f1'
+                                );
+                            });
+
+                            // Reset Handler
+                            document.getElementById('wpc_reset_colors_btn').addEventListener('click', function() {
+                                wpcAdmin.confirm(
+                                    'Reset All Colors?',
+                                    'Are you sure you want to reset <strong>ALL</strong> global color settings to their factory defaults (Indigo Modern)?<br><br>This action cannot be undone.',
+                                    function() {
+                                        applyTheme('indigo', document.getElementById('wpc_reset_colors_btn'));
+                                    },
+                                    'Reset Colors',
+                                    '#ef4444'
+                                );
+                            });
+
+                            function applyTheme(theme, btn) {
+                                var status = document.getElementById('wpc_theme_status');
+                                
+                                wpcAdmin.loading(btn, 'Applying...');
+                                status.innerText = '';
+                                
+                                jQuery.post(ajaxurl, {
+                                    action: 'wpc_apply_theme_preset',
+                                    theme: theme,
+                                    nonce: nonce
+                                }, function(response) {
+                                    if (response.success) {
+                                        // User requested icon-less message
+                                        wpcAdmin.toast('Theme Applied! Reloading page...', 'success-no-icon');
+                                        setTimeout(function() {
+                                            window.location.reload();
+                                        }, 1500);
+                                    } else {
+                                        wpcAdmin.toast('Error: ' + (response.data || 'Unknown error'), 'error');
+                                        wpcAdmin.reset(btn);
+                                    }
+                                });
+                            }
+                        })();
                         </script>
                     </div>
                 </td>
