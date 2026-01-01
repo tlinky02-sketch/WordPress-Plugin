@@ -288,6 +288,36 @@ function wpc_hex2hsl( $hex ) {
 }
 
 /**
+ * Resolve a boolean setting with List > Item > Global cascade
+ * 
+ * @param int    $list_id      The List post ID
+ * @param string $list_meta    Meta key for List-level setting
+ * @param int    $item_id      Item post ID (null if not applicable)
+ * @param string $global_opt   Option key for Global setting
+ * @param bool   $default      Default value if nothing is set
+ * @return bool
+ */
+function wpc_resolve_bool_setting( $list_id, $list_meta, $item_id = null, $global_opt = '', $default = true ) {
+    // 1. List-level (highest priority)
+    $list_val = get_post_meta( $list_id, $list_meta, true );
+    if ( $list_val !== '' ) {
+        return $list_val === '1';
+    }
+    
+    // 2. Item-level (if provided)
+    // Note: For list shortcode, item is not used as the setting is per-list, not per-item
+    // But this function is reusable for other contexts
+    
+    // 3. Global setting (fallback)
+    if ( $global_opt ) {
+        $global_val = get_option( $global_opt, $default ? '1' : '0' );
+        return $global_val === '1';
+    }
+    
+    return $default;
+}
+
+/**
  * Add type="module" to the app script
  */
 function wpc_add_module_type_attribute( $tag, $handle, $src ) {
@@ -985,6 +1015,13 @@ function wpc_list_shortcode( $atts ) {
         'ptBtnPosTable' => ($l_btn = get_post_meta($post_id, '_wpc_list_pt_btn_pos_table', true)) && $l_btn !== 'default' ? $l_btn : get_option('wpc_pt_btn_pos_table', 'after_price'),
         'ptBtnPosPopup' => ($l_btn_p = get_post_meta($post_id, '_wpc_list_pt_btn_pos_popup', true)) && $l_btn_p !== 'default' ? $l_btn_p : get_option('wpc_pt_btn_pos_popup', 'after_price'),
         
+        // Button Visibility (List > Item > Global)
+        'showSelectTable'  => wpc_resolve_bool_setting($post_id, '_wpc_list_show_select_table', null, 'wpc_show_select_table', true),
+        'showSelectPopup'  => wpc_resolve_bool_setting($post_id, '_wpc_list_show_select_popup', null, 'wpc_show_select_popup', true),
+        'showFooterTable'  => wpc_resolve_bool_setting($post_id, '_wpc_list_show_footer_table', null, 'wpc_show_footer_table', true),
+        'showFooterPopup'  => wpc_resolve_bool_setting($post_id, '_wpc_list_show_footer_popup', null, 'wpc_show_footer_popup', true),
+        'hideFeatures'     => wpc_resolve_bool_setting($post_id, '_wpc_list_hide_features', null, 'wpc_hide_features', false),
+        
         'targetDetails' => ($l_tgt_d = get_post_meta($post_id, '_wpc_list_target_details', true)) && $l_tgt_d !== 'default' ? $l_tgt_d : (get_option('wpc_link_target_details', '1') === '1' ? '_blank' : '_self'),
         'targetDirect'  => ($l_tgt_dir = get_post_meta($post_id, '_wpc_list_target_direct', true)) && $l_tgt_dir !== 'default' ? $l_tgt_dir : (get_option('wpc_link_target_direct', '1') === '1' ? '_blank' : '_self'),
         'targetPricing' => ($l_tgt_pr = get_post_meta($post_id, '_wpc_list_target_pricing', true)) && $l_tgt_pr !== 'default' ? $l_tgt_pr : (get_option('wpc_link_target_pricing', '1') === '1' ? '_blank' : '_self'),
@@ -1432,9 +1469,13 @@ function wpc_pricing_table_shortcode( $atts ) {
     elseif ($show_plan_btns_meta !== '') {
         $show_plan_buttons = ($show_plan_btns_meta === '1');
     }
-    // 3. Old Meta (List config) - partial fallback if new meta unused
-    elseif ( $show_plan_links_meta === '1' ) {
-         $show_plan_buttons = true;
+    // 3. Old Meta (List config) - check for explicit values
+    elseif ( $show_plan_links_meta !== '' ) {
+         $show_plan_buttons = ($show_plan_links_meta === '1');
+    }
+    // 4. Default: show buttons
+    else {
+        $show_plan_buttons = true;
     }
     
     // Footer Button

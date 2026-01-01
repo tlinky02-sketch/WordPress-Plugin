@@ -75,12 +75,13 @@ function wpc_render_meta_box( $post ) {
     <div class="wpc-details-wrap wpc-tabs-wrapper">
         <ul class="wpc-tab-nav">
             <li class="active" onclick="wpcOpenItemTab(event, 'general')">General Info</li>
-            <li onclick="wpcOpenItemTab(event, 'visuals')">Visuals & Branding</li>
-            <li onclick="wpcOpenItemTab(event, 'pricing')">Pricing Plans</li>
-            <li onclick="wpcOpenItemTab(event, 'content')">Content & Footer</li>
             <li onclick="wpcOpenItemTab(event, 'taxonomy')">Categories & Tags</li>
+            <li onclick="wpcOpenItemTab(event, 'visuals')">Visuals & Branding</li>
+            <li onclick="wpcOpenItemTab(event, 'content')">Content & Footer</li>
+            <li onclick="wpcOpenItemTab(event, 'pricing')">Pricing Plans</li>
             <li onclick="wpcOpenItemTab(event, 'plan_features')">Plan Features</li>
             <li onclick="wpcOpenItemTab(event, 'seo')">SEO Schema</li>
+            <li onclick="wpcOpenItemTab(event, 'import')">Data Import</li>
         </ul>
 
         <!-- TAB: GENERAL -->
@@ -353,19 +354,48 @@ function wpc_render_meta_box( $post ) {
             <div class="wpc-row">
                 <div class="wpc-col">
                     <label class="wpc-label"><?php _e( 'Pricing Plans Configuration', 'wp-comparison-builder' ); ?></label>
-                    <div style="margin-bottom: 15px;">
+                    <div style="margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 20px;">
                         <?php 
                         $hide_features = get_post_meta( $post->ID, '_wpc_hide_plan_features', true );
                         $show_plan_links = get_post_meta( $post->ID, '_wpc_show_plan_links', true );
+                        $show_plan_links_popup = get_post_meta( $post->ID, '_wpc_show_plan_links_popup', true );
+                        $table_btn_pos = get_post_meta( $post->ID, '_wpc_table_btn_pos', true ) ?: 'default';
+                        $popup_btn_pos = get_post_meta( $post->ID, '_wpc_popup_btn_pos', true ) ?: 'default';
                         ?>
-                        <label style="margin-right: 20px;">
-                            <input type="checkbox" name="wpc_hide_plan_features" value="1" <?php checked( $hide_features, '1' ); ?> />
-                            <?php _e( 'Hide "Features" Column', 'wp-comparison-builder' ); ?>
-                        </label>
-                        <label>
-                            <input type="checkbox" name="wpc_show_plan_links" value="1" <?php checked( $show_plan_links, '1' ); ?> />
-                            <?php _e( 'Show "Select" Link Buttons', 'wp-comparison-builder' ); ?>
-                        </label>
+                        <div>
+                            <strong style="display: block; margin-bottom: 5px;">Visibility:</strong>
+                            <label style="display: block; margin-bottom: 3px;">
+                                <input type="checkbox" name="wpc_hide_plan_features" value="1" <?php checked( $hide_features, '1' ); ?> />
+                                <?php _e( 'Hide "Features" Column', 'wp-comparison-builder' ); ?>
+                            </label>
+                            <label style="display: block; margin-bottom: 3px;">
+                                <input type="checkbox" name="wpc_show_plan_links" value="1" <?php checked( $show_plan_links, '1' ); ?> />
+                                <?php _e( 'Show "Select" Buttons in Table', 'wp-comparison-builder' ); ?>
+                            </label>
+                            <label style="display: block;">
+                                <input type="checkbox" name="wpc_show_plan_links_popup" value="1" <?php checked( $show_plan_links_popup, '1' ); ?> />
+                                <?php _e( 'Show "Select" Buttons in Popup', 'wp-comparison-builder' ); ?>
+                            </label>
+                        </div>
+                        <div>
+                            <strong style="display: block; margin-bottom: 5px;">Button Position:</strong>
+                            <label style="display: block; margin-bottom: 5px;">
+                                Table:
+                                <select name="wpc_table_btn_pos" style="margin-left: 5px;">
+                                    <option value="default" <?php selected( $table_btn_pos, 'default' ); ?>>Default (Global)</option>
+                                    <option value="after_price" <?php selected( $table_btn_pos, 'after_price' ); ?>>After Pricing</option>
+                                    <option value="bottom" <?php selected( $table_btn_pos, 'bottom' ); ?>>Bottom (After Features)</option>
+                                </select>
+                            </label>
+                            <label style="display: block;">
+                                Popup:
+                                <select name="wpc_popup_btn_pos" style="margin-left: 5px;">
+                                    <option value="default" <?php selected( $popup_btn_pos, 'default' ); ?>>Default (Global)</option>
+                                    <option value="after_price" <?php selected( $popup_btn_pos, 'after_price' ); ?>>After Pricing</option>
+                                    <option value="bottom" <?php selected( $popup_btn_pos, 'bottom' ); ?>>Bottom (After Features)</option>
+                                </select>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1146,7 +1176,470 @@ function wpc_render_meta_box( $post ) {
             
             <?php endif; ?>
         </div>
-    </div>
+
+        <!-- Toast Notification Container -->
+        <div id="wpc-toast" style="visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 9999; left: 50%; bottom: 30px; transform: translateX(-50%); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            Message Here
+        </div>
+
+        <!-- Custom Confirmation Modal -->
+        <div id="wpc-confirm-modal" style="display:none; position:fixed; z-index:10000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+            <div style="background-color:#fff; margin:15% auto; padding:20px; border-radius:8px; width:400px; max-width:90%; position:relative; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h3 style="margin-top:0;">Confirm Import</h3>
+                <p>This will overwrite existing fields with the imported data. Are you sure you want to continue?</p>
+                <div style="text-align:right; margin-top:20px;">
+                    <button type="button" class="button" onclick="document.getElementById('wpc-confirm-modal').style.display='none'">Cancel</button>
+                    <button type="button" class="button button-primary" id="wpc-confirm-btn">Yes, Import Data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: DATA IMPORT -->
+        <div id="wpc-tab-import" class="wpc-tab-content">
+            <h3 class="wpc-section-title">Import Data from JSON</h3>
+            <p class="description">Paste a JSON object below to auto-fill this item's fields. Existing data will be overwritten/appended.</p>
+            
+            <div class="wpc-row">
+                <div class="wpc-col">
+                    <div style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" class="button button-primary button-large" onclick="wpcRequestImport()">📥 Import JSON</button>
+                        <input type="file" id="wpc-import-file" accept=".json" style="line-height: 28px;" />
+                        <span style="color:#abaaaa;">or paste below</span>
+                        <div style="flex:1; text-align:right;">
+                             <button type="button" class="button" onclick="wpcShowExampleJson()">View Example</button>
+                             <button type="button" class="button" onclick="document.getElementById('wpc-import-json').value = '';">Clear</button>
+                        </div>
+                    </div>
+                    <textarea id="wpc-import-json" rows="15" class="wpc-input" style="font-family: monospace; font-size: 12px; white-space: pre;" placeholder="{ ... }"></textarea>
+                </div>
+            </div>
+
+
+            <script>
+            // Toast Notification
+            function wpcShowToast(message, isError = false) {
+                var x = document.getElementById("wpc-toast");
+                x.innerHTML = message;
+                x.style.backgroundColor = isError ? "#ef4444" : "#10b981";
+                x.style.visibility = "visible";
+                x.style.opacity = "1";
+                x.style.bottom = "30px";
+                setTimeout(function(){ 
+                    x.style.visibility = "hidden"; 
+                    x.style.opacity = "0";
+                    x.style.bottom = "0px";
+                }, 3000);
+            }
+
+            function wpcShowExampleJson() {
+                const example = {
+                    "title": "Hostinger Review 2024",
+                    "general": {
+                        "price": "$29.00",
+                        "period": "/mo",
+                        "rating": "4.8",
+                        "details_link": "https://example.com/review",
+                        "direct_link": "https://example.com/go",
+                        "button_text": "Visit Website"
+                    },
+                    "content": {
+                        "pros": "Fast Support\nCheap\nReliable",
+                        "cons": "No Phone Support\nLimited Storage",
+                        "labels": {
+                            "pros": "Good Stuff",
+                            "cons": "Bad Stuff",
+                            "price": "Cost",
+                            "rating": "Score",
+                            "mo_suffix": "/month",
+                            "visit_site": "Go Now",
+                            "coupon": "Promo Code",
+                            "copied": "Code Copied!"
+                        }
+                    },
+                    "visuals": {
+                        "logo": "https://example.com/logo.png",
+                        "dashboard_image": "https://example.com/dash.jpg",
+                        "badge_text": "Top Choice",
+                        "badge_color": "#ff0000",
+                        "colors": {
+                            "primary": "#6366f1",
+                            "accent": "#818cf8",
+                            "border": "#e2e8f0",
+                            "coupon_bg": "#fef3c7",
+                            "coupon_text": "#92400e"
+                        }
+                    },
+                    "pricing_plans": [
+                        {
+                            "name": "Basic",
+                            "price": "$29",
+                            "period": "/mo",
+                            "features": "1 Site\n10GB Storage",
+                            "link": "https://example.com/basic",
+                            "coupon": "SAVE20",
+                            "banner_text": "Best Value",
+                            "banner_color": "#10b981",
+                            "show_popup": true,
+                            "show_table": true
+                        }
+                    ],
+                    "seo": {
+                        "schema_type": "SoftwareApplication",
+                        "brand": "ProviderName",
+                        "sku": "SKU123"
+                    },
+                    "categories": ["Hosting", "WordPress"],
+                    "tags": ["Fast", "Cheap"],
+                    "competitors": ["Other Host A", "Other Host B"],
+                    // Note: Ensure plans are loaded before importing features for best results
+                    "plan_features": [
+                        { "name": "Free SSL", "included_in": [0] }
+                    ],
+                    "custom_fields": [
+                        { "name": "Server Location", "value": "USA" }
+                    ]
+                };
+                document.getElementById('wpc-import-json').value = JSON.stringify(example, null, 2);
+            }
+
+            // Global to hold parsed data pending import
+            let wpcPendingImportData = null;
+
+            async function wpcRequestImport() {
+                // 1. Handle File Upload Priority
+                const fileInput = document.getElementById('wpc-import-file');
+                let jsonStr = '';
+
+                if (fileInput.files.length > 0) {
+                    try {
+                        jsonStr = await fileInput.files[0].text();
+                    } catch (err) {
+                        wpcShowToast('Failed to read file: ' + err.message, true);
+                        return;
+                    }
+                } else {
+                    jsonStr = document.getElementById('wpc-import-json').value;
+                }
+
+                if (!jsonStr.trim()) {
+                    wpcShowToast('Please paste JSON or select a file.', true);
+                    return;
+                }
+
+                try {
+                    wpcPendingImportData = JSON.parse(jsonStr);
+                } catch (e) {
+                    wpcShowToast('Invalid JSON: ' + e.message, true);
+                    return;
+                }
+
+                // Show Modal
+                document.getElementById('wpc-confirm-modal').style.display = 'block';
+                
+                // Bind click event once
+                const btn = document.getElementById('wpc-confirm-btn');
+                btn.onclick = function() {
+                    document.getElementById('wpc-confirm-modal').style.display = 'none';
+                    if (wpcPendingImportData) {
+                        wpcExecuteImport(wpcPendingImportData);
+                    }
+                };
+            }
+
+            async function wpcExecuteImport(data) {
+                // Helper to set value
+                const setVal = (name, val) => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el) el.value = val || '';
+                };
+                const setCheck = (name, checked) => {
+                    const el = document.querySelector(`[name="${name}"]`);
+                    if (el) el.checked = !!checked;
+                };
+
+                // 0. Title
+                if (data.title) {
+                    const titleEl = document.getElementById('title');
+                    if (titleEl) {
+                         titleEl.value = data.title;
+                         // Trigger input event for things like Gutenberg (if active, though this is metabox)
+                         titleEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                }
+
+                // 1. General
+                if (data.general) {
+                    setVal('wpc_price', data.general.price);
+                    setVal('wpc_period', data.general.period);
+                    setVal('wpc_rating', data.general.rating);
+                    setVal('wpc_details_link', data.general.details_link);
+                    setVal('wpc_direct_link', data.general.direct_link);
+                    setVal('wpc_button_text', data.general.button_text);
+                }
+
+                // 2. Content
+                if (data.content) {
+                    if (data.content.pros) document.querySelector('[name="wpc_pros"]').value = data.content.pros;
+                    if (data.content.cons) document.querySelector('[name="wpc_cons"]').value = data.content.cons;
+                    
+                    if (data.content.labels) {
+                        setVal('wpc_txt_pros_label', data.content.labels.pros);
+                        setVal('wpc_txt_cons_label', data.content.labels.cons);
+                        setVal('wpc_txt_price_label', data.content.labels.price);
+                        setVal('wpc_txt_rating_label', data.content.labels.rating);
+                        setVal('wpc_txt_mo_suffix', data.content.labels.mo_suffix);
+                        setVal('wpc_txt_visit_site', data.content.labels.visit_site);
+                        setVal('wpc_txt_coupon_label', data.content.labels.coupon);
+                        setVal('wpc_txt_copied_label', data.content.labels.copied);
+                    }
+                }
+
+                // 3. Visuals
+                if (data.visuals) {
+                    setVal('wpc_external_logo_url', data.visuals.logo);
+                    setVal('wpc_dashboard_image', data.visuals.dashboard_image);
+                    setVal('wpc_featured_badge_text', data.visuals.badge_text);
+                    setVal('wpc_featured_color', data.visuals.badge_color);
+
+                    if (data.visuals.colors) {
+                        setCheck('wpc_enable_design_overrides', true);
+                        const overrideCb = document.querySelector('[name="wpc_enable_design_overrides"]');
+                        if (overrideCb) overrideCb.dispatchEvent(new Event('change')); 
+                        
+                        setVal('wpc_primary_color', data.visuals.colors.primary);
+                        setVal('wpc_accent_color', data.visuals.colors.accent);
+                        setVal('wpc_border_color', data.visuals.colors.border);
+                        setVal('wpc_color_coupon_bg', data.visuals.colors.coupon_bg);
+                        setVal('wpc_color_coupon_text', data.visuals.colors.coupon_text);
+                    }
+                }
+
+                // 4. Pricing Plans
+                if (data.pricing_plans && Array.isArray(data.pricing_plans)) {
+                    const container = document.getElementById('wpc-plans-container');
+                    // Optional: Clear existing plans before import to avoid duplicates
+                    // container.innerHTML = ''; 
+                    
+                    data.pricing_plans.forEach(plan => {
+                        wpcAddPlan(); 
+                        const row = container.lastElementChild;
+                        if (!row) return;
+
+                        const find = (sel) => row.querySelector(sel);
+                        if (find('input[name*="[name]"]')) find('input[name*="[name]"]').value = plan.name || '';
+                        if (find('input[name*="[price]"]')) find('input[name*="[price]"]').value = plan.price || '';
+                        if (find('input[name*="[period]"]')) find('input[name*="[period]"]').value = plan.period || '';
+                        if (find('input[name*="[coupon]"]')) find('input[name*="[coupon]"]').value = plan.coupon || '';
+                        
+                        if (plan.show_banner) {
+                             const cb = find('input[name*="[show_banner]"]');
+                             if(cb) cb.checked = true;
+                        }
+                        if (find('input[name*="[banner_text]"]')) find('input[name*="[banner_text]"]').value = plan.banner_text || '';
+                        if (find('input[name*="[banner_color]"]')) find('input[name*="[banner_color]"]').value = plan.banner_color || '#10b981';
+
+                        if (find('textarea[name*="[features]"]')) find('textarea[name*="[features]"]').value = plan.features || '';
+                        if (find('input[name*="[link]"]')) find('input[name*="[link]"]').value = plan.link || '';
+                        if (find('input[name*="[button_text]"]')) find('input[name*="[button_text]"]').value = plan.button_text || '';
+
+                        const popCb = find('input[name*="[show_popup]"]');
+                        if (popCb) popCb.checked = !!plan.show_popup;
+                        const tblCb = find('input[name*="[show_table]"]');
+                        if (tblCb) tblCb.checked = !!plan.show_table;
+                    });
+
+                    // Sync Plan Headers for Feature Table (Crucial for Plan Features import)
+                    wpcSyncPlanHeaders(data.pricing_plans);
+                }
+
+                // 5. SEO
+                if (data.seo) {
+                    const catSelect = document.getElementById('wpc_product_category');
+                    if (data.seo.schema_type && catSelect) {
+                        catSelect.value = data.seo.schema_type;
+                        catSelect.dispatchEvent(new Event('change')); 
+                    }
+                    setVal('wpc_brand', data.seo.brand);
+                    setVal('wpc_sku', data.seo.sku);
+                    setVal('wpc_gtin', data.seo.gtin);
+                    
+                    setVal('wpc_condition', data.seo.condition);
+                    setVal('wpc_availability', data.seo.availability);
+                    setVal('wpc_mfg_date', data.seo.mfg_date);
+                    setVal('wpc_exp_date', data.seo.exp_date);
+                    
+                    setVal('wpc_service_type', data.seo.service_type);
+                    setVal('wpc_area_served', data.seo.area_served);
+                    setVal('wpc_duration', data.seo.duration);
+                }
+                
+                // 6. Competitors
+                if (data.competitors && Array.isArray(data.competitors)) {
+                    const labels = document.querySelectorAll('.wpc-checkbox-list label');
+                    data.competitors.forEach(compName => {
+                        labels.forEach(label => {
+                            if (label.innerText.trim() === compName.trim()) {
+                                const cb = label.querySelector('input[name="wpc_competitors[]"]');
+                                if (cb) cb.checked = true;
+                            }
+                        });
+                    });
+                }
+
+                // 7. Plan Features
+                if (data.plan_features && Array.isArray(data.plan_features)) {
+                   if (typeof wpcAddFeatureRow !== 'function') {
+                       console.warn('wpcAddFeatureRow not available.');
+                   } else {
+                       // Clear existing features to allow clean import
+                       const tbody = document.getElementById('wpc-features-tbody');
+                       tbody.innerHTML = ''; 
+
+                       data.plan_features.forEach(feat => {
+                           wpcAddFeatureRow(feat.name);
+                           const row = tbody.lastElementChild;
+                           if (row && feat.included_in && Array.isArray(feat.included_in)) {
+                               feat.included_in.forEach(planIdx => {
+                                   const cb = row.querySelector('.wpc-feature-plan-checkbox.plan-' + planIdx);
+                                   if (cb) cb.checked = true;
+                               });
+                           }
+                       });
+                   }
+                }
+
+                // 8. Custom Fields
+                if (data.custom_fields && Array.isArray(data.custom_fields)) {
+                    const container = document.getElementById('wpc-custom-fields-container');
+                    const addBtn = document.getElementById('wpc-add-custom-field');
+                    
+                    data.custom_fields.forEach(field => {
+                        if(addBtn) addBtn.click();
+                        const row = container.lastElementChild;
+                        if (!row) return;
+                        
+                        const nameInput = row.querySelector('input[name*="[name]"]');
+                        const valInput = row.querySelector('input[name*="[value]"]');
+                        
+                        if (nameInput) nameInput.value = field.name || '';
+                        if (valInput) valInput.value = field.value || '';
+                    });
+                }
+
+                // 9. Categories & Tags (Async)
+                if (data.categories && Array.isArray(data.categories)) {
+                    await wpcProcessTerms('comparison_category', data.categories, 'wpc-cat-list');
+                }
+                if (data.tags && Array.isArray(data.tags)) {
+                    await wpcProcessTerms('comparison_feature', data.tags, 'wpc-feature-list');
+                }
+
+                wpcShowToast('Import Complete! Please save the post.');
+            }
+
+            // Sync Plan Table Headers in DOM
+            function wpcSyncPlanHeaders(pricingPlans) {
+                // Update Global JS Variable
+                window.wpcPlanNames = pricingPlans.map(p => p.name || 'Plan');
+                
+                // Rebuild Table Header
+                const theadRow = document.querySelector('#wpc-features-table thead tr');
+                if (!theadRow) return;
+
+                // Keep First Column (Feature Name)
+                const firstTh = theadRow.firstElementChild;
+                
+                // Clear the rest
+                theadRow.innerHTML = '';
+                theadRow.appendChild(firstTh);
+
+                // Add Plan Columns
+                window.wpcPlanNames.forEach((name, idx) => {
+                    const th = document.createElement('th');
+                    th.style.padding = '10px';
+                    th.style.textAlign = 'center';
+                    th.style.borderBottom = '2px solid #e2e8f0';
+                    th.style.minWidth = '100px';
+                    th.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                            <span>${name.replace(/</g, "&lt;")}</span>
+                            <label style="font-size: 10px; color: #6366f1; cursor: pointer; font-weight: normal;">
+                                <input type="checkbox" class="wpc-select-all-plan" data-plan-idx="${idx}" onchange="wpcToggleAllForPlan(${idx}, this.checked)" style="margin-right: 3px;" />
+                                Select All
+                            </label>
+                        </div>
+                    `;
+                    theadRow.appendChild(th);
+                });
+
+                // Add Remove Column
+                const lastTh = document.createElement('th');
+                lastTh.style.padding = '10px';
+                lastTh.style.width = '60px';
+                lastTh.style.borderBottom = '2px solid #e2e8f0';
+                theadRow.appendChild(lastTh);
+            }
+
+            async function wpcProcessTerms(taxonomy, names, listId) {
+                const list = document.getElementById(listId);
+                if (!list) return;
+
+                for (const name of names) {
+                    // Check if exists
+                    let found = false;
+                    const labels = list.querySelectorAll('label');
+                    for (const label of labels) {
+                        if (label.innerText.trim().toLowerCase() === name.toLowerCase()) {
+                            const input = label.querySelector('input');
+                            if (input) {
+                                input.checked = true;
+                                if (taxonomy === 'comparison_category') wpcSyncPrimaryCats(input);
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        // Create new via AJAX
+                        try {
+                            await wpcAddTermAsync(taxonomy, name);
+                        } catch (e) {
+                            console.error('Failed to add term:', name, e);
+                        }
+                    }
+                }
+            }
+
+            function wpcAddTermAsync(taxonomy, name) {
+                return new Promise((resolve, reject) => {
+                    jQuery.post(ajaxurl, {
+                        action: 'wpc_add_term',
+                        taxonomy: taxonomy,
+                        term_name: name,
+                        _ajax_nonce: '<?php echo wp_create_nonce('wpc_add_term_nonce'); ?>'
+                    }, function(response) {
+                        if (response.success) {
+                            var term = response.data;
+                            var listId = taxonomy === 'comparison_category' ? 'wpc-cat-list' : 'wpc-feature-list';
+                            var html = '';
+                            if (taxonomy === 'comparison_category') {
+                                 html = '<label style="display:block;"><input type="checkbox" name="wpc_category[]" value="' + term.term_id + '" checked onchange="wpcSyncPrimaryCats(this)" /> ' + term.name + '</label>';
+                                 var primaryHtml = '<label style="display:block;" data-term-id="' + term.term_id + '" class="wpc-primary-option"><input type="checkbox" name="wpc_primary_cats[]" value="' + term.term_id + '" /> ' + term.name + '</label>';
+                                 jQuery('#wpc-primary-cat-list').append(primaryHtml);
+                            } else {
+                                 html = '<label style="display:block;"><input type="checkbox" name="wpc_features[]" value="' + term.term_id + '" checked /> ' + term.name + '</label>';
+                            }
+                            jQuery('#' + listId).append(html);
+                            resolve(term);
+                        } else {
+                            reject(response);
+                        }
+                    });
+                });
+            }
+            </script>
+        </div>
 
     <script>
     // Tab Switching Logic
@@ -1507,6 +2000,21 @@ function wpc_save_meta_box( $post_id ) {
         update_post_meta( $post_id, '_wpc_show_plan_links', '1' );
     } else {
         delete_post_meta( $post_id, '_wpc_show_plan_links' );
+    }
+
+    // Show Plan Links in Popup
+    if ( isset( $_POST['wpc_show_plan_links_popup'] ) ) {
+        update_post_meta( $post_id, '_wpc_show_plan_links_popup', '1' );
+    } else {
+        delete_post_meta( $post_id, '_wpc_show_plan_links_popup' );
+    }
+
+    // Button Positions
+    if ( isset( $_POST['wpc_table_btn_pos'] ) ) {
+        update_post_meta( $post_id, '_wpc_table_btn_pos', sanitize_text_field( $_POST['wpc_table_btn_pos'] ) );
+    }
+    if ( isset( $_POST['wpc_popup_btn_pos'] ) ) {
+        update_post_meta( $post_id, '_wpc_popup_btn_pos', sanitize_text_field( $_POST['wpc_popup_btn_pos'] ) );
     }
 
     // Save Terms (Category - Multiple)

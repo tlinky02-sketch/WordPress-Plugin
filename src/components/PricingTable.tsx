@@ -39,10 +39,24 @@ const PricingTable = ({
 
     // Helper to check if a specific plan should show its button in current context
     const shouldShowPlanButton = (plan: any) => {
+        // --- LIST-LEVEL OVERRIDE (Highest Priority) ---
+        // Check the new config settings passed from PHP (List > Item > Global cascade)
+        if (displayContext === 'popup') {
+            // If List-level says hide popup buttons, respect that
+            if (config?.showSelectPopup === false) {
+                return false;
+            }
+        } else {
+            // If List-level says hide table buttons, respect that
+            if (config?.showSelectTable === false) {
+                return false;
+            }
+        }
+
         // Backward compatibility fallback to show_button
         const showMeta = plan.show_button === '1';
 
-        // 1. Check strict context overrides first
+        // 1. Check strict context overrides first (per-plan settings)
         if (displayContext === 'popup') {
             if (plan.show_popup !== undefined) {
                 return plan.show_popup === '1';
@@ -102,6 +116,18 @@ const PricingTable = ({
 
     // Footer Visibility Logic
     const resolvedShowFooter = (() => {
+        // --- LIST-LEVEL OVERRIDE (Highest Priority) ---
+        // Check the new config settings passed from PHP (List > Item > Global cascade)
+        if (displayContext === 'popup') {
+            if (config?.showFooterPopup === false) {
+                return false;
+            }
+        } else {
+            if (config?.showFooterTable === false) {
+                return false;
+            }
+        }
+
         // 1. Top-Level Item Override (Specific context - Independent of Design Overrides)
         if (displayContext === 'popup') {
             if (item.show_footer_popup !== undefined && item.show_footer_popup !== '') {

@@ -345,6 +345,51 @@ function wpc_render_list_meta_box( $post ) {
                     </div>
                 </div>
 
+                <!-- Pricing Table & Popup Button Settings -->
+                <div class="wpc-field-group" style="margin-top: 15px;">
+                    <h3 style="margin-top:0;">Pricing Table & Popup Settings</h3>
+                    <p class="description">Control button visibility and features column for pricing tables and popups in this list.</p>
+                    <div class="wpc-flex-row">
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">"Select" Buttons</label>
+                            <?php 
+                            $show_select_table = get_post_meta($post->ID, '_wpc_list_show_select_table', true); if($show_select_table === '') $show_select_table = '1';
+                            $show_select_popup = get_post_meta($post->ID, '_wpc_list_show_select_popup', true); if($show_select_popup === '') $show_select_popup = '1';
+                            ?>
+                            <label style="display: block;"><input type="checkbox" name="wpc_list_show_select_table" value="1" <?php checked('1', $show_select_table); ?> /> Show in Table</label>
+                            <label style="display: block;"><input type="checkbox" name="wpc_list_show_select_popup" value="1" <?php checked('1', $show_select_popup); ?> /> Show in Popup</label>
+                        </div>
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">Footer Button</label>
+                            <?php 
+                            $show_footer_table = get_post_meta($post->ID, '_wpc_list_show_footer_table', true); if($show_footer_table === '') $show_footer_table = '1';
+                            $show_footer_popup = get_post_meta($post->ID, '_wpc_list_show_footer_popup', true); if($show_footer_popup === '') $show_footer_popup = '1';
+                            ?>
+                            <label style="display: block;"><input type="checkbox" name="wpc_list_show_footer_table" value="1" <?php checked('1', $show_footer_table); ?> /> Show in Table</label>
+                            <label style="display: block;"><input type="checkbox" name="wpc_list_show_footer_popup" value="1" <?php checked('1', $show_footer_popup); ?> /> Show in Popup</label>
+                        </div>
+                        <div class="wpc-flex-item">
+                            <label class="wpc-field-label">Features Column</label>
+                            <?php 
+                            $hide_features = get_post_meta($post->ID, '_wpc_list_hide_features', true);
+                            ?>
+                            <label style="display: block;"><input type="checkbox" name="wpc_list_hide_features" value="1" <?php checked('1', $hide_features); ?> /> Hide "Features" Column</label>
+                        </div>
+                    </div>
+                    <button type="button" class="button button-small" style="margin-top: 10px;" onclick="wpcResetPricingSettings()">🔄 Reset to Defaults</button>
+                </div>
+                <script>
+                function wpcResetPricingSettings() {
+                    jQuery('[name="wpc_list_show_select_table"]').prop('checked', true);
+                    jQuery('[name="wpc_list_show_select_popup"]').prop('checked', true);
+                    jQuery('[name="wpc_list_show_footer_table"]').prop('checked', true);
+                    jQuery('[name="wpc_list_show_footer_popup"]').prop('checked', true);
+                    jQuery('[name="wpc_list_hide_features"]').prop('checked', false);
+                    jQuery('[name="wpc_list_pt_btn_pos_table"]').val('default');
+                    jQuery('[name="wpc_list_pt_btn_pos_popup"]').val('default');
+                }
+                </script>
+
                 <div class="wpc-field-group">
                     <h3 style="margin-top:0;">Link Target Behavior (New Tab vs Same Tab)</h3>
                     <div class="wpc-flex-row">
@@ -623,6 +668,31 @@ function wpc_render_list_meta_box( $post ) {
                     <div class="wpc-flex-item">
                         <label class="wpc-field-label">Month Suffix (/mo)</label>
                         <input type="text" name="wpc_list_txt_mo_suffix" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_mo_suffix', true) ?: '/mo' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Table & Popup Labels -->
+            <div class="wpc-field-group">
+                <h3 style="margin-top:0;">Pricing Table & Popup Labels</h3>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Select Plan" Button Text</label>
+                        <input type="text" name="wpc_list_txt_select_plan" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_select_plan', true) ?: 'Select' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Plan" Column Header</label>
+                        <input type="text" name="wpc_list_txt_pt_plan" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_pt_plan', true) ?: 'Plan' ); ?>" style="width: 100%;" />
+                    </div>
+                </div>
+                <div class="wpc-flex-row">
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Price" Column Header (Table)</label>
+                        <input type="text" name="wpc_list_txt_pt_price" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_pt_price', true) ?: 'Price' ); ?>" style="width: 100%;" />
+                    </div>
+                    <div class="wpc-flex-item">
+                        <label class="wpc-field-label">"Features" Column Header (Table)</label>
+                        <input type="text" name="wpc_list_txt_pt_features" value="<?php echo esc_attr( get_post_meta($post->ID, '_wpc_list_txt_pt_features', true) ?: 'Features' ); ?>" style="width: 100%;" />
                     </div>
                 </div>
             </div>
@@ -1092,6 +1162,13 @@ function wpc_save_list_meta( $post_id ) {
     // Save Visibility Flags
     update_post_meta( $post_id, '_wpc_list_show_rating', isset($_POST['wpc_list_show_rating']) ? '1' : '0' );
     update_post_meta( $post_id, '_wpc_list_show_price', isset($_POST['wpc_list_show_price']) ? '1' : '0' );
+
+    // Save Pricing Table & Popup Visibility Flags
+    update_post_meta( $post_id, '_wpc_list_show_select_table', isset($_POST['wpc_list_show_select_table']) ? '1' : '0' );
+    update_post_meta( $post_id, '_wpc_list_show_select_popup', isset($_POST['wpc_list_show_select_popup']) ? '1' : '0' );
+    update_post_meta( $post_id, '_wpc_list_show_footer_table', isset($_POST['wpc_list_show_footer_table']) ? '1' : '0' );
+    update_post_meta( $post_id, '_wpc_list_show_footer_popup', isset($_POST['wpc_list_show_footer_popup']) ? '1' : '0' );
+    update_post_meta( $post_id, '_wpc_list_hide_features', isset($_POST['wpc_list_hide_features']) ? '1' : '0' );
     
     // Save List Style
     if ( isset( $_POST['wpc_list_style'] ) ) {
@@ -1173,7 +1250,12 @@ function wpc_save_list_meta( $post_id ) {
         // Additional UI Texts
         '_wpc_list_txt_show_all',
         '_wpc_list_txt_reveal_more',
-        '_wpc_list_txt_no_logo'
+        '_wpc_list_txt_no_logo',
+        // Pricing Table & Popup Labels
+        '_wpc_list_txt_select_plan',
+        '_wpc_list_txt_pt_plan',
+        '_wpc_list_txt_pt_price',
+        '_wpc_list_txt_pt_features'
     ];
 
     foreach ($text_fields as $field) {
