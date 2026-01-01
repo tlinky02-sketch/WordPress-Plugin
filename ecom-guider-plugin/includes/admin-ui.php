@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -79,6 +79,7 @@ function wpc_render_meta_box( $post ) {
             <li onclick="wpcOpenItemTab(event, 'pricing')">Pricing Plans</li>
             <li onclick="wpcOpenItemTab(event, 'content')">Content & Footer</li>
             <li onclick="wpcOpenItemTab(event, 'taxonomy')">Categories & Tags</li>
+            <li onclick="wpcOpenItemTab(event, 'plan_features')">Plan Features</li>
             <li onclick="wpcOpenItemTab(event, 'seo')">SEO Schema</li>
         </ul>
 
@@ -445,19 +446,96 @@ function wpc_render_meta_box( $post ) {
 
         <!-- TAB: CONTENT -->
         <div id="wpc-tab-content" class="wpc-tab-content">
-            <h3 class="wpc-section-title">Pros & Cons</h3>
+            <?php
+            // Get global text settings as defaults
+            $global_pros_label = get_option( 'wpc_text_pros', 'Pros' );
+            $global_cons_label = get_option( 'wpc_text_cons', 'Cons' );
+            
+            // Get per-item overrides
+            $item_pros_label = get_post_meta( $post->ID, '_wpc_txt_pros_label', true );
+            $item_cons_label = get_post_meta( $post->ID, '_wpc_txt_cons_label', true );
+            ?>
+            
+            <h3 class="wpc-section-title"><?php _e( 'Pros & Cons', 'wp-comparison-builder' ); ?></h3>
+            
+            <!-- Label Customization -->
+            <div class="wpc-row" style="margin-bottom: 15px; padding: 10px; background: #f9fafb; border-radius: 4px;">
+                <div class="wpc-col">
+                    <label class="wpc-label" style="font-size: 11px; color: #64748b;"><?php _e( '"Pros" Label Override', 'wp-comparison-builder' ); ?></label>
+                    <input type="text" name="wpc_txt_pros_label" value="<?php echo esc_attr( $item_pros_label ); ?>" class="wpc-input" placeholder="<?php echo esc_attr( $global_pros_label ); ?> (global default)" style="font-size: 12px;" />
+                </div>
+                <div class="wpc-col">
+                    <label class="wpc-label" style="font-size: 11px; color: #64748b;"><?php _e( '"Cons" Label Override', 'wp-comparison-builder' ); ?></label>
+                    <input type="text" name="wpc_txt_cons_label" value="<?php echo esc_attr( $item_cons_label ); ?>" class="wpc-input" placeholder="<?php echo esc_attr( $global_cons_label ); ?> (global default)" style="font-size: 12px;" />
+                </div>
+            </div>
+            
             <div class="wpc-row">
                 <div class="wpc-col">
-                    <label class="wpc-label">Pros (One per line)</label>
+                    <label class="wpc-label"><?php echo esc_html( $item_pros_label ?: $global_pros_label ); ?> <?php _e( '(One per line)', 'wp-comparison-builder' ); ?></label>
                     <textarea name="wpc_pros" rows="6" class="wpc-input"><?php echo esc_textarea( $pros ); ?></textarea>
                 </div>
                 <div class="wpc-col">
-                    <label class="wpc-label">Cons (One per line)</label>
+                    <label class="wpc-label"><?php echo esc_html( $item_cons_label ?: $global_cons_label ); ?> <?php _e( '(One per line)', 'wp-comparison-builder' ); ?></label>
                     <textarea name="wpc_cons" rows="6" class="wpc-input"><?php echo esc_textarea( $cons ); ?></textarea>
                 </div>
             </div>
+            
+            <!-- Text Label Overrides (Collapsible) -->
+            <div style="margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <div onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'; this.querySelector('.toggle-icon').textContent = this.nextElementSibling.style.display === 'none' ? '▶' : '▼';" 
+                     style="background: #f8fafc; padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 13px;">📝 <?php _e( 'Text Label Overrides', 'wp-comparison-builder' ); ?></strong>
+                    <span class="toggle-icon" style="font-size: 10px; color: #94a3b8;">▶</span>
+                </div>
+                <div style="display: none; padding: 15px; background: #fff;">
+                    <p class="description" style="margin-top: 0; margin-bottom: 15px; font-size: 11px; color: #64748b;">
+                        <?php _e( 'Leave blank to use global settings. These override global defaults for this item only.', 'wp-comparison-builder' ); ?>
+                    </p>
+                    
+                    <?php
+                    // Get current per-item overrides
+                    $txt_price_label = get_post_meta( $post->ID, '_wpc_txt_price_label', true );
+                    $txt_rating_label = get_post_meta( $post->ID, '_wpc_txt_rating_label', true );
+                    $txt_mo_suffix = get_post_meta( $post->ID, '_wpc_txt_mo_suffix', true );
+                    $txt_visit_site = get_post_meta( $post->ID, '_wpc_txt_visit_site', true );
+                    $txt_coupon_label = get_post_meta( $post->ID, '_wpc_txt_coupon_label', true );
+                    $txt_feature_header = get_post_meta( $post->ID, '_wpc_txt_feature_header', true );
+                    ?>
+                    
+                    <div class="wpc-row" style="gap: 10px; margin-bottom: 10px;">
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Price" Column', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_price_label" value="<?php echo esc_attr( $txt_price_label ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_price', 'Price' ) ); ?>" />
+                        </div>
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Rating" Column', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_rating_label" value="<?php echo esc_attr( $txt_rating_label ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_rating', 'Rating' ) ); ?>" />
+                        </div>
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"/mo" Suffix', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_mo_suffix" value="<?php echo esc_attr( $txt_mo_suffix ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_mo_suffix', '/mo' ) ); ?>" />
+                        </div>
+                    </div>
+                    
+                    <div class="wpc-row" style="gap: 10px;">
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Visit Site" Button', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_visit_site" value="<?php echo esc_attr( $txt_visit_site ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_visit_site', 'Visit Site' ) ); ?>" />
+                        </div>
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Code" (Coupon)', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_coupon_label" value="<?php echo esc_attr( $txt_coupon_label ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_coupon_label', 'Code' ) ); ?>" />
+                        </div>
+                        <div class="wpc-col">
+                            <label class="wpc-label" style="font-size: 11px;"><?php _e( '"Feature" Header', 'wp-comparison-builder' ); ?></label>
+                            <input type="text" name="wpc_txt_feature_header" value="<?php echo esc_attr( $txt_feature_header ); ?>" class="wpc-input" style="font-size: 12px;" placeholder="<?php echo esc_attr( get_option( 'wpc_text_feat_header', 'Feature' ) ); ?>" />
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <h3 class="wpc-section-title" style="margin-top:20px;">Compare Alternatives</h3>
+            <h3 class="wpc-section-title" style="margin-top:20px;"><?php _e( 'Compare Alternatives', 'wp-comparison-builder' ); ?></h3>
              <div class="wpc-row">
                 <div class="wpc-col">
                     <label class="wpc-label"><?php _e( 'Select Competitors', 'wp-comparison-builder' ); ?></label>
@@ -623,6 +701,247 @@ function wpc_render_meta_box( $post ) {
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- TAB: PLAN FEATURES -->
+        <div id="wpc-tab-plan_features" class="wpc-tab-content">
+            <?php
+            // Get pricing plans for column headers
+            $pricing_plans = get_post_meta( $post->ID, '_wpc_pricing_plans', true );
+            if ( ! is_array( $pricing_plans ) ) $pricing_plans = array();
+            
+            // Filter to only plans with names
+            $plan_names = array();
+            foreach ( $pricing_plans as $idx => $plan ) {
+                if ( ! empty( $plan['name'] ) ) {
+                    $plan_names[$idx] = $plan['name'];
+                }
+            }
+            
+            // Get saved features
+            $plan_features = get_post_meta( $post->ID, '_wpc_plan_features', true );
+            if ( ! is_array( $plan_features ) ) $plan_features = array();
+            
+            // Get display options
+            $feature_table_options = get_post_meta( $post->ID, '_wpc_feature_table_options', true );
+            if ( ! is_array( $feature_table_options ) ) $feature_table_options = array();
+            ?>
+            
+            <!-- Shortcode Display -->
+            <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:15px; border-radius:5px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color: #0284c7; font-size:14px;">Feature Table Shortcode</h3>
+                <p style="margin-bottom: 10px; font-size:13px;">Use this shortcode to display a feature comparison table:</p>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <code style="background:#fff; padding:8px 12px; border:1px solid #dde1e5; border-radius:4px; font-size:13px; color:#c02b5c;">
+                        [wpc_feature_table id="<?php echo $post->ID; ?>"]
+                    </code>
+                    <button type="button" class="button" onclick="wpcCopyFeatureTableShortcode('<?php echo $post->ID; ?>', this)">Copy</button>
+                </div>
+            </div>
+            
+            <script>
+            function wpcCopyFeatureTableShortcode(id, btn) {
+                var text = '[wpc_feature_table id="' + id + '"]';
+                if (!navigator.clipboard) {
+                    var textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    btn.innerText = 'Copied!';
+                    setTimeout(function() { btn.innerText = 'Copy'; }, 2000);
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(function() {
+                    btn.innerText = 'Copied!';
+                    setTimeout(function() { btn.innerText = 'Copy'; }, 2000);
+                });
+            }
+            </script>
+            
+            <?php if ( empty( $plan_names ) ) : ?>
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <strong>⚠️ No Pricing Plans Found</strong>
+                    <p style="margin: 5px 0 0;">Please add pricing plans in the "Pricing Plans" tab first. The plan names will become columns in the feature table.</p>
+                </div>
+            <?php else : ?>
+            
+            <!-- Display Options -->
+            <div class="wpc-row" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;">
+                <div class="wpc-col">
+                    <h3 class="wpc-section-title"><?php _e( 'Display Options', 'wp-comparison-builder' ); ?></h3>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <label>
+                            <input type="radio" name="wpc_feature_table_options[display_mode]" value="full_table" <?php checked( ( $feature_table_options['display_mode'] ?? 'full_table' ), 'full_table' ); ?> />
+                            <?php _e( 'Full Table (Plans + Check/X)', 'wp-comparison-builder' ); ?>
+                        </label>
+                        <label>
+                            <input type="radio" name="wpc_feature_table_options[display_mode]" value="features_only" <?php checked( ( $feature_table_options['display_mode'] ?? '' ), 'features_only' ); ?> />
+                            <?php _e( 'Features Only (No Plans)', 'wp-comparison-builder' ); ?>
+                        </label>
+                    </div>
+                </div>
+                <div class="wpc-col">
+                    <label class="wpc-label"><?php _e( 'Header Label', 'wp-comparison-builder' ); ?></label>
+                    <input type="text" name="wpc_feature_table_options[header_label]" value="<?php echo esc_attr( $feature_table_options['header_label'] ?? '' ); ?>" class="wpc-input" placeholder="Key Features" />
+                </div>
+            </div>
+            
+            <!-- Color Overrides -->
+            <div class="wpc-row" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;">
+                <div class="wpc-col" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+                    <div>
+                        <label class="wpc-label"><?php _e( 'Header BG', 'wp-comparison-builder' ); ?></label>
+                        <input type="color" name="wpc_feature_table_options[header_bg]" value="<?php echo esc_attr( $feature_table_options['header_bg'] ?? '#f3f4f6' ); ?>" style="width: 50px; height: 35px; padding: 0; border: 1px solid #ddd; cursor: pointer;" />
+                    </div>
+                    <div>
+                        <label class="wpc-label"><?php _e( 'Check Color', 'wp-comparison-builder' ); ?></label>
+                        <input type="color" name="wpc_feature_table_options[check_color]" value="<?php echo esc_attr( $feature_table_options['check_color'] ?? '#10b981' ); ?>" style="width: 50px; height: 35px; padding: 0; border: 1px solid #ddd; cursor: pointer;" />
+                    </div>
+                    <div>
+                        <label class="wpc-label"><?php _e( 'X Color', 'wp-comparison-builder' ); ?></label>
+                        <input type="color" name="wpc_feature_table_options[x_color]" value="<?php echo esc_attr( $feature_table_options['x_color'] ?? '#ef4444' ); ?>" style="width: 50px; height: 35px; padding: 0; border: 1px solid #ddd; cursor: pointer;" />
+                    </div>
+                    <div>
+                        <label class="wpc-label"><?php _e( 'Alt Row', 'wp-comparison-builder' ); ?></label>
+                        <input type="color" name="wpc_feature_table_options[alt_row_bg]" value="<?php echo esc_attr( $feature_table_options['alt_row_bg'] ?? '#f9fafb' ); ?>" style="width: 50px; height: 35px; padding: 0; border: 1px solid #ddd; cursor: pointer;" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Features Table -->
+            <h3 class="wpc-section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <?php _e( 'Features List', 'wp-comparison-builder' ); ?>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="button button-small" onclick="wpcToggleBulkPaste()">📋 Bulk Paste</button>
+                    <button type="button" class="button button-small" onclick="wpcAddFeatureRow()">+ Add Feature</button>
+                </div>
+            </h3>
+            
+            <!-- Bulk Paste Area (Hidden by default) -->
+            <div id="wpc-bulk-paste-area" style="display: none; margin-bottom: 15px; padding: 15px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px;">
+                <label class="wpc-label" style="margin-bottom: 8px;">📋 <?php _e( 'Paste Features (one per line)', 'wp-comparison-builder' ); ?></label>
+                <textarea id="wpc-bulk-features" rows="6" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" placeholder="Feature 1&#10;Feature 2&#10;Feature 3&#10;..."></textarea>
+                <div style="margin-top: 10px; display: flex; gap: 10px;">
+                    <button type="button" class="button button-primary" onclick="wpcAddBulkFeatures()">Add All Features</button>
+                    <button type="button" class="button" onclick="wpcToggleBulkPaste()">Cancel</button>
+                </div>
+                <p class="description" style="margin-top: 8px; font-size: 11px; color: #666;">
+                    <?php _e( 'Paste your features list above. After saving, you can select which plans include each feature.', 'wp-comparison-builder' ); ?>
+                </p>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table id="wpc-features-table" style="width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; min-width: 200px;"><?php _e( 'Feature Name', 'wp-comparison-builder' ); ?></th>
+                            <?php foreach ( $plan_names as $plan_idx => $plan_name ) : ?>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0; min-width: 100px;">
+                                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                        <span><?php echo esc_html( $plan_name ); ?></span>
+                                        <label style="font-size: 10px; color: #6366f1; cursor: pointer; font-weight: normal;">
+                                            <input type="checkbox" class="wpc-select-all-plan" data-plan-idx="<?php echo $plan_idx; ?>" onchange="wpcToggleAllForPlan(<?php echo $plan_idx; ?>, this.checked)" style="margin-right: 3px;" />
+                                            Select All
+                                        </label>
+                                    </div>
+                                </th>
+                            <?php endforeach; ?>
+                            <th style="padding: 10px; width: 60px; border-bottom: 2px solid #e2e8f0;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="wpc-features-tbody">
+                        <?php if ( ! empty( $plan_features ) ) : ?>
+                            <?php foreach ( $plan_features as $f_idx => $feature ) : ?>
+                                <tr style="border-bottom: 1px solid #f0f0f0;">
+                                    <td style="padding: 8px;">
+                                        <input type="text" name="wpc_plan_features[<?php echo $f_idx; ?>][name]" value="<?php echo esc_attr( $feature['name'] ?? '' ); ?>" placeholder="Feature name" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;" />
+                                    </td>
+                                    <?php foreach ( $plan_names as $plan_idx => $plan_name ) : ?>
+                                        <td style="padding: 8px; text-align: center;">
+                                            <input type="checkbox" class="wpc-feature-plan-checkbox plan-<?php echo $plan_idx; ?>" name="wpc_plan_features[<?php echo $f_idx; ?>][plans][<?php echo $plan_idx; ?>]" value="1" <?php checked( ! empty( $feature['plans'][$plan_idx] ) ); ?> style="width: 18px; height: 18px;" />
+                                        </td>
+                                    <?php endforeach; ?>
+                                    <td style="padding: 8px; text-align: center;">
+                                        <button type="button" class="button button-small" onclick="this.closest('tr').remove()" title="Remove">&times;</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <script>
+            var wpcFeatureIndex = <?php echo max( 0, count( $plan_features ) ); ?>;
+            var wpcPlanNames = <?php echo json_encode( $plan_names ); ?>;
+            
+            // Toggle Bulk Paste Area
+            function wpcToggleBulkPaste() {
+                var area = document.getElementById('wpc-bulk-paste-area');
+                area.style.display = area.style.display === 'none' ? 'block' : 'none';
+                if (area.style.display === 'block') {
+                    document.getElementById('wpc-bulk-features').focus();
+                }
+            }
+            
+            // Add features from bulk paste
+            function wpcAddBulkFeatures() {
+                var textarea = document.getElementById('wpc-bulk-features');
+                var lines = textarea.value.split('\n');
+                var added = 0;
+                
+                lines.forEach(function(line) {
+                    var name = line.trim();
+                    if (name) {
+                        wpcAddFeatureRow(name);
+                        added++;
+                    }
+                });
+                
+                textarea.value = '';
+                wpcToggleBulkPaste();
+                
+                if (added > 0) {
+                    alert('Added ' + added + ' features. Save the post to persist changes, then select which plans include each feature.');
+                }
+            }
+            
+            // Toggle all checkboxes for a specific plan
+            function wpcToggleAllForPlan(planIdx, checked) {
+                var checkboxes = document.querySelectorAll('.wpc-feature-plan-checkbox.plan-' + planIdx);
+                checkboxes.forEach(function(cb) {
+                    cb.checked = checked;
+                });
+            }
+            
+            function wpcAddFeatureRow(featureName) {
+                featureName = featureName || '';
+                var tbody = document.getElementById('wpc-features-tbody');
+                var tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f0f0f0';
+                
+                var html = '<td style="padding: 8px;"><input type="text" name="wpc_plan_features[' + wpcFeatureIndex + '][name]" value="' + featureName.replace(/"/g, '&quot;') + '" placeholder="Feature name" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;" /></td>';
+                
+                for (var planIdx in wpcPlanNames) {
+                    html += '<td style="padding: 8px; text-align: center;"><input type="checkbox" class="wpc-feature-plan-checkbox plan-' + planIdx + '" name="wpc_plan_features[' + wpcFeatureIndex + '][plans][' + planIdx + ']" value="1" style="width: 18px; height: 18px;" /></td>';
+                }
+                
+                html += '<td style="padding: 8px; text-align: center;"><button type="button" class="button button-small" onclick="this.closest(\'tr\').remove()" title="Remove">&times;</button></td>';
+                
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+                wpcFeatureIndex++;
+                
+                // Focus the new input only if no name was provided
+                if (!featureName) {
+                    tr.querySelector('input[type="text"]').focus();
+                }
+            }
+            </script>
+            
+            <?php endif; ?>
         </div>
 
         <!-- TAB: SEO -->
@@ -1079,6 +1398,34 @@ function wpc_save_meta_box( $post_id ) {
     if ( isset( $_POST['wpc_cons'] ) ) {
         update_post_meta( $post_id, '_wpc_cons', sanitize_textarea_field( $_POST['wpc_cons'] ) );
     }
+    
+    // Save Pros/Cons label overrides
+    if ( isset( $_POST['wpc_txt_pros_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_pros_label', sanitize_text_field( $_POST['wpc_txt_pros_label'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_cons_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_cons_label', sanitize_text_field( $_POST['wpc_txt_cons_label'] ) );
+    }
+    
+    // Save additional text label overrides
+    if ( isset( $_POST['wpc_txt_price_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_price_label', sanitize_text_field( $_POST['wpc_txt_price_label'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_rating_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_rating_label', sanitize_text_field( $_POST['wpc_txt_rating_label'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_mo_suffix'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_mo_suffix', sanitize_text_field( $_POST['wpc_txt_mo_suffix'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_visit_site'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_visit_site', sanitize_text_field( $_POST['wpc_txt_visit_site'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_coupon_label'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_coupon_label', sanitize_text_field( $_POST['wpc_txt_coupon_label'] ) );
+    }
+    if ( isset( $_POST['wpc_txt_feature_header'] ) ) {
+        update_post_meta( $post_id, '_wpc_txt_feature_header', sanitize_text_field( $_POST['wpc_txt_feature_header'] ) );
+    }
     if ( isset( $_POST['wpc_coupon_code'] ) ) {
         update_post_meta( $post_id, '_wpc_coupon_code', sanitize_text_field( $_POST['wpc_coupon_code'] ) );
     }
@@ -1159,6 +1506,41 @@ function wpc_save_meta_box( $post_id ) {
         update_post_meta( $post_id, '_wpc_primary_cats', $primary_ids );
     } else {
         delete_post_meta( $post_id, '_wpc_primary_cats' );
+    }
+
+    // Save Plan Features
+    if ( isset( $_POST['wpc_plan_features'] ) && is_array( $_POST['wpc_plan_features'] ) ) {
+        $features = array();
+        foreach ( $_POST['wpc_plan_features'] as $f ) {
+            if ( ! empty( $f['name'] ) ) { // Only save if has name
+                $feature_data = array(
+                    'name' => sanitize_text_field( $f['name'] ),
+                    'plans' => array()
+                );
+                if ( isset( $f['plans'] ) && is_array( $f['plans'] ) ) {
+                    foreach ( $f['plans'] as $plan_idx => $val ) {
+                        $feature_data['plans'][ intval( $plan_idx ) ] = '1';
+                    }
+                }
+                $features[] = $feature_data;
+            }
+        }
+        update_post_meta( $post_id, '_wpc_plan_features', $features );
+    } else {
+        delete_post_meta( $post_id, '_wpc_plan_features' );
+    }
+
+    // Save Feature Table Options
+    if ( isset( $_POST['wpc_feature_table_options'] ) && is_array( $_POST['wpc_feature_table_options'] ) ) {
+        $options = array(
+            'display_mode' => sanitize_text_field( $_POST['wpc_feature_table_options']['display_mode'] ?? 'full_table' ),
+            'header_label' => sanitize_text_field( $_POST['wpc_feature_table_options']['header_label'] ?? '' ),
+            'header_bg'    => sanitize_hex_color( $_POST['wpc_feature_table_options']['header_bg'] ?? '#f3f4f6' ),
+            'check_color'  => sanitize_hex_color( $_POST['wpc_feature_table_options']['check_color'] ?? '#10b981' ),
+            'x_color'      => sanitize_hex_color( $_POST['wpc_feature_table_options']['x_color'] ?? '#ef4444' ),
+            'alt_row_bg'   => sanitize_hex_color( $_POST['wpc_feature_table_options']['alt_row_bg'] ?? '#f9fafb' ),
+        );
+        update_post_meta( $post_id, '_wpc_feature_table_options', $options );
     }
 
     // Save Pricing Table Design

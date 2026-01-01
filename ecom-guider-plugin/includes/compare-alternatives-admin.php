@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 add_action( 'admin_menu', 'wpc_add_compare_menu' );
 function wpc_add_compare_menu() {
-    add_submenu_page(
+    $hook = add_submenu_page(
         'edit.php?post_type=comparison_item',
         __( 'Compare Alternatives', 'wp-comparison-builder' ),
         __( 'Compare Alternatives', 'wp-comparison-builder' ),
@@ -16,6 +16,33 @@ function wpc_add_compare_menu() {
         'wpc-compare-alternatives',
         'wpc_compare_alternatives_page'
     );
+    
+    // Add Screen Options
+    add_action( 'load-' . $hook, 'wpc_compare_alternatives_screen_options' );
+}
+
+/**
+ * Add Screen Options for Compare Alternatives Page
+ */
+function wpc_compare_alternatives_screen_options() {
+    $option = 'per_page';
+    $args = array(
+        'label'   => __( 'Items per page', 'wp-comparison-builder' ),
+        'default' => 15,
+        'option'  => 'wpc_compare_items_per_page'
+    );
+    add_screen_option( $option, $args );
+}
+
+/**
+ * Save Screen Options
+ */
+add_filter( 'set-screen-option', 'wpc_compare_set_screen_option', 10, 3 );
+function wpc_compare_set_screen_option( $status, $option, $value ) {
+    if ( 'wpc_compare_items_per_page' === $option ) {
+        return $value;
+    }
+    return $status;
 }
 
 /**
@@ -34,14 +61,36 @@ function wpc_compare_alternatives_page() {
         }
     }
 
-    // Get all items
-    $items = get_posts( array(
+    // Pagination Setup - Get user's screen option preference
+    $user_id = get_current_user_id();
+    $per_page = get_user_meta( $user_id, 'wpc_compare_items_per_page', true );
+    if ( empty( $per_page ) || $per_page < 1 ) {
+        $per_page = 15; // Default
+    }
+    $paged = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
+    
+    // Server-Side Search
+    $search_query = isset( $_GET['wpc_search'] ) ? sanitize_text_field( $_GET['wpc_search'] ) : '';
+    
+    // Main Query
+    $query_args = array(
         'post_type' => 'comparison_item',
-        'posts_per_page' => -1,
+        'posts_per_page' => $per_page,
+        'paged' => $paged,
         'post_status' => array( 'publish', 'draft' ),
         'orderby' => 'title',
         'order' => 'ASC'
-    ));
+    );
+    
+    // Add search to query if present
+    if ( ! empty( $search_query ) ) {
+        $query_args['s'] = $search_query;
+    }
+    
+    $query = new WP_Query( $query_args );
+    $items = $query->posts;
+    $total_items = $query->found_posts;
+    $total_pages = $query->max_num_pages;
 
     ?>
     <!-- Premium UI Helpers (Injected) -->
@@ -64,6 +113,12 @@ function wpc_compare_alternatives_page() {
         /* Loading Spinner */
         .wpc-spinner-icon { width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: currentColor; border-radius: 50%; animation: wpcSpin 0.6s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
         @keyframes wpcSpin { to { transform: rotate(360deg); } }
+        
+        /* Pagination Styles */
+        .wpc-pagination { margin-top: 20px; text-align: center; }
+        .wpc-pagination a, .wpc-pagination span { display: inline-block; padding: 6px 12px; margin: 0 4px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #2271b1; background: #fff; }
+        .wpc-pagination span.current { background: #2271b1; color: #fff; border-color: #2271b1; font-weight: bold; }
+        .wpc-pagination a:hover { background: #f0f6ff; }
     </style>
     
     <div id="wpc-premium-modal" class="wpc-modal-overlay">
@@ -162,25 +217,40 @@ function wpc_compare_alternatives_page() {
         <h1><?php _e( 'Compare Alternatives Settings', 'wp-comparison-builder' ); ?></h1>
         <p><?php _e( 'Configure competitor alternatives for each item. You can set default competitors or save custom comparison sets with specific names.', 'wp-comparison-builder' ); ?></p>
 
-        <!-- Main Search Bar -->
-        <div style="margin: 20px 0; padding: 15px; background: #f0f6ff; border-radius: 8px; border: 1px solid #c3c4c7;">
-            <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- Server-Side Search Bar -->
+        <form method="get" action="" style="margin: 20px 0; padding: 15px; background: #f0f6ff; border-radius: 8px; border: 1px solid #c3c4c7;">
+            <input type="hidden" name="post_type" value="comparison_item" />
+            <input type="hidden" name="page" value="wpc-compare-alternatives" />
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <label for="wpc-main-search" style="font-weight: 600; white-space: nowrap;">
                     &#128269; <?php _e( 'Search Items:', 'wp-comparison-builder' ); ?>
                 </label>
                 <input 
                     type="text" 
                     id="wpc-main-search" 
-                    placeholder="<?php _e( 'Type to filter items...', 'wp-comparison-builder' ); ?>"
+                    name="wpc_search"
+                    value="<?php echo esc_attr( $search_query ); ?>"
+                    placeholder="<?php _e( 'Search all items...', 'wp-comparison-builder' ); ?>"
                     style="flex: 1; max-width: 400px; padding: 8px 12px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 14px;"
                     autocomplete="off"
                 />
-                <span id="wpc-search-count" style="color: #666; font-size: 13px;"></span>
-                <button type="button" id="wpc-clear-search" class="button" style="display: none;">
-                    <?php _e( 'Clear', 'wp-comparison-builder' ); ?>
+                <button type="submit" class="button button-primary">
+                    <?php _e( 'Search', 'wp-comparison-builder' ); ?>
                 </button>
+                <?php if ( ! empty( $search_query ) ) : ?>
+                    <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=comparison_item&page=wpc-compare-alternatives' ) ); ?>" class="button">
+                        <?php _e( 'Clear', 'wp-comparison-builder' ); ?>
+                    </a>
+                    <span style="color: #666; font-size: 13px;">
+                        <?php printf( __( 'Showing %d results for "%s"', 'wp-comparison-builder' ), $total_items, esc_html( $search_query ) ); ?>
+                    </span>
+                <?php else : ?>
+                    <span style="color: #666; font-size: 13px;">
+                        <?php printf( __( 'Total: %d items', 'wp-comparison-builder' ), $total_items ); ?>
+                    </span>
+                <?php endif; ?>
             </div>
-        </div>
+        </form>
 
         <?php wp_nonce_field( 'wpc_comparison_nonce', 'wpc_comparison_nonce_field' ); ?>
 
@@ -198,14 +268,52 @@ function wpc_compare_alternatives_page() {
                 </thead>
                 <tbody>
                     <?php if ( ! empty( $items ) ) : ?>
+                        <?php 
+                        // Perform a single query for ALL items to populate the choice list
+                        // This ensures that the "Select Alternatives" dropdown has all possible items,
+                        // regardless of the current pagination.
+                        if (!isset($all_competitor_candidates)) {
+                            $all_competitor_candidates = get_posts(array(
+                                'post_type' => 'comparison_item',
+                                'posts_per_page' => -1,
+                                'post_status' => 'publish',
+                                'orderby' => 'title',
+                                'order' => 'ASC'
+                            ));
+                        }
+                        ?>
                         <?php foreach ( $items as $item ) : 
                             $selected_competitors = get_post_meta( $item->ID, '_wpc_competitors', true );
                             if ( ! is_array( $selected_competitors ) ) {
                                 $selected_competitors = array();
                             }
                             
-                            // Get other items (exclude current)
-                            $other_items = array_filter( $items, function( $p ) use ( $item ) {
+                            // Get all PUBLISHED items for alternatives list (not just this page)
+                            // We need a lightweight way to get ALL potential competitors, 
+                            // but loading ALL posts inside loop is bad.
+                            // Optimization: Fetch ALL ID/Titles ONCE at top if list is small, or use AJAX for searching?
+                            // For now, let's keep the existing logic but optimize if possible.
+                            // Actually, fetching all posts per row is N+1 query problem.
+                            // Let's optimize: fetch all IDs and titles once above loop.
+                            
+                            // Re-using logic:
+                            // We need to exclude current item from its own list.
+                            
+                            // For this "Select Alternatives" box, user wants scroll.
+                            // We essentially need all other items here.
+                            
+                             // Perform a single query for ALL items to populate the choice list
+                            if (!isset($all_competitor_candidates)) {
+                                $all_competitor_candidates = get_posts(array(
+                                    'post_type' => 'comparison_item',
+                                    'posts_per_page' => -1,
+                                    'post_status' => 'publish',
+                                    'orderby' => 'title',
+                                    'order' => 'ASC'
+                                ));
+                            }
+                            
+                            $other_items = array_filter( $all_competitor_candidates, function( $p ) use ( $item ) {
                                 return $p->ID !== $item->ID;
                             });
                             
@@ -291,9 +399,10 @@ function wpc_compare_alternatives_page() {
                                 </div>
                                 
                                 <?php if ( ! empty( $other_items ) ) : ?>
-                                    <div class="competitors-list" id="competitors-list-<?php echo $item->ID; ?>" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; padding: 10px; background: #f9f9f9; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                                    <!-- Use max-height: 150px for compact scrollable list -->
+                                    <div class="competitors-list" id="competitors-list-<?php echo $item->ID; ?>" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 4px 12px; padding: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; max-height: 150px; overflow-y: auto;">
                                         <?php foreach ( $other_items as $alt ) : ?>
-                                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+                                            <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 0;">
                                                 <input 
                                                     type="checkbox" 
                                                     name="competitors[<?php echo $item->ID; ?>][]" 
@@ -387,6 +496,8 @@ function wpc_compare_alternatives_page() {
                                                         type="button" 
                                                         class="button button-small button-link-delete"
                                                         onclick="deleteComparisonSet(<?php echo $set->id; ?>, this, event)"
+                                                    >
+                                                        &#x274C;
                                                     </button>
                                                 </td>
                                             </tr>
@@ -408,6 +519,22 @@ function wpc_compare_alternatives_page() {
                     <?php endif; ?>
                 </tbody>
             </table>
+            
+            <!-- Pagination Controls -->
+            <?php if ( $total_pages > 1 ) : ?>
+                <div class="wpc-pagination">
+                    <?php
+                    echo paginate_links( array(
+                        'base' => add_query_arg( 'paged', '%#%' ),
+                        'format' => '',
+                        'current' => $paged,
+                        'total' => $total_pages,
+                        'prev_text' => '&laquo; Previous',
+                        'next_text' => 'Next &raquo;',
+                    ) );
+                    ?>
+                </div>
+            <?php endif; ?>
 
             <?php if ( ! empty( $items ) ) : ?>
                 <p class="submit">
@@ -430,48 +557,8 @@ function wpc_compare_alternatives_page() {
     </div>
     
     <script>
-    // Main Search Functionality
+    // Per-row alternatives search (client-side filter within each item's competitor list)
     (function() {
-        const mainSearch = document.getElementById('wpc-main-search');
-        const searchCount = document.getElementById('wpc-search-count');
-        const clearBtn = document.getElementById('wpc-clear-search');
-        const allItemRows = document.querySelectorAll('tr[data-item-id]');
-        const savedSetRows = document.querySelectorAll('tr.saved-sets-row');
-        
-        function updateMainSearch() {
-            const query = mainSearch.value.toLowerCase().trim();
-            let visibleCount = 0;
-            
-            clearBtn.style.display = query ? 'inline-block' : 'none';
-            
-            allItemRows.forEach((row, index) => {
-                const itemName = row.querySelector('td:first-child strong');
-                if (!itemName) return;
-                
-                const name = itemName.textContent.toLowerCase();
-                const matches = !query || name.includes(query);
-                
-                row.style.display = matches ? '' : 'none';
-                
-                // Also hide/show the corresponding saved sets row
-                if (savedSetRows[index]) {
-                    savedSetRows[index].style.display = matches ? '' : 'none';
-                }
-                
-                if (matches) visibleCount++;
-            });
-            
-            searchCount.textContent = query ? `Showing ${visibleCount} of ${allItemRows.length} items` : '';
-        }
-        
-        mainSearch.addEventListener('input', updateMainSearch);
-        clearBtn.addEventListener('click', function() {
-            mainSearch.value = '';
-            updateMainSearch();
-            mainSearch.focus();
-        });
-        
-        // Per-row alternatives search
         document.querySelectorAll('.wpc-alt-search').forEach(searchInput => {
             searchInput.addEventListener('input', function() {
                 const itemId = this.dataset.itemId;
@@ -519,7 +606,7 @@ function wpc_compare_alternatives_page() {
         shortcodeInput.value = shortcodeParts.join('');
     }
     
-    // Toggle Select All checkbox
+    // Toggle Select All checkbox (Check all / Uncheck all)
     function toggleSelectAll(itemId) {
         const selectAllCheckbox = document.getElementById('select-all-' + itemId);
         const competitorCheckboxes = document.querySelectorAll('.competitor-' + itemId);
@@ -528,11 +615,12 @@ function wpc_compare_alternatives_page() {
         if (selectAllCheckbox.checked) {
             // Check all competitors
             competitorCheckboxes.forEach(cb => cb.checked = true);
-            // Optionally hide the list
             if (competitorsList) {
                 competitorsList.style.opacity = '0.5';
             }
         } else {
+            // Uncheck all competitors
+            competitorCheckboxes.forEach(cb => cb.checked = false);
             if (competitorsList) {
                 competitorsList.style.opacity = '1';
             }

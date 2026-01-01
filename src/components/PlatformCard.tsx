@@ -80,6 +80,15 @@ export interface ComparisonItem {
         show_footer_table?: boolean | string;
         footer_text?: string;
     };
+    // Per-item text label overrides
+    prosLabel?: string;
+    consLabel?: string;
+    priceLabel?: string;
+    ratingLabel?: string;
+    moSuffix?: string;
+    visitSiteLabel?: string;
+    couponLabel?: string;
+    featureHeader?: string;
 }
 
 interface PlatformCardProps {

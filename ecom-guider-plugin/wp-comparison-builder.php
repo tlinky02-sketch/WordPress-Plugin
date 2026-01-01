@@ -30,6 +30,7 @@ require_once WPC_PLUGIN_DIR . 'includes/shortcode-helper.php';
 require_once WPC_PLUGIN_DIR . 'includes/sample-data.php';
 require_once WPC_PLUGIN_DIR . 'includes/seo-schema.php';
 require_once WPC_PLUGIN_DIR . 'includes/compare-button-shortcode.php';
+require_once WPC_PLUGIN_DIR . 'includes/feature-table-shortcode.php';
 require_once WPC_PLUGIN_DIR . 'includes/comparison-sets-db.php';
 require_once WPC_PLUGIN_DIR . 'includes/compare-alternatives-admin.php';
 
