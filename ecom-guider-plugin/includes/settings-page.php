@@ -658,12 +658,225 @@ function wpc_delete_all_data() {
 }
 
 /**
+ * Apply Theme Preset
+ */
+add_action( 'wp_ajax_wpc_apply_theme_preset', 'wpc_apply_theme_preset' );
+function wpc_apply_theme_preset() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    check_ajax_referer( 'wpc_import_export_nonce', 'nonce' );
+
+    $theme = isset( $_POST['theme'] ) ? sanitize_text_field( $_POST['theme'] ) : 'indigo';
+    
+    $themes = array(
+        'indigo' => array(
+            'wpc_primary_color' => '#6366f1',
+            'wpc_accent_color' => '#0d9488',
+            'wpc_secondary_color' => '#1e293b',
+            'wpc_card_border_color' => '#e2e8f0',
+            'wpc_pricing_banner_color' => '#10b981',
+            'wpc_pt_header_bg' => '#f8fafc',
+            'wpc_pt_header_text' => '#0f172a',
+            'wpc_pt_btn_bg' => '#0f172a',
+            'wpc_pt_btn_text' => '#ffffff',
+            'wpc_color_pros_bg' => '#f0fdf4',
+            'wpc_color_pros_text' => '#166534',
+            'wpc_color_cons_bg' => '#fef2f2',
+            'wpc_color_cons_text' => '#991b1b',
+            'wpc_color_coupon_bg' => '#fef3c7',
+            'wpc_color_coupon_text' => '#92400e',
+        ),
+        'emerald' => array(
+            'wpc_primary_color' => '#10b981',
+            'wpc_accent_color' => '#3b82f6',
+            'wpc_secondary_color' => '#064e3b',
+             'wpc_card_border_color' => '#d1fae5',
+            'wpc_pricing_banner_color' => '#059669',
+            'wpc_pt_header_bg' => '#ecfdf5',
+            'wpc_pt_header_text' => '#064e3b',
+            'wpc_pt_btn_bg' => '#059669',
+            'wpc_pt_btn_text' => '#ffffff',
+             'wpc_color_pros_bg' => '#ecfdf5',
+            'wpc_color_pros_text' => '#065f46',
+            'wpc_color_cons_bg' => '#fff1f2',
+            'wpc_color_cons_text' => '#9f1239',
+            'wpc_color_coupon_bg' => '#ffedd5',
+            'wpc_color_coupon_text' => '#c2410c',
+        ),
+        'sunset' => array(
+            'wpc_primary_color' => '#f97316',
+            'wpc_accent_color' => '#be123c',
+            'wpc_secondary_color' => '#431407',
+            'wpc_card_border_color' => '#ffedd5',
+            'wpc_pricing_banner_color' => '#ea580c',
+            'wpc_pt_header_bg' => '#fff7ed',
+            'wpc_pt_header_text' => '#7c2d12',
+            'wpc_pt_btn_bg' => '#ea580c',
+            'wpc_pt_btn_text' => '#ffffff',
+            'wpc_color_pros_bg' => '#fff7ed',
+            'wpc_color_pros_text' => '#9a3412',
+            'wpc_color_cons_bg' => '#fef2f2',
+            'wpc_color_cons_text' => '#991b1b',
+            'wpc_color_coupon_bg' => '#fee2e2',
+            'wpc_color_coupon_text' => '#991b1b',
+        ),
+        'ocean' => array(
+            'wpc_primary_color' => '#0ea5e9', // Sky
+            'wpc_accent_color' => '#6366f1', // Indigo
+            'wpc_secondary_color' => '#0c4a6e', // Sky 900
+            'wpc_card_border_color' => '#e0f2fe',
+            'wpc_pricing_banner_color' => '#0284c7',
+            'wpc_pt_header_bg' => '#f0f9ff',
+            'wpc_pt_header_text' => '#075985',
+            'wpc_pt_btn_bg' => '#0284c7',
+            'wpc_pt_btn_text' => '#ffffff',
+            'wpc_color_pros_bg' => '#f0f9ff',
+            'wpc_color_pros_text' => '#0369a1',
+            'wpc_color_cons_bg' => '#fef2f2',
+            'wpc_color_cons_text' => '#b91c1c',
+            'wpc_color_coupon_bg' => '#e0e7ff',
+            'wpc_color_coupon_text' => '#3730a3',
+        ),
+         'minimal' => array(
+            'wpc_primary_color' => '#0f172a', // Slate 900
+            'wpc_accent_color' => '#64748b', // Slate 500
+            'wpc_secondary_color' => '#334155', 
+            'wpc_card_border_color' => '#e2e8f0',
+            'wpc_pricing_banner_color' => '#000000',
+            'wpc_pt_header_bg' => '#ffffff',
+            'wpc_pt_header_text' => '#0f172a',
+            'wpc_pt_btn_bg' => '#0f172a',
+            'wpc_pt_btn_text' => '#ffffff',
+            'wpc_color_pros_bg' => '#f8fafc',
+            'wpc_color_pros_text' => '#0f172a',
+            'wpc_color_cons_bg' => '#f8fafc',
+            'wpc_color_cons_text' => '#0f172a',
+            'wpc_color_coupon_bg' => '#f1f5f9',
+            'wpc_color_coupon_text' => '#0f172a',
+        ),
+    );
+
+    if ( isset( $themes[$theme] ) ) {
+        foreach ( $themes[$theme] as $key => $value ) {
+            update_option( $key, $value );
+        }
+        wp_send_json_success( 'Theme applied successfully' );
+    } else {
+        wp_send_json_error( 'Theme not found' );
+    }
+}
+
+/**
  * Render Settings Page
  */
 function wpc_render_settings_page() {
     ?>
     <div class="wrap" style="padding-bottom: 60px;">
         <h1><?php _e( 'Comparison Builder Settings', 'wp-comparison-builder' ); ?></h1>
+        
+        <!-- Premium UI Helpers -->
+        <style>
+            .wpc-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+            .wpc-modal { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); width: 90%; max-width: 450px; animation: wpcSlideDown 0.2s ease-out; border: 1px solid #e2e8f0; }
+            .wpc-modal h3 { margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 600; margin-bottom: 10px; }
+            .wpc-modal p { color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 25px; }
+            .wpc-modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
+            .wpc-modal-actions .button { padding: 6px 16px; height: auto; font-size: 14px; }
+            .wpc-modal-actions .button-primary { background: #6366f1; border-color: #6366f1; transition: all 0.2s; }
+            .wpc-modal-actions .button-primary:hover { background: #4f46e5; border-color: #4f46e5; }
+            
+            .wpc-toast { position: fixed; bottom: 30px; right: 30px; background: #fff; border-left: 5px solid #10b981; padding: 16px 24px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 10001; font-weight: 500; font-size: 14px; color: #334155; animation: wpcSlideIn 0.3s ease-out; display: none; align-items: center; gap: 12px; max-width: 400px; }
+            .wpc-toast.error { border-left-color: #ef4444; }
+            .wpc-toast-icon { font-size: 18px; }
+            
+            @keyframes wpcSlideDown { from { opacity: 0; transform: translateY(-20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes wpcSlideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+            
+            /* Loading Spinner */
+            .wpc-spinner-icon { width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: currentColor; border-radius: 50%; animation: wpcSpin 0.6s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+            @keyframes wpcSpin { to { transform: rotate(360deg); } }
+        </style>
+        
+        <div id="wpc-premium-modal" class="wpc-modal-overlay">
+            <div class="wpc-modal">
+                <h3 id="wpc-modal-title">Confirm Action</h3>
+                <p id="wpc-modal-message">Are you sure you want to proceed?</p>
+                <div class="wpc-modal-actions">
+                    <button id="wpc-modal-cancel-btn" class="button">Cancel</button>
+                    <button id="wpc-modal-confirm-btn" class="button button-primary">Confirm</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="wpc-toast" class="wpc-toast">
+            <span class="wpc-toast-icon">&#x2713;</span>
+            <span id="wpc-toast-message">Operation successful</span>
+        </div>
+        
+        <script>
+        window.wpcAdmin = {
+            toast: function(msg, type='success') {
+                var t = document.getElementById('wpc-toast');
+                var m = document.getElementById('wpc-toast-message');
+                var i = t.querySelector('.wpc-toast-icon');
+                
+                t.className = 'wpc-toast ' + type;
+                m.innerText = msg;
+                i.innerText = type === 'success' ? '&#x2713;' : '&#x26A0;&#xFE0F;';
+                i.style.color = type === 'success' ? '#10b981' : '#ef4444';
+                
+                t.style.display = 'flex';
+                setTimeout(function() {
+                    t.style.display = 'none';
+                }, 4000);
+            },
+            
+            confirm: function(title, msg, onConfirm, confirmText='Confirm', confirmColor='#6366f1') {
+                var modal = document.getElementById('wpc-premium-modal');
+                document.getElementById('wpc-modal-title').innerText = title;
+                document.getElementById('wpc-modal-message').innerHTML = msg; // Allowed HTML
+                
+                var btn = document.getElementById('wpc-modal-confirm-btn');
+                btn.innerText = confirmText;
+                btn.style.background = confirmColor;
+                btn.style.borderColor = confirmColor;
+                
+                // Clone button to remove old listeners
+                var newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    if (onConfirm) onConfirm();
+                });
+                
+                var cancelBtn = document.getElementById('wpc-modal-cancel-btn');
+                var newCancel = cancelBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+                
+                newCancel.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                });
+                
+                modal.style.display = 'flex';
+            },
+            
+            loading: function(btn, text='Processing...') {
+                if (!btn) return;
+                btn.dataset.originalText = btn.innerText;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="wpc-spinner-icon"></span> ' + text;
+            },
+            
+            reset: function(btn) {
+                if (!btn) return;
+                btn.disabled = false;
+                btn.innerText = btn.dataset.originalText || 'Save';
+            }
+        };
+        </script>
         
         <!-- Tab Navigation -->
         <nav class="nav-tab-wrapper wpc-tabs-nav" style="margin-bottom: 20px;">
@@ -689,7 +902,7 @@ function wpc_render_settings_page() {
                 <?php _e( 'JSON Schema', 'wp-comparison-builder' ); ?>
             </a>
             <a href="#" class="nav-tab" data-tab="danger-zone" style="color: #d32f2f;">
-                <?php _e( '⚠️ Danger Zone', 'wp-comparison-builder' ); ?>
+                <?php _e( '&#x26A0;&#xFE0F; Danger Zone', 'wp-comparison-builder' ); ?>
             </a>
         </nav>
 
@@ -935,13 +1148,58 @@ function wpc_render_general_tab() {
                         Choose the border color for standard items (non-featured). Leave empty to use default (light gray).
                     </p>
                     
-                    <div style="margin-top: 15px;">
-                        <strong>Quick Presets:</strong><br>
-                        <button type="button" onclick="setAllColors('#6366f1', '#0d9488', '#1e293b')" class="button" style="margin: 5px;">Indigo Theme</button>
-                        <button type="button" onclick="setAllColors('#10b981', '#059669', '#1e293b')" class="button" style="margin: 5px;">Green Theme</button>
-                        <button type="button" onclick="setAllColors('#f59e0b', '#d97706', '#1e293b')" class="button" style="margin: 5px;">Orange Theme</button>
-                        <button type="button" onclick="setAllColors('#8b5cf6', '#7c3aed', '#1e293b')" class="button" style="margin: 5px;">Purple Theme</button>
-                        <button type="button" onclick="setAllColors('#0ea5e9', '#0284c7', '#1e293b')" class="button" style="margin: 5px;">Blue Theme</button>
+                    <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <strong style="display:block; margin-bottom: 10px; color: #334155;">Global Theme Presets</strong>
+                        <p class="description" style="margin-bottom: 10px;">Select a predefined theme to automatically set <strong>ALL</strong> colors (General, Card, Pricing Table, Coupons) to a professional palette.</p>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="wpc_theme_selector" style="max-width: 200px;">
+                                <option value="indigo">Indigo Modern (Default)</option>
+                                <option value="emerald">Emerald Green</option>
+                                <option value="sunset">Sunset Orange</option>
+                                <option value="ocean">Ocean Blue</option>
+                                <option value="minimal">Minimal Slate</option>
+                            </select>
+                            <button type="button" id="wpc_apply_theme_btn" class="button button-secondary">Apply Theme</button>
+                            <span id="wpc_theme_status" style="margin-left: 10px; font-weight: bold;"></span>
+                        </div>
+                        
+                        <script>
+                        document.getElementById('wpc_apply_theme_btn').addEventListener('click', function() {
+                            var theme = document.getElementById('wpc_theme_selector').value;
+                            var nonce = '<?php echo wp_create_nonce( 'wpc_import_export_nonce' ); ?>';
+                            
+                            wpcAdmin.confirm(
+                                'Apply Theme Preset?',
+                                'This will update <strong>ALL</strong> your color settings (General, Pricing, Coupons) to the "'+theme+'" palette.<br><br>Existing color customizations will be overwritten.',
+                                function() {
+                                    var btn = document.getElementById('wpc_apply_theme_btn');
+                                    var status = document.getElementById('wpc_theme_status');
+                                    
+                                    wpcAdmin.loading(btn, 'Applying...');
+                                    status.innerText = '';
+                                    
+                                    jQuery.post(ajaxurl, {
+                                        action: 'wpc_apply_theme_preset',
+                                        theme: theme,
+                                        nonce: nonce
+                                    }, function(response) {
+                                        if (response.success) {
+                                            wpcAdmin.toast('Theme Applied! Reloading page...', 'success');
+                                            setTimeout(function() {
+                                                window.location.reload();
+                                            }, 1500);
+                                        } else {
+                                            wpcAdmin.toast('Error: ' + (response.data || 'Unknown error'), 'error');
+                                            wpcAdmin.reset(btn);
+                                        }
+                                    });
+                                },
+                                'Apply Theme',
+                                '#6366f1'
+                            );
+                        });
+                        </script>
                     </div>
                 </td>
             </tr>
@@ -1348,7 +1606,7 @@ function wpc_render_import_export_tab() {
             });
             
             if (selectedOpts.length === 0) {
-                statusEl.textContent = '⚠️ Select at least one option to export';
+                statusEl.textContent = '\u26A0\uFE0F Select at least one option to export';
                 statusEl.style.color = '#dc2626';
                 return;
             }
@@ -1372,15 +1630,15 @@ function wpc_render_import_export_tab() {
                         a.download = 'wpc-export-' + new Date().toISOString().slice(0,10) + '.json';
                         a.click();
                         URL.revokeObjectURL(url);
-                        statusEl.textContent = '✓ Downloaded!';
+                        statusEl.textContent = '\u2713 Downloaded!';
                         statusEl.style.color = '#16a34a';
                     } else {
-                        statusEl.textContent = '✗ Error: ' + data.data;
+                        statusEl.textContent = '\u2717 Error: ' + data.data;
                         statusEl.style.color = '#dc2626';
                     }
                 })
                 .catch(e => { 
-                    statusEl.textContent = '✗ Request failed'; 
+                    statusEl.textContent = '\u2717 Request failed'; 
                     statusEl.style.color = '#dc2626';
                 });
         });
@@ -1418,10 +1676,10 @@ function wpc_render_import_export_tab() {
                             statusEl.textContent = '';
                             showConflictModal(data.data);
                         } else {
-                            statusEl.textContent = '✗ Error: ' + data.data;
+                            statusEl.textContent = '\u2717 Error: ' + data.data;
                         }
                     })
-                    .catch(e => { statusEl.textContent = '✗ Analysis failed'; });
+                    .catch(e => { statusEl.textContent = '\u2717 Analysis failed'; });
             };
             reader.readAsText(fileInput.files[0]);
         });
@@ -1432,10 +1690,10 @@ function wpc_render_import_export_tab() {
             
             // Build summary
             let summaryHtml = '<strong>Import Summary:</strong><br>';
-            summaryHtml += `• Categories: ${summary.categories_count || 0}<br>`;
-            summaryHtml += `• Features: ${summary.features_count || 0}<br>`;
-            summaryHtml += `• Items: ${summary.items_count || 0}<br>`;
-            summaryHtml += `• Lists: ${summary.lists_count || 0}`;
+            summaryHtml += `\u2022 Categories: ${summary.categories_count || 0}<br>`;
+            summaryHtml += `\u2022 Features: ${summary.features_count || 0}<br>`;
+            summaryHtml += `\u2022 Items: ${summary.items_count || 0}<br>`;
+            summaryHtml += `\u2022 Lists: ${summary.lists_count || 0}`;
             document.getElementById('wpc-import-summary').innerHTML = summaryHtml;
             
             // Build conflicts
@@ -1446,7 +1704,7 @@ function wpc_render_import_export_tab() {
                 conflictsSection.style.display = 'block';
                 let html = '';
                 detectedConflicts.forEach((c, i) => {
-                    html += `<label style="display: block; padding: 5px 0;"><input type="checkbox" class="wpc-conflict-cb" data-slug="${c.slug}" checked /> ${c.type === 'item' ? '📦' : '📋'} ${c.title} <span style="color: #888;">(${c.slug})</span></label>`;
+                    html += `<label style="display: block; padding: 5px 0;"><input type="checkbox" class="wpc-conflict-cb" data-slug="${c.slug}" checked /> ${c.type === 'item' ? '\uD83D\uDCE6' : '\uD83D\uDCCB'} ${c.title} <span style="color: #888;">(${c.slug})</span></label>`;
                 });
                 conflictsList.innerHTML = html;
             } else {
@@ -1503,7 +1761,7 @@ function wpc_render_import_export_tab() {
                 .then(data => {
                     if (data.success) {
                         const r = data.data;
-                        let msg = '✓ Import complete!<br>';
+                        let msg = '\u2713 Import complete!<br>';
                         if (r.items_created || r.items_updated) msg += `Items: ${r.items_created || 0} created, ${r.items_updated || 0} updated<br>`;
                         if (r.lists_created || r.lists_updated) msg += `Lists: ${r.lists_created || 0} created, ${r.lists_updated || 0} updated<br>`;
                         if (r.categories_created) msg += `Categories: ${r.categories_created} created<br>`;
@@ -1511,11 +1769,11 @@ function wpc_render_import_export_tab() {
                         if (r.settings_updated) msg += `Settings: ${r.settings_updated} updated`;
                         statusEl.innerHTML = msg;
                     } else {
-                        statusEl.textContent = '✗ Error: ' + data.data;
+                        statusEl.textContent = '\u2717 Error: ' + data.data;
                     }
                     pendingJsonData = null;
                 })
-                .catch(e => { statusEl.textContent = '✗ Import failed'; });
+                .catch(e => { statusEl.textContent = '\u2717 Import failed'; });
         });
         
         // Sample JSON
@@ -1869,7 +2127,7 @@ function wpc_render_danger_zone_tab() {
         <!-- Maintenance Tools Section -->
         <div style="background: #f0f9ff; border: 2px solid #0284c7; border-radius: 8px; padding: 30px; margin-bottom: 30px;">
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                <span style="font-size: 40px;">🔧</span>
+                <span style="font-size: 40px;">&#128295;</span>
                 <div>
                     <h2 style="margin: 0; color: #0369a1;"><?php _e( 'Maintenance Tools', 'wp-comparison-builder' ); ?></h2>
                     <p style="margin: 5px 0 0 0; color: #0c4a6e;">Safe utilities to maintain and troubleshoot your data.</p>
@@ -1944,7 +2202,7 @@ function wpc_render_danger_zone_tab() {
         <!-- Danger Zone Section -->
         <div style="background: #fef2f2; border: 2px solid #dc2626; border-radius: 8px; padding: 30px; margin-bottom: 30px;">
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                <span style="font-size: 40px;">⚠️</span>
+                <span style="font-size: 40px;">&#x26A0;&#xFE0F;</span>
                 <div>
                     <h2 style="margin: 0; color: #dc2626;"><?php _e( 'Danger Zone', 'wp-comparison-builder' ); ?></h2>
                     <p style="margin: 5px 0 0 0; color: #991b1b;">These actions can cause data loss and cannot be undone.</p>
@@ -2032,7 +2290,7 @@ function wpc_render_danger_zone_tab() {
                 
                 <!-- Inline Confirmation Panel -->
                 <div id="wpc-delete-panel" style="display: none; margin-top: 15px; padding: 15px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;">
-                    <h4 style="margin: 0 0 10px 0; color: #dc2626;">⚠️ Critical: Select what to delete:</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #dc2626;">&#x26A0;&#xFE0F; Critical: Select what to delete:</h4>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 15px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -2085,7 +2343,7 @@ function wpc_render_danger_zone_tab() {
         
         <!-- Tips Section -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px;">
-            <h3 style="margin: 0 0 15px 0; color: #334155;">💡 Tips</h3>
+            <h3 style="margin: 0 0 15px 0; color: #334155;">&#x1F4A1; Tips</h3>
             <ul style="margin: 0; padding-left: 20px; color: #64748b;">
                 <li><strong>Maintenance Tools</strong> are safe to run anytime – they don't delete your content</li>
                 <li><strong>Export your data first</strong> before using Danger Zone options</li>
@@ -2103,16 +2361,27 @@ function wpc_render_danger_zone_tab() {
             el.className = 'wpc-tool-status ' + type;
             el.innerHTML = message;
             el.style.display = 'block';
+            
+            // Premium Toast Integration
+            if (type === 'success') {
+                if (message.includes('<br>')) {
+                    wpcAdmin.toast('Operation completed. See details below.', 'success');
+                } else {
+                    wpcAdmin.toast(message.replace(/<[^>]*>?/gm, ''), 'success');
+                }
+            } else if (type === 'error') {
+                 wpcAdmin.toast('Error: ' + message.replace(/<[^>]*>?/gm, ''), 'error');
+            }
         }
         
         function showLoading(elementId, message) {
-            showStatus(elementId, '<span class="wpc-spinner"></span>' + message, 'loading');
+            showStatus(elementId, '<span class="wpc-spinner-icon"></span> ' + message, 'loading');
         }
         
         // Clear Cache
         document.getElementById('wpc-clear-cache-btn').addEventListener('click', function() {
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Clearing...');
             showLoading('wpc-cache-status', 'Clearing cache...');
             
             const formData = new FormData();
@@ -2122,23 +2391,23 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
-                        showStatus('wpc-cache-status', '✓ Cache cleared! ' + data.data.message, 'success');
+                        showStatus('wpc-cache-status', '\u2713 Cache cleared! ' + data.data.message, 'success');
                     } else {
-                        showStatus('wpc-cache-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-cache-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-cache-status', '✗ Operation failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-cache-status', '\u2717 Operation failed', 'error'); 
                 });
         });
         
         // Clean Orphaned Data
         document.getElementById('wpc-orphan-btn').addEventListener('click', function() {
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Cleaning...');
             showLoading('wpc-orphan-status', 'Cleaning orphaned data...');
             
             const formData = new FormData();
@@ -2148,23 +2417,23 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
-                        showStatus('wpc-orphan-status', '✓ Cleanup complete! Removed ' + data.data.cleaned + ' orphaned entries.', 'success');
+                        showStatus('wpc-orphan-status', '\u2713 Cleanup complete! Removed ' + data.data.cleaned + ' orphaned entries.', 'success');
                     } else {
-                        showStatus('wpc-orphan-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-orphan-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-orphan-status', '✗ Operation failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-orphan-status', '\u2717 Operation failed', 'error'); 
                 });
         });
         
         // Rebuild Term Counts
         document.getElementById('wpc-recount-btn').addEventListener('click', function() {
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Rebuilding...');
             showLoading('wpc-recount-status', 'Rebuilding term counts...');
             
             const formData = new FormData();
@@ -2174,23 +2443,23 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
-                        showStatus('wpc-recount-status', '✓ Term counts rebuilt! Categories: ' + data.data.categories + ', Features: ' + data.data.features, 'success');
+                        showStatus('wpc-recount-status', '\u2713 Term counts rebuilt! Categories: ' + data.data.categories + ', Features: ' + data.data.features, 'success');
                     } else {
-                        showStatus('wpc-recount-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-recount-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-recount-status', '✗ Operation failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-recount-status', '\u2717 Operation failed', 'error'); 
                 });
         });
         
         // Data Integrity Check
         document.getElementById('wpc-integrity-btn').addEventListener('click', function() {
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Checking...');
             showLoading('wpc-integrity-status', 'Running integrity check...');
             
             const formData = new FormData();
@@ -2200,33 +2469,33 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
                         const d = data.data;
-                        let html = '<strong>✓ Integrity Check Complete</strong><br><br>';
+                        let html = '<strong>&#x2713; Integrity Check Complete</strong><br><br>';
                         html += '<strong>Summary:</strong><br>';
-                        html += '• Total Items: ' + d.total_items + '<br>';
-                        html += '• Total Lists: ' + d.total_lists + '<br>';
-                        html += '• Categories: ' + d.total_categories + '<br>';
-                        html += '• Features: ' + d.total_features + '<br><br>';
+                        html += '\u2022 Total Items: ' + d.total_items + '<br>';
+                        html += '\u2022 Total Lists: ' + d.total_lists + '<br>';
+                        html += '\u2022 Categories: ' + d.total_categories + '<br>';
+                        html += '\u2022 Features: ' + d.total_features + '<br><br>';
                         
                         if (d.issues.length > 0) {
-                            html += '<strong style="color: #f59e0b;">⚠️ Issues Found (' + d.issues.length + '):</strong><br>';
+                            html += '<strong style="color: #f59e0b;">\u26A0\uFE0F Issues Found (' + d.issues.length + '):</strong><br>';
                             d.issues.forEach(function(issue) {
-                                html += '• ' + issue + '<br>';
+                                html += '\u2022 ' + issue + '<br>';
                             });
                             showStatus('wpc-integrity-status', html, 'success');
                         } else {
-                            html += '<strong style="color: #16a34a;">✓ No issues found!</strong>';
+                            html += '<strong style="color: #16a34a;">\u2713 No issues found!</strong>';
                             showStatus('wpc-integrity-status', html, 'success');
                         }
                     } else {
-                        showStatus('wpc-integrity-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-integrity-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-integrity-status', '✗ Operation failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-integrity-status', '\u2717 Operation failed', 'error'); 
                 });
         });
         
@@ -2264,12 +2533,12 @@ function wpc_render_danger_zone_tab() {
             document.querySelectorAll('.wpc-reset-opt:checked').forEach(cb => selectedOpts.push(cb.value));
             
             if (selectedOpts.length === 0) {
-                showStatus('wpc-reset-status', '⚠️ Please select at least one setting to reset.', 'error');
+                wpcAdmin.toast('Please select at least one setting to reset.', 'error');
                 return;
             }
             
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Resetting...');
             showLoading('wpc-reset-status', 'Resetting selected settings...');
             
             const formData = new FormData();
@@ -2280,17 +2549,17 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
                         document.getElementById('wpc-reset-panel').style.display = 'none';
-                        showStatus('wpc-reset-status', '✓ Selected settings reset to defaults! <a href="">Refresh page to see changes</a>', 'success');
+                        showStatus('wpc-reset-status', '\u2713 Selected settings reset to defaults! <a href="">Refresh page to see changes</a>', 'success');
                     } else {
-                        showStatus('wpc-reset-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-reset-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-reset-status', '✗ Reset failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-reset-status', '\u2717 Reset failed', 'error'); 
                 });
         });
         
@@ -2327,7 +2596,7 @@ function wpc_render_danger_zone_tab() {
         document.getElementById('wpc-delete-confirm-btn').addEventListener('click', function() {
             const confirmText = document.getElementById('wpc-delete-confirm-text').value;
             if (confirmText !== 'DELETE') {
-                showStatus('wpc-delete-status', '⚠️ Please type "DELETE" to confirm this action.', 'error');
+                wpcAdmin.toast('Please type "DELETE" to confirm.', 'error');
                 return;
             }
             
@@ -2335,12 +2604,12 @@ function wpc_render_danger_zone_tab() {
             document.querySelectorAll('.wpc-delete-opt:checked').forEach(cb => selectedOpts.push(cb.value));
             
             if (selectedOpts.length === 0) {
-                showStatus('wpc-delete-status', '⚠️ Please select at least one data type to delete.', 'error');
+                wpcAdmin.toast('Please select at least one data type to delete.', 'error');
                 return;
             }
             
             const btn = this;
-            btn.disabled = true;
+            wpcAdmin.loading(btn, 'Deleting...');
             showLoading('wpc-delete-status', 'Deleting selected data... Please wait...');
             
             const formData = new FormData();
@@ -2351,25 +2620,25 @@ function wpc_render_danger_zone_tab() {
             fetch(ajaxurl, { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
-                    btn.disabled = false;
+                    wpcAdmin.reset(btn);
                     if (data.success) {
                         const r = data.data;
                         document.getElementById('wpc-delete-panel').style.display = 'none';
                         document.getElementById('wpc-delete-confirm-text').value = '';
-                        showStatus('wpc-delete-status', `✓ Data deleted successfully!<br><br>
+                        showStatus('wpc-delete-status', `\u2713 Data deleted successfully!<br><br>
                             <strong>Deleted:</strong><br>
-                            • Items: ${r.items_deleted || 0}<br>
-                            • Lists: ${r.lists_deleted || 0}<br>
-                            • Categories: ${r.categories_deleted || 0}<br>
-                            • Features: ${r.features_deleted || 0}<br>
-                            ${r.settings_reset ? '• Settings: Reset to defaults' : ''}`, 'success');
+                            â€¢ Items: ${r.items_deleted || 0}<br>
+                            â€¢ Lists: ${r.lists_deleted || 0}<br>
+                            â€¢ Categories: ${r.categories_deleted || 0}<br>
+                            â€¢ Features: ${r.features_deleted || 0}<br>
+                            ${r.settings_reset ? 'â€¢ Settings: Reset to defaults' : ''}`, 'success');
                     } else {
-                        showStatus('wpc-delete-status', '✗ Error: ' + data.data, 'error');
+                        showStatus('wpc-delete-status', '\u2717 Error: ' + data.data, 'error');
                     }
                 })
                 .catch(e => { 
-                    btn.disabled = false;
-                    showStatus('wpc-delete-status', '✗ Delete operation failed', 'error'); 
+                    wpcAdmin.reset(btn);
+                    showStatus('wpc-delete-status', '\u2717 Delete operation failed', 'error'); 
                 });
         });
     })();
@@ -2621,7 +2890,7 @@ function wpc_render_schema_seo_tab() {
         
         <!-- Info Section -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px;">
-            <h3 style="margin: 0 0 15px 0; color: #334155;">💡 How Schema Works</h3>
+            <h3 style="margin: 0 0 15px 0; color: #334155;">&#x1F4A1; How Schema Works</h3>
             <ul style="margin: 0; padding-left: 20px; color: #64748b;">
                 <li><strong>Single Item Pages:</strong> Schema is automatically output in the &lt;head&gt;</li>
                 <li><strong>Custom Lists:</strong> ItemList schema is generated with all items in the list</li>
@@ -2634,8 +2903,8 @@ function wpc_render_schema_seo_tab() {
     <script>
     (function() {
         document.getElementById('wpc-save-schema-settings').addEventListener('click', function() {
-            const statusEl = document.getElementById('wpc-schema-status');
-            statusEl.textContent = 'Saving...';
+            var btn = this;
+            wpcAdmin.loading(btn, 'Saving...');
             
             const settings = {
                 enabled: document.getElementById('wpc-schema-enabled').checked ? '1' : '0',
@@ -2655,13 +2924,18 @@ function wpc_render_schema_seo_tab() {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        statusEl.innerHTML = '<span style="color: #16a34a;">✓ Saved!</span>';
+                        wpcAdmin.toast('Schema settings saved successfully!', 'success');
                     } else {
-                        statusEl.innerHTML = '<span style="color: #dc2626;">✗ Error</span>';
+                        wpcAdmin.toast('Error saving settings', 'error');
                     }
-                    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+                    wpcAdmin.reset(btn);
+                    // Clear old status if any
+                    document.getElementById('wpc-schema-status').innerText = '';
                 })
-                .catch(e => { statusEl.innerHTML = '<span style="color: #dc2626;">✗ Failed</span>'; });
+                .catch(e => { 
+                    wpcAdmin.toast('Request failed', 'error');
+                    wpcAdmin.reset(btn);
+                });
         });
     })();
     </script>
@@ -2900,6 +3174,18 @@ function wpc_render_texts_tab() {
 
             <!-- Filter & Search Internal Labels -->
             <tr valign="top"><th colspan="2"><h3 style="margin:0;">Filter & Search Component Labels</h3></th></tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_category"><?php _e( 'Category Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_category" name="wpc_text_category" value="<?php echo esc_attr( get_option( 'wpc_text_category', '' ) ); ?>" class="regular-text" placeholder="e.g. Category" />
+                </td>
+            </tr>
+            <tr valign="top">
+                <th scope="row"><label for="wpc_text_features"><?php _e( 'Features / Tags Label', 'wp-comparison-builder' ); ?></label></th>
+                <td>
+                    <input type="text" id="wpc_text_features" name="wpc_text_features" value="<?php echo esc_attr( get_option( 'wpc_text_features', '' ) ); ?>" class="regular-text" placeholder="e.g. Tags" />
+                </td>
+            </tr>
             <tr valign="top">
                 <th scope="row"><label for="wpc_text_reset_filt"><?php _e( '"Reset Filters"', 'wp-comparison-builder' ); ?></label></th>
                 <td>

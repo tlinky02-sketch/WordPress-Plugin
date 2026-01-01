@@ -50,11 +50,19 @@ function wpc_register_cpt() {
         'show_in_rest'      => true,
     ));
 
-    // 3. Features Taxonomy (formerly Ecommerce Feature)
+    // 3. Tags Taxonomy (formerly Ecommerce Feature)
     register_taxonomy( 'comparison_feature', 'comparison_item', array(
         'labels' => array(
-            'name'          => __( 'Features', 'wp-comparison-builder' ),
-            'singular_name' => __( 'Feature', 'wp-comparison-builder' ),
+            'name'          => __( 'Tags', 'wp-comparison-builder' ),
+            'singular_name' => __( 'Tag', 'wp-comparison-builder' ),
+            'menu_name'     => __( 'Tags', 'wp-comparison-builder' ),
+            'search_items'  => __( 'Search Tags', 'wp-comparison-builder' ),
+            'popular_items' => __( 'Popular Tags', 'wp-comparison-builder' ),
+            'all_items'     => __( 'All Tags', 'wp-comparison-builder' ),
+            'edit_item'     => __( 'Edit Tag', 'wp-comparison-builder' ),
+            'update_item'   => __( 'Update Tag', 'wp-comparison-builder' ),
+            'add_new_item'  => __( 'Add New Tag', 'wp-comparison-builder' ),
+            'new_item_name' => __( 'New Tag Name', 'wp-comparison-builder' ),
         ),
         'hierarchical'      => false,
         'public'            => false, // Do not expose

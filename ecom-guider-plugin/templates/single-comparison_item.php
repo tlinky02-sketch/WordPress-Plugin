@@ -60,7 +60,7 @@ while ( have_posts() ) : the_post();
                 <div style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 8px; margin-bottom: 30px;">
                     <div style="display: flex; gap: 2px;">
                         <?php for ( $i = 1; $i <= 5; $i++ ) : ?>
-                            <span style="color: <?php echo $i <= round($rating) ? '#FBBF24' : '#D1D5DB'; ?>; font-size: 20px;">★</span>
+                            <span style="color: <?php echo $i <= round($rating) ? '#FBBF24' : '#D1D5DB'; ?>; font-size: 20px;">&#9733;</span>
                         <?php endfor; ?>
                     </div>
                     <span style="font-weight: 700; color: #333;"><?php echo esc_html( $rating ); ?>/5</span>

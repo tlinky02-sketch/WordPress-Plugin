@@ -94,7 +94,7 @@ function wpc_register_scripts() {
         'searchPlaceholder' => get_option('wpc_text_search_placeholder', ''),
         'sortDefault' => get_option('wpc_text_sort_default', ''),
         'category' => get_option('wpc_text_category', ''),
-        'features' => get_option('wpc_text_features', ''),
+        'features' => get_option('wpc_text_features', 'Tags'),
         'itemsCount' => get_option('wpc_text_items_count', ''),
         'selected' => get_option('wpc_text_selected', ''),
         'clearAll' => get_option('wpc_text_clear_all', ''),
@@ -465,7 +465,7 @@ function wpc_shortcode( $atts ) {
                                                 <h3 class="font-bold text-lg leading-none mb-1"><?php echo esc_html( $name ); ?></h3>
                                                 <div class="flex items-center gap-1">
                                                     <div class="flex text-yellow-400">
-                                                        <?php for($i=0; $i<5; $i++) echo ($i < floor($rating)) ? '★' : '☆'; ?>
+                                                        <?php for($i=0; $i<5; $i++) echo ($i < floor($rating)) ? '&#9733;' : '&#9734;'; ?>
                                                     </div>
                                                     <span class="text-xs text-muted-foreground font-medium">(<?php echo esc_html($rating); ?>)</span>
                                                 </div>
@@ -1207,7 +1207,7 @@ function wpc_list_shortcode( $atts ) {
                         <div class="flex-1 text-center md:text-left">
                             <h3 class="font-bold text-lg"><?php echo esc_html($item['name']); ?></h3>
                             <div class="flex flex-wrap gap-1 justify-center md:justify-start mt-1 opacity-70" style="<?php echo $r_style; ?>">
-                                <?php if(!empty($item['rating'])): ?><span class="text-xs">★ <?php echo esc_html($item['rating']); ?></span><?php endif; ?>
+                                <?php if(!empty($item['rating'])): ?><span class="text-xs">&#9733; <?php echo esc_html($item['rating']); ?></span><?php endif; ?>
                             </div>
                         </div>
                         <div class="text-center md:text-right md:w-64 flex-shrink-0 flex flex-col gap-3 pt-4 md:pt-10 md:pl-6 md:self-stretch md:justify-between border-t md:border-t-0 md:border-l border-border" style="<?php echo $p_style; ?>">
@@ -1254,7 +1254,7 @@ function wpc_list_shortcode( $atts ) {
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h3 class="font-bold text-sm leading-tight truncate"><?php echo esc_html($item['name']); ?></h3>
-                                <div class="flex items-center gap-1 text-xs" style="<?php echo $r_style; ?>"><span class="text-yellow-400">★</span> <?php echo esc_html($item['rating']); ?></div>
+                                <div class="flex items-center gap-1 text-xs" style="<?php echo $r_style; ?>"><span class="text-yellow-400">&#9733;</span> <?php echo esc_html($item['rating']); ?></div>
                             </div>
                             <div class="text-right" style="<?php echo $p_style; ?>">
                                 <span class="block font-bold text-lg leading-none text-primary"><?php echo esc_html($item['price']); ?></span>

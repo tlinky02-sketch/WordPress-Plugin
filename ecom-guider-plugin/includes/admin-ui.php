@@ -78,7 +78,7 @@ function wpc_render_meta_box( $post ) {
             <li onclick="wpcOpenItemTab(event, 'visuals')">Visuals & Branding</li>
             <li onclick="wpcOpenItemTab(event, 'pricing')">Pricing Plans</li>
             <li onclick="wpcOpenItemTab(event, 'content')">Content & Footer</li>
-            <li onclick="wpcOpenItemTab(event, 'taxonomy')">Categories & Features</li>
+            <li onclick="wpcOpenItemTab(event, 'taxonomy')">Categories & Tags</li>
             <li onclick="wpcOpenItemTab(event, 'seo')">SEO Schema</li>
         </ul>
 
@@ -531,7 +531,7 @@ function wpc_render_meta_box( $post ) {
                         <div class="wpc-custom-field-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
                             <input type="text" name="wpc_custom_fields[<?php echo $index; ?>][name]" value="<?php echo esc_attr( $field['name'] ?? '' ); ?>" placeholder="Field Name" style="flex: 1;" />
                             <input type="text" name="wpc_custom_fields[<?php echo $index; ?>][value]" value="<?php echo esc_attr( $field['value'] ?? '' ); ?>" placeholder="Field Value" style="flex: 2;" />
-                            <button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">×</button>
+                            <button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">&times;</button>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -550,7 +550,7 @@ function wpc_render_meta_box( $post ) {
                     row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 8px; align-items: center;';
                     row.innerHTML = '<input type="text" name="wpc_custom_fields[' + index + '][name]" placeholder="Field Name" style="flex: 1;" />' +
                                     '<input type="text" name="wpc_custom_fields[' + index + '][value]" placeholder="Field Value" style="flex: 2;" />' +
-                                    '<button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">×</button>';
+                                    '<button type="button" class="button wpc-remove-field" onclick="this.parentElement.remove();" title="Remove">&times;</button>';
                     container.appendChild(row);
                     index++;
                 });
@@ -601,10 +601,10 @@ function wpc_render_meta_box( $post ) {
                     </div>
                 </div>
                 
-                <!-- Features -->
+                <!-- Tags -->
                 <div class="wpc-col">
-                    <h3 class="wpc-section-title"><?php _e( 'Features', 'wp-comparison-builder' ); ?></h3>
-                    <input type="text" id="wpc-feature-search" placeholder="Search features..." style="width:100%; margin-bottom:5px;" onkeyup="wpcFilterList('wpc-feature-search', 'wpc-feature-list')" />
+                    <h3 class="wpc-section-title"><?php _e( 'Tags', 'wp-comparison-builder' ); ?></h3>
+                    <input type="text" id="wpc-feature-search" placeholder="Search tags..." style="width:100%; margin-bottom:5px;" onkeyup="wpcFilterList('wpc-feature-search', 'wpc-feature-list')" />
                     <div class="wpc-checkbox-list" id="wpc-feature-list">
                         <?php if ( ! empty( $all_features ) && ! is_wp_error( $all_features ) ) : ?>
                             <?php foreach ( $all_features as $feature ) : ?>
@@ -614,11 +614,11 @@ function wpc_render_meta_box( $post ) {
                                 </label>
                             <?php endforeach; ?>
                         <?php else : ?>
-                            <p>No features found. Add one below.</p>
+                            <p>No tags found. Add one below.</p>
                         <?php endif; ?>
                     </div>
                     <div class="wpc-add-new-wrap">
-                        <input type="text" id="new-wpc-feature" placeholder="New Feature Name" />
+                        <input type="text" id="new-wpc-feature" placeholder="New Tag Name" />
                         <button type="button" class="button" onclick="wpcAddTerm('comparison_feature')">Add</button>
                     </div>
                 </div>

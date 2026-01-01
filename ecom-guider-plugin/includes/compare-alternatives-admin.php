@@ -52,7 +52,7 @@ function wpc_compare_alternatives_page() {
         <div style="margin: 20px 0; padding: 15px; background: #f0f6ff; border-radius: 8px; border: 1px solid #c3c4c7;">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <label for="wpc-main-search" style="font-weight: 600; white-space: nowrap;">
-                    🔍 <?php _e( 'Search Items:', 'wp-comparison-builder' ); ?>
+                    &#128269; <?php _e( 'Search Items:', 'wp-comparison-builder' ); ?>
                 </label>
                 <input 
                     type="text" 
@@ -146,7 +146,7 @@ function wpc_compare_alternatives_page() {
                                         type="text" 
                                         class="wpc-alt-search" 
                                         data-item-id="<?php echo $item->ID; ?>"
-                                        placeholder="🔍 Search alternatives..."
+                                        placeholder="&#128269; Search alternatives..."
                                         style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
                                         autocomplete="off"
                                     />
@@ -194,14 +194,14 @@ function wpc_compare_alternatives_page() {
                                     class="button button-primary button-small"
                                     onclick="saveComparisonSet(<?php echo $item->ID; ?>)"
                                     style="width: 100%; margin-bottom: 5px;">
-                                    💾 Save Set
+                                    &#128190; Save Set
                                 </button>
                                 <button 
                                     type="button" 
                                     class="button button-small"
                                     onclick="document.getElementById('shortcode-<?php echo $item->ID; ?>').select(); document.execCommand('copy'); alert('Shortcode copied!');"
                                     style="width: 100%;">
-                                    📋 Copy Code
+                                    &#128203; Copy Code
                                 </button>
                             </td>
                         </tr>
@@ -218,7 +218,7 @@ function wpc_compare_alternatives_page() {
                         if ( ! empty( $saved_sets ) ) : ?>
                             <tr class="saved-sets-row">
                                 <td colspan="4" style="padding: 0 12px 20px 40px; background: #f0f6ff;">
-                                    <strong style="display: block; margin-bottom: 8px; color: #2271b1;">📁 Saved Comparison Sets:</strong>
+                                    <strong style="display: block; margin-bottom: 8px; color: #2271b1;">&#128204; Saved Comparison Sets:</strong>
                                     <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 4px; overflow: hidden;">
                                         <?php foreach ( $saved_sets as $set ) : 
                                             // Split and filter out empty strings
@@ -253,7 +253,7 @@ function wpc_compare_alternatives_page() {
                                                         onclick="editComparisonSet(<?php echo $set->id; ?>, <?php echo $item->ID; ?>, '<?php echo esc_js($set->set_name); ?>', '<?php echo esc_attr($set->competitor_ids); ?>', '<?php echo esc_js($set->button_text); ?>')"
                                                         style="color: #2271b1; margin-right: 4px;"
                                                         title="Edit">
-                                                        ✏️
+                                                        &#x270F;&#xFE0F;
                                                     </button>
                                                     <button 
                                                         type="button" 
@@ -261,7 +261,7 @@ function wpc_compare_alternatives_page() {
                                                         onclick="deleteComparisonSet(<?php echo $set->id; ?>, this)"
                                                         style="color: #b32d2e;"
                                                         title="Delete">
-                                                        🗑️
+                                                        &#x1F5D1;&#xFE0F;
                                                     </button>
                                                 </td>
                                             </tr>
@@ -461,7 +461,7 @@ function wpc_compare_alternatives_page() {
         // Change button text to "Update Set"
         const saveButton = document.querySelector('[onclick*="saveComparisonSet(' + itemId + ')"]');
         if (saveButton) {
-            saveButton.innerHTML = '💾 Update Set';
+            saveButton.innerHTML = '\uD83D\uDCBE Update Set';
             saveButton.style.background = '#2271b1';
             saveButton.style.color = '#fff';
         }
