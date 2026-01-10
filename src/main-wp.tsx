@@ -16,6 +16,7 @@ import { toast, Toaster } from 'sonner';
 import { cn } from "@/lib/utils";
 import '@/index.css';
 import PricingTable from "@/components/PricingTable";
+import PlatformHeroWrapper from "@/components/PlatformHeroWrapper"; // Static Import
 
 // Define window interface for WP settings
 declare global {
@@ -64,10 +65,19 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
         return defaults[colorKey] || '';
     };
 
-    const [items, setItems] = useState<ComparisonItem[]>([]);
-    const [categories, setCategories] = useState<string[]>([]);
-    const [filterableFeatures, setFilterableFeatures] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Pre-load data synchronously for instant render
+    const preloadedSettings = typeof window !== 'undefined' ?
+        ((window as any).wpcSettings || (window as any).ecommerceGuiderSettings || (window as any).hostingGuiderSettings) : null;
+    const preloadedData = preloadedSettings?.initialData;
+
+    const [items, setItems] = useState<ComparisonItem[]>(() => {
+        if (preloadedData?.items) return preloadedData.items;
+        if (preloadedData?.providers) return preloadedData.providers; // Legacy
+        return [];
+    });
+    const [categories, setCategories] = useState<string[]>(() => preloadedData?.categories || []);
+    const [filterableFeatures, setFilterableFeatures] = useState<string[]>(() => preloadedData?.filterableFeatures || []);
+    const [loading, setLoading] = useState(() => !preloadedData);
 
     // Derived Display Lists (for Custom Filters)
     const displayedCategories = useMemo(() => {
@@ -189,20 +199,12 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
 
             // console.log('Compare event received:', event.detail);
             const { providerIds, itemIds, autoShow } = event.detail;
-            const ids = itemIds || providerIds;
+            const ids = providerIds || itemIds || [];
 
-            if (ids && Array.isArray(ids)) {
-                // Auto-select the items
+            if (ids.length > 0) {
                 setSelectedItems(ids.map(String));
-                // console.log('Selected items set to:', ids);
-
-                if (autoShow) {
-                    // Only show comparison table automatically if we are in usage mode for it (e.g. Button)
-                    // Regular lists should NOT switch to table view automatically via remote event.
-                    // UPDATE: We now filter by 'source' at the top, so if we reached here, it is a valid trigger.
+                if (autoShow !== false) {
                     setShowComparison(true);
-                    console.log('Showing comparison table');
-
                     // Scroll to comparison after a short delay
                     setTimeout(() => {
                         if (comparisonRef.current) {
@@ -495,36 +497,105 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
     // Check if compare button shortcode is present on the page
     const shouldHideFilters = !!(window as any).wpcCompareButtonPresent || !!(window as any).ecommerceCompareButtonPresent;
 
-    // Check if in compare button mode (from config in ANY .wpc-root element)
-    const getCurrentConfig = () => {
-        // Check all possible root elements, including compare button roots
+    // Helper: Check if ANY root on the page has compareButtonMode (Fallback for legacy/caching)
+    const getCurrentConfigFallback = () => {
         const roots = document.querySelectorAll('.wpc-root, .ecommerce-guider-root, #ecommerce-guider-root, #hosting-guider-root');
         for (let i = 0; i < roots.length; i++) {
             const root = roots[i] as HTMLElement;
             if (root && root.dataset.config) {
                 try {
-                    const config = JSON.parse(root.dataset.config);
-                    // If we find a root with compareButtonMode, return it
-                    if (config.compareButtonMode === true) {
-                        return config;
-                    }
-                } catch (e) {
-                    // Continue checking other roots
-                }
+                    const cfg = JSON.parse(root.dataset.config);
+                    if (cfg.compareButtonMode === true) return true;
+                } catch (e) { }
             }
         }
-        // Fallback: check the original IDs
-        const root = document.querySelector('.wpc-root') || document.getElementById('hosting-guider-root') || document.getElementById('ecommerce-guider-root');
-        if (root && (root as HTMLElement).dataset.config) {
-            try {
-                return JSON.parse((root as HTMLElement).dataset.config || "{}");
-            } catch (e) {
-                return {};
-            }
-        }
-        return {};
+        return false;
     };
-    const isCompareButtonMode = getCurrentConfig().compareButtonMode === true;
+
+    // Check if in compare button mode (Priority: Local Config > Global Fallback)
+    const isCompareButtonMode = config.compareButtonMode === true || config.viewMode === 'button' || getCurrentConfigFallback();
+
+    // RENDER: Single Pros/Cons Table Mode (New Shortcode)
+    if (config.viewMode === 'pros-cons-table' && config.item) {
+        const item = config.item;
+        const pros = item.pros || [];
+        const cons = item.cons || [];
+
+        // Get colors from config (per-item overrides) with global fallbacks
+        const prosBg = config.prosBg || (window as any).wpcSettings?.colors?.prosBg || '#f0fdf4';
+        const prosText = config.prosText || (window as any).wpcSettings?.colors?.prosText || '#166534';
+        const consBg = config.consBg || (window as any).wpcSettings?.colors?.consBg || '#fef2f2';
+        const consText = config.consText || (window as any).wpcSettings?.colors?.consText || '#991b1b';
+
+        // Get labels from config (per-item overrides)
+        const prosLabel = config.prosLabel || (window as any).wpcSettings?.texts?.prosLabel || 'Pros';
+        const consLabel = config.consLabel || (window as any).wpcSettings?.texts?.consLabel || 'Cons';
+
+        // Get icons from config
+        const prosIcon = config.prosIcon || '✓';
+        const consIcon = config.consIcon || '✗';
+
+        return (
+            <div className="wpc-comparison-wrapper">
+                <Toaster />
+                <div className="w-full">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {/* Pros Section */}
+                        <div
+                            className="rounded-xl border p-6"
+                            style={{
+                                backgroundColor: prosBg,
+                                borderColor: prosText + '40'
+                            }}
+                        >
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-3" style={{ color: prosText }}>
+                                <span className="text-3xl">{prosIcon}</span>
+                                {prosLabel}
+                            </h3>
+                            {pros.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {pros.map((pro: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-3 text-sm">
+                                            <span className="mt-0.5 font-bold" style={{ color: prosText }}>{prosIcon}</span>
+                                            <span style={{ color: prosText }}>{pro}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-muted-foreground italic text-sm">No {prosLabel.toLowerCase()} listed</p>
+                            )}
+                        </div>
+
+                        {/* Cons Section */}
+                        <div
+                            className="rounded-xl border p-6"
+                            style={{
+                                backgroundColor: consBg,
+                                borderColor: consText + '40'
+                            }}
+                        >
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-3" style={{ color: consText }}>
+                                <span className="text-3xl">{consIcon}</span>
+                                {consLabel}
+                            </h3>
+                            {cons.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {cons.map((con: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-3 text-sm">
+                                            <span className="mt-0.5 font-bold" style={{ color: consText }}>{consIcon}</span>
+                                            <span style={{ color: consText }}>{con}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-muted-foreground italic text-sm">No {consLabel.toLowerCase()} listed</p>
+                            )}
+                        </div>
+                    </div>
+                </div >
+            </div >
+        );
+    }
 
     // RENDER: Single Pricing Table Mode (New Shortcode)
     // Render BEFORE loading check because it uses config.item (passed from shortcode)
@@ -548,87 +619,30 @@ const ComparisonBuilderApp = ({ initialConfig = {} }: { initialConfig?: any }) =
     // RENDER: Comparison Table Mode (Pure Table View)
     if (config.viewMode === 'comparison-table') {
         if (loading) {
-            return (
-                <div className="wpc-comparison-wrapper py-4">
-                    <div className="w-full h-64 bg-card rounded-xl border border-border animate-pulse flex items-center justify-center text-muted-foreground">
-                        Loading comparison...
-                    </div>
-                </div>
-            );
+            return null;
         }
 
         return (
             <div className="wpc-comparison-wrapper">
                 <Toaster />
                 <div className="w-full">
-                    <ComparisonTable items={filteredItems} onRemove={() => { }} />
+                    <ComparisonTable items={filteredItems} onRemove={() => { }} config={config} />
                 </div>
             </div>
         );
     }
 
-    // RENDER: Loading State - Show skeleton placeholder for SEO (prevents CLS)
+    // RENDER: Loading State - Return nothing (data is preloaded via PHP, so loading is instant)
     if (loading) {
-        // Show a skeleton that matches the filter bar to prevent layout shift
-        const shouldShowFilterSkeleton = !isCompareButtonMode;
+        return null;
+    }
 
-        if (!shouldShowFilterSkeleton) {
-            return <div className="wpc-comparison-wrapper"><Toaster /></div>;
-        }
-
+    // RENDER: Hide items initially if showItemsInitially is false (for compare button mode)
+    // BUT: Allow rendering if user has selected items OR if showComparison is true
+    if (config.showItemsInitially === false && selectedItems.length === 0) {
         return (
-            <div className="wpc-comparison-wrapper bg-background text-foreground min-h-[100px] py-4">
+            <div className="wpc-comparison-wrapper">
                 <Toaster />
-
-                {/* Skeleton Filter Bar */}
-                {filterStyle === 'top' ? (
-                    <div className="mb-8 p-4 bg-card rounded-xl border border-border shadow-sm animate-pulse">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-2 mr-2">
-                                <div className="w-5 h-5 bg-muted rounded"></div>
-                                <div className="w-16 h-5 bg-muted rounded"></div>
-                            </div>
-                            <div className="w-28 h-9 bg-muted rounded border border-dashed border-border"></div>
-                            <div className="w-36 h-9 bg-muted rounded border border-dashed border-border"></div>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex flex-col lg:grid lg:grid-cols-4 lg:gap-8">
-                        {/* Sidebar Skeleton */}
-                        <div className="lg:col-span-1 border border-border rounded-xl p-6 bg-card mb-8 lg:mb-0 h-fit animate-pulse">
-                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-border">
-                                <div className="w-5 h-5 bg-muted rounded"></div>
-                                <div className="w-16 h-5 bg-muted rounded"></div>
-                            </div>
-                            <div className="space-y-3">
-                                <div className="w-24 h-4 bg-muted rounded"></div>
-                                <div className="space-y-2">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="flex items-center gap-3">
-                                            <div className="w-4 h-4 bg-muted rounded"></div>
-                                            <div className="w-20 h-4 bg-muted rounded"></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Cards Skeleton */}
-                        <div className="lg:col-span-3">
-                            <div className="w-48 h-4 bg-muted rounded mb-4 animate-pulse"></div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {[1, 2, 3, 4, 5, 6].map(i => (
-                                    <div key={i} className="bg-card rounded-2xl border border-border p-6 animate-pulse">
-                                        <div className="w-16 h-16 bg-muted rounded-lg mb-4"></div>
-                                        <div className="w-32 h-5 bg-muted rounded mb-2"></div>
-                                        <div className="w-full h-4 bg-muted rounded mb-1"></div>
-                                        <div className="w-3/4 h-4 bg-muted rounded"></div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         );
     }
@@ -1054,21 +1068,25 @@ roots.forEach((el) => {
     }
 });
 
-// Mount Hero Instances (potentially multiple or single)
-// Currently only supporting one ID based on typical shortcode pattern implies one per page usually, 
-// but let's query selector all if possible? No, React roots need unique management. 
-// For now, let's grab the first one matching the ID we output in PHP.
-// For now, let's grab the first one matching the ID or Class
-const heroRoot = document.querySelector('.wpc-hero-root') || document.getElementById('wpc-hero-root') || document.getElementById('ecommerce-guider-hero-root');
-if (heroRoot) {
-    const config = getPropsFromRoot(heroRoot as HTMLElement);
-    // We need a wrapper component to fetch the specific provider data
-    import('./components/PlatformHeroWrapper').then(({ default: PlatformHeroWrapper }) => {
-        ReactDOM.createRoot(heroRoot as HTMLElement).render(
-            <React.StrictMode>
-                <PlatformHeroWrapper itemId={config.itemId || config.providerId} />
-            </React.StrictMode>
-        );
-    });
-}
+// Mount Hero Instances (potentially multiple)
+try {
+    const heroRoots = document.querySelectorAll('.wpc-hero-root');
+    if (heroRoots.length > 0) {
+        for (let i = 0; i < heroRoots.length; i++) {
+            const root = heroRoots[i] as HTMLElement;
+            if (root && !root.hasAttribute('data-react-mounted')) {
+                root.setAttribute('data-react-mounted', 'true');
+                const config = getPropsFromRoot(root);
 
+                // Static Render
+                ReactDOM.createRoot(root).render(
+                    <React.StrictMode>
+                        <PlatformHeroWrapper itemId={config.itemId || config.providerId} />
+                    </React.StrictMode>
+                );
+            }
+        }
+    }
+} catch (e) {
+    console.error('WPC: Error mounting hero instances', e);
+}

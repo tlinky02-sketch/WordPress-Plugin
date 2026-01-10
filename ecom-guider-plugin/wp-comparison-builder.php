@@ -36,6 +36,7 @@ require_once WPC_PLUGIN_DIR . 'includes/compare-alternatives-admin.php';
 
 require_once WPC_PLUGIN_DIR . 'includes/list-meta-box.php';
 require_once WPC_PLUGIN_DIR . 'includes/migration.php';
+require_once WPC_PLUGIN_DIR . 'includes/ai-handler.php';
 
 /**
  * Register Scripts and Styles
@@ -398,8 +399,13 @@ function wpc_shortcode( $atts ) {
 
     $config_json = htmlspecialchars(json_encode($config), ENT_QUOTES, 'UTF-8');
 
-    // --- HTML SKELETON GENERATION (Hybrid Rendering) ---
-    // We generate the exact same HTML structure as the React app to prevent layout shift ("blink")
+    // --- SIMPLE CONTAINER (No skeleton needed - data is preloaded via wpcSettings) ---
+    // React renders instantly because initialData is passed via wp_localize_script
+    ob_start();
+    ?>
+    <div class="wpc-root" data-config="<?php echo $config_json; ?>"></div>
+    <?php
+    return ob_get_clean();
     
     // Icons (Inline SVG)
     $icon_search = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
@@ -1105,293 +1111,15 @@ function wpc_list_shortcode( $atts ) {
         if($c) $scoped_styles .= "--wpc-banner: {$c}; "; 
     }
 
-    // --- HYBRID RENDERING VARIABLES ---
-    $icon_search = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
-    $icon_chevron = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"><path d="m6 9 6 6 6-6"/></svg>';
-    $icon_filter = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-filter w-5 h-5 text-muted-foreground"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
-    $icon_plus = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle mr-2 h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>';
-
-    $icon_chevrons = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down ml-2 h-4 w-4 shrink-0 opacity-50"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5-5"/></svg>';
-    
-    // Text Labels Logic (List Override > Global Default > Hardcoded Fallback)
-    // Text Labels Logic Moved Up
-
-    $search_input_html = '';
-    if ($final_search_type === 'combobox') {
-         // Render Combobox Trigger Skeleton (Button)
-         $search_input_html = '
-         <button type="button" role="combobox" aria-expanded="false" class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" disabled>
-            <span class="text-muted-foreground">' . __('Select provider...', 'wp-comparison-builder') . '</span>
-            ' . $icon_chevrons . '
-         </button>';
-    } else {
-         // Render Standard Text Input Skeleton
-         $search_input_html = '
-         <div class="relative flex-1">
-            ' . $icon_search . '
-            <input type="text" placeholder="' . __('Search by name...', 'wp-comparison-builder') . '" class="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" disabled />
-         </div>';
-    }
-
-    $search_bar_html = '
-    <div class="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div class="relative flex-1">
-            ' . $search_input_html . '
-        </div>
-        <div class="relative min-w-[160px]">
-            <select class="w-full appearance-none pl-4 pr-10 py-2.5 bg-card border border-border rounded-xl text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors" disabled>
-                <option>' . __('Sort: Default', 'wp-comparison-builder') . '</option>
-            </select>
-            ' . $icon_chevron . '
-        </div>
-        <span class="text-sm text-muted-foreground whitespace-nowrap">' . count($items) . ' ' . (count($items) === 1 ? __('item', 'wp-comparison-builder') : __('items', 'wp-comparison-builder')) . '</span>
-    </div>';
-
-    $top_filter_html = '
-    <div class="mb-8 p-4 bg-card rounded-xl border border-border shadow-sm">
-        <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2 mr-2">
-                ' . $icon_filter . '
-                <span class="font-display font-bold text-lg text-foreground">' . __('Filters', 'wp-comparison-builder') . '</span>
-            </div>
-            <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 border-dashed px-3" type="button" disabled>
-                ' . $icon_plus . '
-                Category
-            </button>
-            <button class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 border-dashed px-3" type="button" disabled>
-                ' . $icon_plus . '
-                Platform Features
-            </button>
-        </div>
-    </div>';
-
+    // --- SIMPLE CONTAINER (No skeleton needed - data is preloaded via wpcSettings) ---
+    // React renders instantly because initialData is passed via wp_localize_script
     ob_start();
     ?>
     <?php if(!empty($css_rules)): ?>
     <style><?php echo $css_rules; ?></style>
     <?php endif; ?>
 
-    <div id="<?php echo esc_attr($unique_id); ?>" class="wpc-root" data-config="<?php echo $config_json; ?>">
-        <div class="wpc-comparison-wrapper bg-background text-foreground min-h-[100px] py-4">
-             
-             <?php if ($filter_style === 'top'): ?>
-                <!-- Top Layout -->
-                <?php if($show_filters) echo $top_filter_html; ?>
-                <div class="w-full flex flex-col lg:flex-row gap-8">
-                     <div class="flex-1">
-                        <?php if($show_search) echo $search_bar_html; ?>
-                        <div class="<?php echo esc_attr($grid_class); ?>">
-             <?php else: ?>
-                <!-- Sidebar Layout -->
-                <div class="w-full flex flex-col lg:grid lg:grid-cols-4 lg:gap-8">
-                     <!-- Static Sidebar Skeleton -->
-                     <?php if($show_filters): ?>
-                     <div class="lg:col-span-1 border border-border rounded-xl p-6 bg-card mb-8 lg:mb-0 h-fit lg:sticky lg:top-24">
-                        <div class="flex items-center gap-2 mb-2 pb-2 border-b border-border">
-                            <?php echo $icon_filter; ?>
-                            <span class="font-display font-bold text-lg text-foreground"><?php _e('Filters', 'wp-comparison-builder'); ?></span>
-                        </div>
-                        <div class="space-y-3 pt-2 opacity-60">
-                            <h4 class="text-sm font-bold text-foreground uppercase tracking-wider">Categories</h4>
-                            <div class="space-y-2">
-                                <div class="h-4 bg-muted rounded w-3/4"></div>
-                                <div class="h-4 bg-muted rounded w-1/2"></div>
-                            </div>
-                            <h4 class="text-sm font-bold text-foreground uppercase tracking-wider mt-4">Features</h4>
-                             <div class="space-y-2">
-                                <div class="h-4 bg-muted rounded w-3/4"></div>
-                                <div class="h-4 bg-muted rounded w-1/2"></div>
-                                <div class="h-4 bg-muted rounded w-2/3"></div>
-                            </div>
-                        </div>
-                     </div>
-                     <?php endif; ?>
-
-                     <div class="<?php echo $show_filters ? 'lg:col-span-3' : 'lg:col-span-4'; ?>">
-                        <?php if($show_search) echo $search_bar_html; ?>
-                        <div class="<?php echo esc_attr($grid_class); ?>">
-             <?php endif; ?>
-                <?php foreach ( $items as $item ): 
-                    // Determine styles
-                    $is_featured_in_list = !empty($config['featured']) && in_array($item['id'], $config['featured']);
-                    $bg_class = $is_featured_in_list ? "bg-amber-50/10" : "";
-                    $featured_color = !empty($item['featured_badge_color']) ? $item['featured_badge_color'] : (!empty($item['featured_color']) ? $item['featured_color'] : '#6366f1');
-                    
-                    // Render Badge HTML
-                    $badge_html = '';
-                    if ($is_featured_in_list) {
-                        $b_text = !empty($item['featured_badge_text']) ? $item['featured_badge_text'] : 'Top Choice';
-                        if ($badge_style === 'floating') {
-                             $badge_html = '<div class="absolute -top-3 left-4 z-10"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-lg" style="background-color: '.esc_attr($featured_color).'; color: white;">'.esc_html($b_text).'</span></div>';
-                        } else {
-                             // Flush style
-                             $badge_html = '<div class="absolute top-0 left-0"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-br-lg rounded-tl-xl shadow-sm" style="background-color: '.esc_attr($featured_color).'; color: white;">'.esc_html($b_text).'</span></div>';
-                        }
-                    }
-
-                    // Determines Overflow Class based on badge style (Flush needs overflow hidden, Floating does not)
-                    $overflow_class = ($badge_style === 'floating') ? '' : 'overflow-hidden';
-                    
-                    // Visibility Checks
-                    $r_style = ($show_rating === '1') ? '' : 'display:none;';
-                    $p_style = ($show_price === '1') ? '' : 'display:none;';
-
-                    // Selection Circle HTML (Unselected state)
-                    $select_circle_html = '<div class="absolute top-2 right-2 w-6 h-6 rounded-full border-2 border-border bg-background flex items-center justify-center transition-colors z-20"></div>';
-                    // For Compact card, it is top-2 right-2 and smaller
-                    $select_circle_compact_html = '<div class="absolute top-2 right-2 w-5 h-5 rounded-full border-2 border-border bg-background flex items-center justify-center transition-colors z-20"></div>';
-                ?>
-                
-                <?php if ($final_style === 'list'): ?>
-                    <!-- LIST STYLE SKELETON -->
-                    <div class="group relative flex flex-col md:flex-row items-center gap-4 md:gap-6 p-4 rounded-xl border bg-card text-card-foreground shadow-sm <?php echo $overflow_class . ' ' . $bg_class; ?>" style="border-color: #e2e8f0;">
-                        <?php echo $badge_html; ?>
-                        <?php echo $select_circle_html; ?>
-                        <div class="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-muted/10 rounded-lg p-2 flex items-center justify-center">
-                            <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
-                        </div>
-                        <div class="flex-1 text-center md:text-left">
-                            <h3 class="font-bold text-lg"><?php echo esc_html($item['name']); ?></h3>
-                            <div class="flex flex-wrap gap-1 justify-center md:justify-start mt-1 opacity-70" style="<?php echo $r_style; ?>">
-                                <?php if(!empty($item['rating'])): ?><span class="text-xs">&#9733; <?php echo esc_html($item['rating']); ?></span><?php endif; ?>
-                            </div>
-                        </div>
-                        <div class="text-center md:text-right md:w-64 flex-shrink-0 flex flex-col gap-3 pt-4 md:pt-10 md:pl-6 md:self-stretch md:justify-between border-t md:border-t-0 md:border-l border-border" style="<?php echo $p_style; ?>">
-                             <span class="block text-2xl font-bold text-primary"><?php echo esc_html($item['price']); ?></span>
-                             <button class="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors">View</button>
-                        </div>
-                    </div>
-
-                <?php elseif ($final_style === 'detailed'): ?>
-                    <!-- DETAILED STYLE SKELETON -->
-                    <div class="group relative grid grid-cols-1 md:grid-cols-12 gap-6 p-6 rounded-xl border bg-card text-card-foreground shadow-sm items-center <?php echo $overflow_class . ' ' . $bg_class; ?>">
-                        <?php echo $badge_html; ?>
-                        <?php echo $select_circle_html; ?>
-                        <div class="md:col-span-3 flex flex-col items-center text-center">
-                           <div class="w-24 h-24 mb-3 bg-muted/10 rounded-lg p-2 flex items-center justify-center">
-                                <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
-                           </div>
-                           <h3 class="font-bold text-lg mb-1"><?php echo esc_html($item['name']); ?></h3>
-                           <span class="text-xs font-medium text-muted-foreground" style="<?php echo $r_style; ?>">Rating: <?php echo esc_html($item['rating']); ?></span>
-                        </div>
-                        <div class="md:col-span-6 border-t md:border-t-0 md:border-l md:border-r border-border py-4 md:px-6">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div class="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                                <div class="h-4 bg-muted rounded w-full mb-2"></div>
-                                <div class="h-4 bg-muted rounded w-1/2"></div>
-                                <div class="h-4 bg-muted rounded w-2/3"></div>
-                            </div>
-                        </div>
-                        <div class="md:col-span-3 flex flex-col items-center justify-center text-center">
-                            <span class="text-3xl font-bold text-primary mb-1" style="<?php echo $p_style; ?>"><?php echo esc_html($item['price']); ?></span>
-                            <span class="text-sm text-muted-foreground mb-4"><?php echo esc_html($item['period']); ?></span>
-                            <button class="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors">Visit Site</button>
-                        </div>
-                    </div>
-
-                <?php elseif ($final_style === 'compact'): ?>
-                    <!-- COMPACT STYLE SKELETON -->
-                    <div class="group relative flex flex-col p-4 rounded-xl border bg-card text-card-foreground shadow-sm h-full <?php echo $overflow_class . ' ' . $bg_class; ?>">
-                        <?php echo $badge_html; ?>
-                        <?php echo $select_circle_compact_html; ?>
-                        <div class="flex items-center gap-3 mb-3 pt-2">
-                            <div class="w-10 h-10 shrink-0 bg-muted/10 rounded-lg p-1 flex items-center justify-center">
-                                <?php if(!empty($item['logo'])): ?><img src="<?php echo esc_url($item['logo']); ?>" class="w-full h-full object-contain" /><?php endif; ?>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-bold text-sm leading-tight truncate"><?php echo esc_html($item['name']); ?></h3>
-                                <div class="flex items-center gap-1 text-xs" style="<?php echo $r_style; ?>"><span class="text-yellow-400">&#9733;</span> <?php echo esc_html($item['rating']); ?></div>
-                            </div>
-                            <div class="text-right" style="<?php echo $p_style; ?>">
-                                <span class="block font-bold text-lg leading-none text-primary"><?php echo esc_html($item['price']); ?></span>
-                            </div>
-                        </div>
-                        <div class="mt-auto grid grid-cols-2 gap-2">
-                            <button class="col-span-2 bg-primary text-primary-foreground h-8 px-3 rounded-md text-xs font-bold">View</button>
-                        </div>
-                    </div>
-
-                <?php else: ?>
-                    <!-- GRID STYLE SKELETON (Default) -->
-                    <div class="relative bg-card rounded-2xl p-5 transition-all duration-300 cursor-pointer border-border hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 <?php echo $bg_class; ?> <?php echo $is_featured_in_list ? 'border-4' : 'border-2'; ?>" style="<?php echo $is_featured_in_list ? 'border-color:'.esc_attr($featured_color) : ''; ?>">
-                    
-                    <?php if ( $is_featured_in_list ): ?>
-                        <?php if ($badge_style === 'flush'): ?>
-                            <div class="absolute top-0 left-0"><span class="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-br-lg rounded-tl-xl shadow-sm" style="background-color: <?php echo esc_attr($featured_color); ?>; color: white;"><?php echo esc_html($b_text); ?></span></div>
-                        <?php else: ?>
-                             <!-- Default Grid Floating -->
-                            <div class="absolute -top-3 -right-3 px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-bold shadow-lg z-10" style="background-color: <?php echo esc_attr($featured_color); ?>; color: white;">
-                                <?php echo esc_html($b_text); ?>
-                            </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
-
-                    <!-- Selection Circle -->
-                    <div class="absolute top-4 right-4 w-6 h-6 rounded-full border-2 border-border bg-background flex items-center justify-center"></div>
-
-                    <!-- Header -->
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-xl bg-white p-1 shadow-sm border border-border/50 flex items-center justify-center overflow-hidden">
-                            <?php if ( !empty($item['logo']) ): ?>
-                                <img src="<?php echo esc_url($item['logo']); ?>" alt="<?php echo esc_attr($item['name']); ?>" class="w-full h-full object-contain" />
-                            <?php endif; ?>
-                        </div>
-                        <div>
-                            <h3 class="font-display font-bold text-lg text-foreground leading-tight"><?php echo esc_html($item['name']); ?></h3>
-                            <!-- Rating -->
-                            <div class="flex items-center gap-1" style="<?php echo $r_style; ?>">
-                                <span class="text-xs font-medium text-muted-foreground">Rating: <?php echo esc_html($item['rating']); ?></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Price -->
-                    <div class="mb-6 p-3 bg-muted/30 rounded-lg text-center" style="<?php echo $p_style; ?>">
-                        <span class="text-3xl font-display font-bold text-primary"><?php echo esc_html($item['price']); ?></span>
-                        <?php if(!empty($item['period'])): ?><span class="text-sm text-muted-foreground"><?php echo esc_html($item['period']); ?></span><?php endif; ?>
-                    </div>
-                
-                    <!-- Categories -->
-                     <div class="flex flex-wrap gap-2 mb-4">
-                        <?php 
-                        $cats = is_array($item['category']) ? array_slice($item['category'], 0, 2) : [];
-                        foreach($cats as $cat): ?>
-                             <span class="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[10px] font-bold uppercase tracking-wider"><?php echo esc_html($cat); ?></span>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <!-- Features -->
-                     <ul class="space-y-2 mb-2">
-                        <?php if ( !empty($item['raw_features']) ):
-                             $feats = is_array($item['raw_features']) ? array_slice($item['raw_features'], 0, 3) : [];
-                             foreach($feats as $f): ?>
-                                <li class="flex items-center gap-2 text-sm text-foreground/80">
-                                    <svg class="w-4 h-4 text-primary flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    <span class="truncate"><?php echo esc_html($f); ?></span>
-                                </li>
-                             <?php endforeach;
-                        endif; ?>
-                     </ul>
-                    
-                     <!-- Button Placeholder -->
-                     <div class="mt-4 pt-4 border-t border-border/50 text-center">
-                        <span class="text-xs font-semibold text-muted-foreground block w-full">Select to Compare</span>
-                     </div>
-                </div>
-                <?php endif; ?>
-                <?php endforeach; ?>
-             </div> <!-- End Grid -->
-             
-             <?php if ($filter_style === 'top'): ?>
-                    </div> <!-- End Flex-1 -->
-                </div> <!-- End Flex Row -->
-             <?php else: ?>
-                    </div> <!-- End Col Span 3 -->
-                </div> <!-- End Main Grid -->
-             <?php endif; ?>
-
-        </div> <!-- End Comparison Wrapper -->
-    </div> <!-- End Root -->
+    <div id="<?php echo esc_attr($unique_id); ?>" class="wpc-root" data-config="<?php echo $config_json; ?>"></div>
     <?php
     $html = ob_get_clean();
     
@@ -1406,6 +1134,7 @@ function wpc_list_shortcode( $atts ) {
 
 add_shortcode( 'wpc_list', 'wpc_list_shortcode' );
 add_shortcode( 'ecommerce_guider_list', 'wpc_list_shortcode' ); // Legacy Support
+
 
 /**
  * Shortcode: [wpc_pricing_table id="123"]
@@ -1567,6 +1296,13 @@ function wpc_pricing_table_shortcode( $atts ) {
         'showFooterButton' => $show_footer_button,
         'footerButtonText' => $footer_button_text,
         'displayContext' => 'inline', // Tell React this is the Shortcode view (Table)
+        
+        // Per-item pricing configuration settings
+        'hideFeatures' => get_post_meta($item['id'], '_wpc_hide_plan_features', true) === '1',
+        'showSelectTable' => get_post_meta($item['id'], '_wpc_show_plan_links', true) === '1',
+        'showSelectPopup' => get_post_meta($item['id'], '_wpc_show_plan_links_popup', true) === '1',
+        'ptBtnPosTable' => get_post_meta($item['id'], '_wpc_table_btn_pos', true) ?: 'default',
+        'ptBtnPosPopup' => get_post_meta($item['id'], '_wpc_popup_btn_pos', true) ?: 'default',
     ];
 
     $config_json = htmlspecialchars(json_encode($widget_config), ENT_QUOTES, 'UTF-8');
@@ -1576,7 +1312,7 @@ function wpc_pricing_table_shortcode( $atts ) {
     <div id="<?php echo esc_attr($unique_id); ?>" class="wpc-root" data-config="<?php echo $config_json; ?>">
         <!-- Skeleton / Loading State -->
         <div class="w-full h-64 bg-muted/10 animate-pulse rounded-xl border border-border flex items-center justify-center">
-            <span class="text-muted-foreground">Loading Pricing Table...</span>
+            <span class="text-muted-foreground"><?php echo esc_html( get_option( 'wpc_text_loading_pricing', 'Loading Pricing Table...' ) ); ?></span>
         </div>
     </div>
     <?php
@@ -1584,6 +1320,9 @@ function wpc_pricing_table_shortcode( $atts ) {
 }
 add_shortcode( 'wpc_pricing_table', 'wpc_pricing_table_shortcode' );
 
+// Load Pros/Cons Shortcode
+require_once plugin_dir_path( __FILE__ ) . 'includes/pros-cons-shortcode.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/proscons-settings-tab.php';
 
 
 

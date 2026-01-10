@@ -57,23 +57,26 @@ const PlatformHero: React.FC<PlatformHeroProps> = ({ item, onBack, onScrollToCom
                         {item.name}
                     </h1>
 
-                    <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                        In-depth review and details
-                    </p>
+                    {/* Subtitle (Dynamic) */}
+                    {item.hero_subtitle && (
+                        <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+                            {item.hero_subtitle}
+                        </p>
+                    )}
 
                     <div className="prose prose-lg text-muted-foreground mb-8">
                         <p>{item.description}</p>
                     </div>
 
                     {/* Rating */}
-                    <div className="flex items-center gap-2 mb-8 p-3 bg-amber-50/50 border border-amber-100 rounded-lg w-fit">
+                    <div className="flex items-center gap-2 mb-8 w-fit">
                         <div className="flex">
                             {[1, 2, 3, 4, 5].map((s) => (
                                 <Star key={s} className={cn("w-5 h-5", s <= Math.round(item.rating) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted/30")} />
                             ))}
                         </div>
                         <span className="font-bold text-foreground">{item.rating}/5</span>
-                        <span className="text-sm text-muted-foreground">(Based on our analysis)</span>
+                        {item.analysis_label && <span className="text-sm text-muted-foreground">({item.analysis_label})</span>}
                     </div>
 
                     {/* Actions */}
@@ -81,24 +84,6 @@ const PlatformHero: React.FC<PlatformHeroProps> = ({ item, onBack, onScrollToCom
                         <Button size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20" onClick={handleVisit}>
                             Visit {item.name} <ExternalLink className="w-4 h-4 ml-2" />
                         </Button>
-
-                        {onScrollToCompare && (
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="h-12 px-8 text-base bg-background transition-colors duration-200 border-primary text-primary wpc-compare-btn mobile-compare-btn"
-                                onClick={onScrollToCompare}
-                                onMouseEnter={() => setIsHovered(true)}
-                                onMouseLeave={() => setIsHovered(false)}
-                                style={{
-                                    borderColor: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
-                                    color: isHovered && hoverColor ? hoverColor : (primaryColor || undefined),
-                                    backgroundColor: isHovered && hoverColor ? `${hoverColor}10` : undefined
-                                }}
-                            >
-                                Compare Alternatives
-                            </Button>
-                        )}
                     </div>
                 </div>
 

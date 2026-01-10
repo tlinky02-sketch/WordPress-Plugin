@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -17,6 +17,16 @@ function wpc_add_meta_boxes() {
     );
 }
 add_action( 'add_meta_boxes', 'wpc_add_meta_boxes' );
+
+/**
+ * Enqueue Admin Scripts
+ */
+function wpc_admin_ui_scripts() {
+    wp_enqueue_media();
+    wp_enqueue_style( 'wp-color-picker' );
+    wp_enqueue_script( 'wp-color-picker' );
+}
+add_action( 'admin_enqueue_scripts', 'wpc_admin_ui_scripts' );
 
 /**
  * Remove Default Taxonomy Meta Boxes (To avoid confusion)
@@ -71,8 +81,187 @@ function wpc_render_meta_box( $post ) {
         
         .wpc-section-title { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
     </style>
+    
+    <script>
+    // Global Admin Utilities
+    var wpcAdmin = {
+        toast: function(msg, type) {
+            var isError = type === 'error';
+            var bg = isError ? '#dc2626' : '#10b981';
+            var icon = isError ? '⚠' : '✓';
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:30px;right:30px;background:' + bg + ';color:white;padding:12px 20px;border-radius:8px;font-weight:500;z-index:100000;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:10px;animation:wpc-slide-up 0.3s ease-out;';
+            toast.innerHTML = '<span style="font-size:18px;">' + icon + '</span> <span>' + msg + '</span>';
+            document.body.appendChild(toast);
+            setTimeout(function() { 
+                toast.style.opacity = '0'; 
+                setTimeout(function(){ toast.remove(); }, 300);
+            }, isError ? 5000 : 3000);
+        },
+        
+        confirm: function(title, message, onConfirm, confirmText, confirmColor) {
+            // Remove existing modal if any
+            var existing = document.getElementById('wpc-confirm-modal');
+            if (existing) existing.remove();
+            
+            var modal = document.createElement('div');
+            modal.id = 'wpc-confirm-modal';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;padding:25px;border-radius:12px;width:90%;max-width:450px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);transform:scale(0.95);opacity:0;transition:all 0.2s;">
+                    <h3 style="margin-top:0;font-size:18px;color:#1f2937;">${title}</h3>
+                    <p style="color:#4b5563;line-height:1.5;margin-bottom:25px;">${message}</p>
+                    <div style="display:flex;justify-content:flex-end;gap:10px;">
+                        <button type="button" class="button" onclick="document.getElementById('wpc-confirm-modal').remove()">Cancel</button>
+                        <button type="button" class="button button-primary" id="wpc-confirm-btn" style="background:${confirmColor || '#dc2626'};border-color:${confirmColor || '#dc2626'};">${confirmText || 'Confirm'}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Animation
+            requestAnimationFrame(() => {
+                modal.querySelector('div').style.transform = 'scale(1)';
+                modal.querySelector('div').style.opacity = '1';
+            });
+            
+            document.getElementById('wpc-confirm-btn').addEventListener('click', function() {
+                onConfirm();
+                modal.remove();
+            });
+        },
+        
+        loading: function(btn, text) {
+            if (!btn) return;
+            btn.dataset.originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner is-active" style="float:none;margin:0 5px 0 0;"></span> ' + text;
+        },
+        
+        reset: function(btn) {
+            if (!btn) return;
+            btn.disabled = false;
+            if (btn.dataset.originalText) {
+                btn.innerHTML = btn.dataset.originalText;
+            }
+        }
+    };
+    
+    // Legacy support
+    function wpcShowToast(msg, isError) {
+        wpcAdmin.toast(msg, isError ? 'error' : 'success');
+    }
+    </script>
+    <style>
+        @keyframes wpc-slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
 
     <div class="wpc-details-wrap wpc-tabs-wrapper">
+        <?php
+        // Check if AI is configured
+        $ai_configured = false;
+        $ai_profiles = [];
+        if ( class_exists( 'WPC_AI_Handler' ) ) {
+            $ai_profiles = WPC_AI_Handler::get_profiles();
+            $ai_configured = ! empty( $ai_profiles );
+        }
+        
+        // Find default profile name for display
+        $default_profile_name = '';
+        foreach ( $ai_profiles as $p ) {
+            if ( ! empty( $p['is_default'] ) ) {
+                $default_profile_name = $p['name'];
+                break;
+            }
+        }
+        if ( empty( $default_profile_name ) && ! empty( $ai_profiles ) ) {
+            $default_profile_name = $ai_profiles[0]['name'];
+        }
+        
+        // Prepare Global Defaults for JS Reset
+        $global_defaults = array(
+            'primary' => get_option('wpc_primary_color', '#6366f1'),
+            'accent' => get_option('wpc_accent_color', '#818cf8'),
+            'border' => get_option('wpc_card_border_color', '#e2e8f0'), // Note: Option name might differ, using fallback
+            'coupon_bg' => get_option('wpc_color_coupon_bg', '#fef3c7'), // Assuming this option exists
+            'coupon_text' => get_option('wpc_color_coupon_text', '#92400e'), // Assuming this option exists
+            
+            'pros_bg' => get_option('wpc_color_pros_bg', '#f0fdf4'),
+            'pros_text' => get_option('wpc_color_pros_text', '#166534'),
+            'cons_bg' => get_option('wpc_color_cons_bg', '#fef2f2'),
+            'cons_text' => get_option('wpc_color_cons_text', '#991b1b')
+        );
+        ?>
+        <script>
+            var wpcGlobalDefaults = <?php echo json_encode($global_defaults); ?>;
+        </script>
+        
+        <!-- AI Assistant Panel - Always Visible -->
+        <div id="wpc-ai-assistant" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 15px 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">&#x1F916;</span>
+                    <div>
+                        <strong style="font-size: 14px;">AI Assistant</strong>
+                        <?php if ( $ai_configured ) : ?>
+                        <span style="opacity: 0.8; font-size: 12px; margin-left: 8px;"><?php echo count( $ai_profiles ); ?> Profile(s) Available</span>
+                        <?php else : ?>
+                        <span style="opacity: 0.8; font-size: 12px; margin-left: 8px;">Not Configured</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php if ( $ai_configured ) : ?>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="wpc-ai-product-name" value="<?php echo esc_attr( $post->post_title ); ?>" placeholder="Enter product/service name" style="padding: 8px 12px; border-radius: 6px; border: none; min-width: 200px; color: #1e293b;" />
+                    <select id="wpc-ai-item-profile" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white;">
+                        <option value="" style="color:#000;"><?php _e( 'Default Profile', 'wp-comparison-builder' ); ?></option>
+                        <?php
+                        $profiles = WPC_AI_Handler::get_profiles();
+                        foreach ( $profiles as $prof ) :
+                        ?>
+                        <option value="<?php echo esc_attr( $prof['id'] ); ?>" style="color:#000;">
+                            <?php echo esc_html( $prof['name'] ); ?> (<?php echo ucfirst( $prof['provider'] ); ?>)
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" id="wpc-ai-generate-all" class="button" style="background: white; color: #6366f1; border: none; font-weight: 600; padding: 8px 16px;">
+                        &#x2728; Generate All
+                    </button>
+                </div>
+                <?php else : ?>
+                <a href="<?php echo admin_url( 'edit.php?post_type=comparison_item&page=wpc-settings' ); ?>" class="button" style="background: white; color: #6366f1; border: none; font-weight: 600; padding: 8px 16px;">
+                    &#x2699; Configure AI Provider
+                </a>
+                <?php endif; ?>
+            </div>
+            
+            <?php if ( $ai_configured ) : ?>
+            <!-- Custom Context (Optional) -->
+            <div style="margin-top: 10px;">
+                <label style="font-size: 12px; opacity: 0.9; display: block; margin-bottom: 5px;">
+                    &#x1F4DD; Additional Context (pricing details, features AI might not know, etc.)
+                </label>
+                <textarea id="wpc-ai-custom-context" placeholder="e.g. Pricing starts at $5/mo for Basic, $15/mo for Pro. Has 24/7 support. Founded in 2020..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: none; color: #1e293b; resize: vertical; min-height: 60px; font-size: 13px;"></textarea>
+            </div>
+            <?php endif; ?>
+        </div>
+        
+        <!-- AI Styles -->
+        <style>
+            .wpc-ai-btn { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+            .wpc-ai-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+            .wpc-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+            .wpc-ai-btn .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: wpc-ai-spin 0.6s linear infinite; }
+            @keyframes wpc-ai-spin { to { transform: rotate(360deg); } }
+            .wpc-ai-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+            .wpc-ai-section-header h3 { margin: 0; }
+        </style>
+        
+        <!-- AI Nonce -->
+        <?php if ( $ai_configured ) : ?>
+        <input type="hidden" id="wpc_ai_item_nonce" name="wpc_ai_item_nonce" value="<?php echo wp_create_nonce( 'wpc_ai_nonce' ); ?>" />
+        <?php endif; ?>
+        
         <ul class="wpc-tab-nav">
             <li class="active" onclick="wpcOpenItemTab(event, 'general')">General Info</li>
             <li onclick="wpcOpenItemTab(event, 'taxonomy')">Categories & Tags</li>
@@ -80,58 +269,13 @@ function wpc_render_meta_box( $post ) {
             <li onclick="wpcOpenItemTab(event, 'content')">Content & Footer</li>
             <li onclick="wpcOpenItemTab(event, 'pricing')">Pricing Plans</li>
             <li onclick="wpcOpenItemTab(event, 'plan_features')">Plan Features</li>
+            <li onclick="wpcOpenItemTab(event, 'shortcodes')">📋 Shortcodes</li>
             <li onclick="wpcOpenItemTab(event, 'seo')">SEO Schema</li>
             <li onclick="wpcOpenItemTab(event, 'import')">Data Import</li>
         </ul>
 
         <!-- TAB: GENERAL -->
         <div id="wpc-tab-general" class="wpc-tab-content active">
-                <?php
-                // Shortcode to display specifically THIS item's pricing table
-                ?>
-                <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:15px; border-radius:5px; margin-bottom:20px;">
-                    <h3 style="margin-top:0; color: #0284c7; font-size:14px;">Pricing Table Shortcode</h3>
-                    <p style="margin-bottom: 10px; font-size:13px;">Use the following shortcode to display specifically THIS item's pricing table anywhere on your site (inline):</p>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <code style="background:#fff; padding:8px 12px; border:1px solid #dde1e5; border-radius:4px; font-size:13px; color:#c02b5c;">
-                            [wpc_pricing_table id="<?php echo $post->ID; ?>"]
-                        </code>
-                        <button type="button" class="button" onclick="wpcCopyShortcode('<?php echo $post->ID; ?>', this)">Copy</button>
-                    </div>
-                </div>
-
-                <script>
-                function wpcCopyShortcode(id, btn) {
-                    var text = '[wpc_pricing_table id="' + id + '"]';
-                    
-                    // Fallback for non-secure contexts
-                    if (!navigator.clipboard) {
-                        var textArea = document.createElement("textarea");
-                        textArea.value = text;
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try {
-                            document.execCommand('copy');
-                            var originalText = btn.innerText;
-                            btn.innerText = 'Copied!';
-                            setTimeout(function() { btn.innerText = originalText; }, 2000);
-                        } catch (err) {
-                            console.error('Fallback: Oops, unable to copy', err);
-                        }
-                        document.body.removeChild(textArea);
-                        return;
-                    }
-
-                    navigator.clipboard.writeText(text).then(function() {
-                        var originalText = btn.innerText;
-                        btn.innerText = 'Copied!';
-                        setTimeout(function() { btn.innerText = originalText; }, 2000);
-                    }, function(err) {
-                        console.error('Async: Could not copy text: ', err);
-                    });
-                }
-                </script>
 
             <!-- MOVED FROM SEO TAB -->
             <div class="wpc-row" style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 20px;">
@@ -289,11 +433,53 @@ function wpc_render_meta_box( $post ) {
                     <p class="description"><?php _e( 'Or use the standard "Featured Image" box on the right.', 'wp-comparison-builder' ); ?></p>
                 </div>
                 <div class="wpc-col">
-                    <label class="wpc-label"><?php _e( 'Dashboard / Hero Image (External URL)', 'wp-comparison-builder' ); ?></label>
-                    <input type="url" name="wpc_dashboard_image" value="<?php echo esc_url( get_post_meta( $post->ID, '_wpc_dashboard_image', true ) ); ?>" class="wpc-input" placeholder="https://example.com/dashboard.jpg" />
+                    <label class="wpc-label"><?php _e( 'Dashboard / Hero Image', 'wp-comparison-builder' ); ?></label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="wpc_dashboard_image" name="wpc_dashboard_image" value="<?php echo esc_url( get_post_meta( $post->ID, '_wpc_dashboard_image', true ) ); ?>" class="wpc-input" placeholder="https://..." />
+                        <button type="button" class="button" id="wpc_upload_dashboard_image"><?php _e( 'Upload', 'wp-comparison-builder' ); ?></button>
+                    </div>
                     <p class="description">Used in hero sections and detailed views.</p>
                 </div>
             </div>
+
+            <div class="wpc-row">
+                <div class="wpc-col">
+                    <label class="wpc-label"><?php _e( 'Hero Subtitle', 'wp-comparison-builder' ); ?></label>
+                    <input type="text" name="wpc_hero_subtitle" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_hero_subtitle', true ) ); ?>" class="wpc-input" placeholder="In-depth review and details" />
+                    <p class="description">Appears below the title. Leave empty to hide.</p>
+                </div>
+                <div class="wpc-col">
+                    <label class="wpc-label"><?php _e( 'Analysis Label', 'wp-comparison-builder' ); ?></label>
+                    <input type="text" name="wpc_analysis_label" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_analysis_label', true ) ); ?>" class="wpc-input" placeholder="Based on our analysis" />
+                    <p class="description">Appears next to the star rating. Leave empty to hide.</p>
+                </div>
+            </div>
+
+            <script>
+            jQuery(document).ready(function($){
+                // Media Uploader
+                var mediaUploader;
+                $('#wpc_upload_dashboard_image').click(function(e) {
+                    e.preventDefault();
+                    if (mediaUploader) {
+                        mediaUploader.open();
+                        return;
+                    }
+                    mediaUploader = wp.media.frames.file_frame = wp.media({
+                        title: 'Choose Image',
+                        button: {
+                            text: 'Choose Image'
+                        },
+                        multiple: false
+                    });
+                    mediaUploader.on('select', function() {
+                        var attachment = mediaUploader.state().get('selection').first().toJSON();
+                        $('#wpc_dashboard_image').val(attachment.url);
+                    });
+                    mediaUploader.open();
+                });
+            });
+            </script>
 
             <div class="wpc-row">
                 <div class="wpc-col">
@@ -342,6 +528,50 @@ function wpc_render_meta_box( $post ) {
                                 <input type="color" name="wpc_color_coupon_text" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_coupon_text', true ) ?: '#92400e' ); ?>" style="height:35px; width:60px;" />
                             </div>
                         </div>
+                        
+                        <button type="button" class="button" onclick="wpcResetDesignOverrides(this)" style="margin-top: 10px;">
+                            Reset to Global Settings
+                        </button>
+                    </div>
+                </div>
+             </div>
+
+            <h3 class="wpc-section-title" style="margin-top:20px;">Pros & Cons Colors</h3>
+             <div class="wpc-row">
+                <div class="wpc-col">
+                    <div style="background: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <!-- Enable Custom Colors Toggle -->
+                        <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                            <?php $enable_pros_colors = get_post_meta( $post->ID, '_wpc_enable_pros_cons_colors', true ); ?>
+                            <label style="font-weight:bold; color: #334155;">
+                                <input type="checkbox" id="wpc_enable_pros_cons_colors" name="wpc_enable_pros_cons_colors" value="1" <?php checked( $enable_pros_colors, '1' ); ?> onchange="wpcToggleProsCons(this)" />
+                                <?php _e( 'Enable Custom Pros & Cons Colors', 'wp-comparison-builder' ); ?>
+                            </label>
+                            <p class="description" style="margin-top:2px;">If unchecked, the global default colors will be used.</p>
+                        </div>
+                        
+                        <div id="wpc-pros-cons-inputs" style="display:flex; gap: 20px; margin-bottom: 15px; <?php echo $enable_pros_colors !== '1' ? 'opacity:0.5;pointer-events:none;' : ''; ?>">
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Pros Background</label>
+                                <input type="color" name="wpc_color_pros_bg" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_pros_bg', true ) ?: '#f0fdf4' ); ?>" style="height:35px; width:60px;" />
+                            </div>
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Pros Text</label>
+                                <input type="color" name="wpc_color_pros_text" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_pros_text', true ) ?: '#166534' ); ?>" style="height:35px; width:60px;" />
+                            </div>
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Cons Background</label>
+                                <input type="color" name="wpc_color_cons_bg" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_cons_bg', true ) ?: '#fef2f2' ); ?>" style="height:35px; width:60px;" />
+                            </div>
+                            <div>
+                                <label class="wpc-label" style="font-size:11px; margin-bottom:2px;">Cons Text</label>
+                                <input type="color" name="wpc_color_cons_text" value="<?php echo esc_attr( get_post_meta( $post->ID, '_wpc_color_cons_text', true ) ?: '#991b1b' ); ?>" style="height:35px; width:60px;" />
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="button" onclick="wpcResetProsConsColors(this)" style="margin-top: 10px;">
+                            Reset to Global Settings
+                        </button>
                     </div>
                 </div>
              </div>
@@ -411,7 +641,7 @@ function wpc_render_meta_box( $post ) {
                     <label class="wpc-label"><?php _e( 'Show Coupon?', 'wp-comparison-builder' ); ?></label>
                     <label>
                         <input type="checkbox" name="wpc_show_coupon" value="1" <?php checked( $show_coupon, '1' ); ?> />
-                        <?php _e( 'Display coupon button on the frontend', 'wp-comparison-builder' ); ?>
+                        <?php _e( 'Show Coupon Button?', 'wp-comparison-builder' ); ?>
                     </label>
                 </div>
             </div>
@@ -589,7 +819,7 @@ function wpc_render_meta_box( $post ) {
                     $all_other_items = get_posts( array(
                         'post_type' => 'comparison_item',
                         'posts_per_page' => -1,
-                        'post_status' => array( 'publish', 'draft' ),
+                        'post_status' => 'publish',
                         'orderby' => 'title',
                         'order' => 'ASC',
                         'post__not_in' => array( $post->ID )
@@ -949,7 +1179,7 @@ function wpc_render_meta_box( $post ) {
                 wpcToggleBulkPaste();
                 
                 if (added > 0) {
-                    alert('Added ' + added + ' features. Save the post to persist changes, then select which plans include each feature.');
+                    wpcShowToast('Added ' + added + ' features. Save the post to persist.');
                 }
             }
             
@@ -1167,7 +1397,7 @@ function wpc_render_meta_box( $post ) {
                             btn.innerHTML = originalText;
                         }, 2000);
                     } catch(e) {
-                        alert('Copy failed. Please select and copy manually.');
+                        wpcShowToast('Copy failed. Please copy manually.', true);
                     }
                     document.body.removeChild(textarea);
                 }
@@ -1175,6 +1405,110 @@ function wpc_render_meta_box( $post ) {
             </div>
             
             <?php endif; ?>
+        </div>
+
+        <!-- TAB: SHORTCODES -->
+        <div id="wpc-tab-shortcodes" class="wpc-tab-content">
+            <h2 style="margin-top: 0; color: #1e293b; font-size: 18px; margin-bottom: 20px;">📋 Available Shortcodes</h2>
+            <p style="margin-bottom: 25px; color: #64748b;">Click copy to get the shortcode for this item. Paste it anywhere on your site to display the content.</p>
+            
+            <!-- Hero Shortcode -->
+            <div style="background:#faf5ff; border:2px solid #c084fc; padding:20px; border-radius:8px; margin-bottom:20px;">
+                <div style="display:flex; align-items:start; gap:15px;">
+                    <span style="font-size: 32px;">🎯</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin-top:0; margin-bottom:8px; color: #7c3aed; font-size:16px;">Hero Section</h3>
+                        <p style="margin-bottom: 12px; font-size:13px; color: #6b7280;">Displays a full-width hero section with logo, description, pricing, and call-to-action buttons.</p>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+                            <code style="background:#fff; padding:10px 14px; border:1px solid #dde1e5; border-radius:6px; font-size:13px; color:#7c3aed; flex: 1; min-width: 200px;">
+                                [wpc_hero id="<?php echo $post->ID; ?>"]
+                            </code>
+                            <button type="button" class="button button-primary" onclick="wpcCopyShortcodeGeneric('[wpc_hero id=<?php echo $post->ID; ?>]', this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Table Shortcode -->
+            <div style="background:#f0f9ff; border:2px solid #60a5fa; padding:20px; border-radius:8px; margin-bottom:20px;">
+                <div style="display:flex; align-items:start; gap:15px;">
+                    <span style="font-size: 32px;">💰</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin-top:0; margin-bottom:8px; color: #2563eb; font-size:16px;">Pricing Table</h3>
+                        <p style="margin-bottom: 12px; font-size:13px; color: #6b7280;">Shows all pricing plans with features, pricing, and purchase buttons in a responsive table.</p>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+                            <code style="background:#fff; padding:10px 14px; border:1px solid #dde1e5; border-radius:6px; font-size:13px; color:#2563eb; flex: 1; min-width: 200px;">
+                                [wpc_pricing_table id="<?php echo $post->ID; ?>"]
+                            </code>
+                            <button type="button" class="button button-primary" onclick="wpcCopyShortcodeGeneric('[wpc_pricing_table id=<?php echo $post->ID; ?>]', this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pros & Cons Shortcode -->
+            <div style="background:#ecfdf5; border:2px solid #34d399; padding:20px; border-radius:8px; margin-bottom:20px;">
+                <div style="display:flex; align-items:start; gap:15px;">
+                    <span style="font-size: 32px;">⚖️</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin-top:0; margin-bottom:8px; color: #047857; font-size:16px;">Pros & Cons</h3>
+                        <p style="margin-bottom: 12px; font-size:13px; color: #6b7280;">Displays the advantages and disadvantages in a clean, easy-to-read format.</p>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+                            <code style="background:#fff; padding:10px 14px; border:1px solid #dde1e5; border-radius:6px; font-size:13px; color:#047857; flex: 1; min-width: 200px;">
+                                [wpc_pros_cons id="<?php echo $post->ID; ?>"]
+                            </code>
+                            <button type="button" class="button button-primary" onclick="wpcCopyShortcodeGeneric('[wpc_pros_cons id=<?php echo $post->ID; ?>]', this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Table Shortcode -->
+            <div style="background:#fff7ed; border:2px solid #fb923c; padding:20px; border-radius:8px; margin-bottom:20px;">
+                <div style="display:flex; align-items:start; gap:15px;">
+                    <span style="font-size: 32px;">📊</span>
+                    <div style="flex: 1;">
+                        <h3 style="margin-top:0; margin-bottom:8px; color: #ea580c; font-size:16px;">Feature Comparison Table</h3>
+                        <p style="margin-bottom: 12px; font-size:13px; color: #6b7280;">Shows detailed feature comparison across all pricing plans.</p>
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+                            <code style="background:#fff; padding:10px 14px; border:1px solid #dde1e5; border-radius:6px; font-size:13px; color:#ea580c; flex: 1; min-width: 200px;">
+                                [wpc_feature_table id="<?php echo $post->ID; ?>"]
+                            </code>
+                            <button type="button" class="button button-primary" onclick="wpcCopyShortcodeGeneric('[wpc_feature_table id=<?php echo $post->ID; ?>]', this)">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function wpcCopyShortcodeGeneric(text, btn) {
+                if (!navigator.clipboard) {
+                    // Fallback
+                    var textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        var originalText = btn.innerHTML;
+                        btn.innerHTML = '✓ Copied!';
+                        setTimeout(function() { btn.innerHTML = originalText; }, 2000);
+                    } catch (err) {
+                        wpcShowToast('Copy failed. Please copy manually.', true);
+                    }
+                    document.body.removeChild(textArea);
+                    return;
+                }
+
+                navigator.clipboard.writeText(text).then(function() {
+                    var originalText = btn.innerHTML;
+                    btn.innerHTML = '✓ Copied!';
+                    setTimeout(function() { btn.innerHTML = originalText; }, 2000);
+                }, function(err) {
+                    wpcShowToast('Copy failed: ' + err, true);
+                });
+            }
+            </script>
         </div>
 
         <!-- Toast Notification Container -->
@@ -1357,14 +1691,19 @@ function wpc_render_meta_box( $post ) {
                     if (el) el.checked = !!checked;
                 };
 
-                // 0. Title
+                // 0. Title & Description
                 if (data.title) {
                     const titleEl = document.getElementById('title');
                     if (titleEl) {
                          titleEl.value = data.title;
-                         // Trigger input event for things like Gutenberg (if active, though this is metabox)
                          titleEl.dispatchEvent(new Event('input', { bubbles: true }));
                     }
+                }
+                if (data.description) {
+                    setVal('wpc_short_description', data.description);
+                    // Also try standard WP Excerpt
+                    const excerpt = document.getElementById('excerpt');
+                    if (excerpt) excerpt.value = data.description;
                 }
 
                 // 1. General
@@ -1418,7 +1757,10 @@ function wpc_render_meta_box( $post ) {
                 if (data.pricing_plans && Array.isArray(data.pricing_plans)) {
                     const container = document.getElementById('wpc-plans-container');
                     // Optional: Clear existing plans before import to avoid duplicates
-                    // container.innerHTML = ''; 
+                    // Clear existing plans before import to avoid duplicates
+                    if (data.pricing_plans.length > 0) {
+                        container.innerHTML = '';
+                    } 
                     
                     data.pricing_plans.forEach(plan => {
                         wpcAddPlan(); 
@@ -1802,10 +2144,402 @@ function wpc_render_meta_box( $post ) {
                 jQuery('#' + listId).append(html);
                 input.value = '';
             } else {
-                alert('Error adding term');
+                wpcShowToast('Error adding term', true);
             }
         });
     }
+    
+    // ======================
+    // AI GENERATION FUNCTIONS
+    // ======================
+    
+    <?php if ( $ai_configured ) : ?>
+    (function() {
+        var aiNonce = document.getElementById('wpc_ai_item_nonce') ? document.getElementById('wpc_ai_item_nonce').value : '';
+        
+        // AI Generation Prompts
+        var aiPrompts = {
+            all: `Generate comprehensive comparison data for "{name}".
+Return a JSON object with this EXACT structure (for importing into a comparison tool):
+{
+  "title": "{name} Review",
+  "description": "2-3 sentence marketing description of {name} including key selling points.",
+  "general": {
+    "price": "$29",
+    "period": "/mo",
+    "rating": "4.5",
+    "details_link": "/{name}-review",
+    "direct_link": "https://{name}.com",
+    "button_text": "Visit Website"
+  },
+  "content": {
+    "pros": "Pro 1\\nPro 2\\nPro 3\\nPro 4\\nPro 5",
+    "cons": "Con 1\\nCon 2\\nCon 3",
+     "labels": {
+      "pros": "Pros",
+      "cons": "Cons",
+      "price": "Starting at",
+      "rating": "Rating",
+      "visit_site": "Visit Site",
+      "coupon": "Coupon"
+    }
+  },
+  "pricing_plans": [
+    {
+      "name": "Basic", 
+      "price": "$9", 
+      "period": "/mo", 
+      "features": "Feature 1\\nFeature 2\\nFeature 3", 
+      "button_text": "Get Started", 
+      "show_table": true, 
+      "show_popup": true
+    },
+    {
+      "name": "Pro", 
+      "price": "$29", 
+      "period": "/mo", 
+      "features": "All Basic features\\nPro Feature 1\\nPro Feature 2", 
+      "button_text": "Choose Pro", 
+      "is_popular": true, 
+      "show_table": true, 
+      "show_popup": true, 
+      "banner_text": "MOST POPULAR", 
+      "banner_color": "#10b981"
+    }
+  ],
+  "visuals": {
+    "badge_text": "Editor\'s Choice",
+    "badge_color": "#10b981"
+  },
+  "categories": ["Category 1", "Category 2"],
+  "tags": ["Tag 1", "Tag 2"],
+  "custom_fields": [
+      {"name": "Founded", "value": "2015"},
+      {"name": "Headquarters", "value": "San Francisco, USA"}
+  ],
+  "seo": {
+      "schema_type": "SoftwareApplication",
+      "brand": "{name}"
+  }
+}
+Be accurate and specific to the actual product/service. Use proper JSON quoting.`,
+
+            description: `Generate a compelling 2-3 sentence marketing description for "{name}". Return JSON: {"description": "..."}`,
+            
+            pros_cons: `Generate 5 pros and 3 cons for "{name}". Return JSON: {"pros": ["..."], "cons": ["..."]}`,
+            
+            pricing: `Generate 3 realistic pricing plans for "{name}". Return JSON: {"pricing_plans": [{"name": "...", "price": "$X", "period": "/mo", "features": "Feature 1\\nFeature 2", "button_text": "..."}]}`,
+            
+            categories: `Suggest 2-3 relevant categories and 3-5 tags for "{name}". Return JSON: {"suggested_categories": ["..."], "suggested_tags": ["..."]}`
+        };
+        
+        // Generate All button click
+        var generateAllBtn = document.getElementById('wpc-ai-generate-all');
+        if (generateAllBtn) {
+            generateAllBtn.addEventListener('click', function() {
+                var productName = document.getElementById('wpc-ai-product-name').value.trim();
+                var profileSelect = document.getElementById('wpc-ai-item-profile');
+                var profileId = profileSelect ? profileSelect.value : '';
+                var customContext = document.getElementById('wpc-ai-custom-context');
+                var contextText = customContext ? customContext.value.trim() : '';
+                
+                if (!productName) {
+                    wpcShowAIToast('Please enter a product/service name', true);
+                    return;
+                }
+                
+                generateAllBtn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border:2px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:wpc-ai-spin 0.6s linear infinite;display:inline-block;"></span> Generating...';
+                generateAllBtn.disabled = true;
+                
+                var prompt = aiPrompts.all.replace('{name}', productName);
+                
+                // Add custom context if provided
+                if (contextText) {
+                    prompt += '\n\nAdditional context from user (use this information for accurate pricing/details):\n' + contextText;
+                }
+                
+                var ajaxData = {
+                    action: 'wpc_ai_generate',
+                    nonce: aiNonce,
+                    prompt: prompt
+                };
+                
+                // Send profile_id if selected, otherwise let server use default
+                if (profileId) {
+                    ajaxData.profile_id = profileId;
+                }
+                
+                jQuery.post(ajaxurl, ajaxData, function(response) {
+                    generateAllBtn.innerHTML = '&#x2728; Generate All';
+                    generateAllBtn.disabled = false;
+                    
+                    if (response.success) {
+                        var data = response.data;
+                        // Handle string vs object response
+                        if (typeof data === 'string') {
+                            try {
+                                data = JSON.parse(data);
+                            } catch(e) {
+                                console.error('Failed to parse AI response:', e);
+                                wpcShowAIToast('AI returned invalid data. Check console.', true);
+                                return;
+                            }
+                        }
+                        if (typeof wpcExecuteImport === 'function') {
+                            // Adapter: If AI returns flat structure (legacy/stubborn), map to Import structure
+                            if (!data.general && (data.price || data.description)) {
+                                console.log('Adapting flat AI response to Import format...');
+                                data.general = {
+                                    price: data.price,
+                                    period: data.period,
+                                    rating: data.rating,
+                                    button_text: 'Visit Website'
+                                };
+                                data.content = {
+                                    pros: Array.isArray(data.pros) ? data.pros.join('\n') : data.pros,
+                                    cons: Array.isArray(data.cons) ? data.cons.join('\n') : data.cons
+                                };
+                                if (data.description) {
+                                    var desc = document.getElementById('wpc_short_description');
+                                    if(desc) desc.value = data.description;
+                                }
+                            }
+                            
+                            wpcExecuteImport(data);
+                            wpcShowAIToast('Content generated & imported!');
+                        } else {
+                            wpcPopulateFromAI(data);
+                            wpcShowAIToast('Content generated successfully!');
+                        }
+                    } else {
+                        console.error('AI Error:', response);
+                        wpcShowAIToast('AI Error: ' + (response.data || 'Unknown error'), true);
+                    }
+                }).fail(function() {
+                    generateAllBtn.innerHTML = '&#x2728; Generate All';
+                    generateAllBtn.disabled = false;
+                    wpcShowAIToast('Failed to connect to AI. Check settings.', true);
+                });
+            });
+        }
+        
+        // Populate form fields from AI response
+        function wpcPopulateFromAI(data) {
+            // Description
+            if (data.description) {
+                var descField = document.getElementById('wpc_short_description');
+                if (descField) descField.value = data.description;
+            }
+            
+            // Rating
+            if (data.rating) {
+                var ratingField = document.getElementById('wpc_rating');
+                if (ratingField) ratingField.value = data.rating;
+            }
+            
+            // Price
+            if (data.price) {
+                var priceField = document.getElementById('wpc_price');
+                if (priceField) priceField.value = data.price;
+            }
+            
+            // Period
+            if (data.period) {
+                var periodField = document.getElementById('wpc_price_period');
+                if (periodField) periodField.value = data.period;
+            }
+            
+            // Pros
+            if (data.pros && Array.isArray(data.pros)) {
+                var prosField = document.getElementById('wpc_pros');
+                if (prosField) prosField.value = data.pros.join('\n');
+            }
+            
+            // Cons
+            if (data.cons && Array.isArray(data.cons)) {
+                var consField = document.getElementById('wpc_cons');
+                if (consField) consField.value = data.cons.join('\n');
+            }
+            
+            // Pricing Plans
+            if (data.pricing_plans && Array.isArray(data.pricing_plans)) {
+                var container = document.getElementById('wpc-plans-container');
+                if (container) {
+                    // Clear existing plans
+                    container.innerHTML = '';
+                    
+                    data.pricing_plans.forEach(function(plan, idx) {
+                        wpcAddPlan();
+                        var row = container.children[idx];
+                        if (row) {
+                            var nameInput = row.querySelector('input[name*="[name]"]');
+                            var priceInput = row.querySelector('input[name*="[price]"]');
+                            var periodInput = row.querySelector('input[name*="[period]"]');
+                            var featuresInput = row.querySelector('textarea[name*="[features]"]');
+                            var btnTextInput = row.querySelector('input[name*="[button_text]"]');
+                            
+                            if (nameInput) nameInput.value = plan.name || '';
+                            if (priceInput) priceInput.value = plan.price || '';
+                            if (periodInput) periodInput.value = plan.period || '/mo';
+                            if (featuresInput) featuresInput.value = plan.features || '';
+                            if (btnTextInput) btnTextInput.value = plan.button_text || 'Get Started';
+                            
+                            // Mark popular plan
+                            if (plan.is_popular) {
+                                var bannerCheck = row.querySelector('input[name*="[show_banner]"]');
+                                var bannerText = row.querySelector('input[name*="[banner_text]"]');
+                                if (bannerCheck) bannerCheck.checked = true;
+                                if (bannerText) bannerText.value = 'MOST POPULAR';
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // Switch to relevant tab for review
+            wpcOpenItemTab(null, 'general');
+        }
+        
+        // Toast notification
+        function wpcShowAIToast(msg, isError) {
+            var bg = isError ? '#dc2626' : '#10b981';
+            var icon = isError ? '&#x26A0;' : '&#x2728;';
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:30px;right:30px;background:' + bg + ';color:white;padding:12px 20px;border-radius:8px;font-weight:500;z-index:100000;animation:wpc-ai-toast-in 0.3s ease;max-width:400px;';
+            toast.innerHTML = icon + ' ' + msg;
+            document.body.appendChild(toast);
+            
+            setTimeout(function() {
+                toast.remove();
+            }, isError ? 5000 : 3000);
+        }
+    })();
+    <?php endif; ?>
+        
+        // Reset Design Overrides to Global Settings
+        function wpcResetDesignOverrides(btn) {
+            wpcAdmin.confirm(
+                'Reset Design Overrides',
+                'Reset all design overrides to global settings?',
+                function() {
+                    wpcAdmin.loading(btn, 'Resetting...');
+                    
+                    setTimeout(function() {
+                        // Reset Checkbox
+                        var toggle = document.querySelector('input[name="wpc_enable_design_overrides"]');
+                        if (toggle) toggle.checked = false;
+                        
+                        // Reset Inputs to Global Defaults (Visual only)
+                        const mapping = {
+                            'wpc_primary_color': 'primary',
+                            'wpc_accent_color': 'accent',
+                            'wpc_border_color': 'border',
+                            'wpc_color_coupon_bg': 'coupon_bg',
+                            'wpc_color_coupon_text': 'coupon_text'
+                        };
+
+                        for (var name in mapping) {
+                            var input = document.querySelector('input[name="' + name + '"]');
+                            if (input && wpcGlobalDefaults[mapping[name]]) {
+                                input.value = wpcGlobalDefaults[mapping[name]];
+                            }
+                        }
+                        
+                        wpcAdmin.reset(btn);
+                        wpcAdmin.toast('Design overrides disabled & reset to global.', 'success');
+                    }, 600);
+                },
+                'Reset',
+                '#d32f2f'
+            );
+        }
+        
+        // Toggle Pros/Cons
+        function wpcToggleProsCons(checkbox) {
+            var wrap = document.getElementById('wpc-pros-cons-inputs');
+            if (!wrap) return;
+            if (checkbox.checked) {
+                wrap.style.opacity = '1';
+                wrap.style.pointerEvents = 'auto';
+            } else {
+                wrap.style.opacity = '0.5';
+                wrap.style.pointerEvents = 'none';
+            }
+        }
+
+        // Reset Pros/Cons Colors to Global Settings
+        function wpcResetProsConsColors(btn) {
+            wpcAdmin.confirm(
+                'Reset Pros & Cons Colors',
+                'Disable custom colors and reset to global defaults?',
+                function() {
+                    wpcAdmin.loading(btn, 'Resetting...');
+                    
+                    setTimeout(function() {
+                         // Reset Checkbox
+                        var toggle = document.getElementById('wpc_enable_pros_cons_colors');
+                        if (toggle) {
+                            toggle.checked = false;
+                            wpcToggleProsCons(toggle);
+                        }
+                        
+                        // Reset Inputs to Global Defaults
+                        const mapping = {
+                            'wpc_color_pros_bg': 'pros_bg',
+                            'wpc_color_pros_text': 'pros_text',
+                            'wpc_color_cons_bg': 'cons_bg',
+                            'wpc_color_cons_text': 'cons_text'
+                        };
+
+                        for (var name in mapping) {
+                            var input = document.querySelector('input[name="' + name + '"]');
+                            if (input && wpcGlobalDefaults[mapping[name]]) {
+                                input.value = wpcGlobalDefaults[mapping[name]];
+                            }
+                        }
+                        
+                        wpcAdmin.reset(btn);
+                        wpcAdmin.toast('Pros & cons colors disabled & reset.', 'success');
+                    }, 600);
+                },
+                'Reset',
+                '#d32f2f'
+            );
+        }
+
+        // Reset Global Pros/Cons Colors (Settings Page)
+        function wpcResetGlobalProsConsColors(btn, type) {
+            wpcAdmin.confirm(
+                'Reset Global Colors',
+                'Reset global ' + (type === 'pros' ? 'Pros' : 'Cons') + ' colors to factory defaults?',
+                function() {
+                    wpcAdmin.loading(btn, 'Resetting...');
+                    
+                    setTimeout(function() {
+                        if (type === 'pros') {
+                            var bg = document.querySelector('input[name="wpc_color_pros_bg"]');
+                            var txt = document.querySelector('input[name="wpc_color_pros_text"]');
+                            // Also checking description (p tag) to update preview text if needed?
+                            // Default behavior of color picker might update it on change, lets fire change event
+                            
+                            if (bg) { bg.value = '#f0fdf4'; bg.dispatchEvent(new Event('input')); bg.dispatchEvent(new Event('change')); }
+                            if (txt) { txt.value = '#166534'; txt.dispatchEvent(new Event('input')); txt.dispatchEvent(new Event('change')); }
+                        } else {
+                            var bg = document.querySelector('input[name="wpc_color_cons_bg"]');
+                            var txt = document.querySelector('input[name="wpc_color_cons_text"]');
+                            
+                            if (bg) { bg.value = '#fef2f2'; bg.dispatchEvent(new Event('input')); bg.dispatchEvent(new Event('change')); }
+                            if (txt) { txt.value = '#991b1b'; txt.dispatchEvent(new Event('input')); txt.dispatchEvent(new Event('change')); }
+                        }
+                        
+                        wpcAdmin.reset(btn);
+                        wpcAdmin.toast((type === 'pros' ? 'Pros' : 'Cons') + ' colors reset to defaults.', 'success');
+                    }, 600);
+                },
+                'Reset',
+                '#d32f2f'
+            );
+        }
     </script>
     <?php
 }
@@ -2091,6 +2825,26 @@ function wpc_save_meta_box( $post_id ) {
     if ( isset( $_POST['wpc_color_coupon_text'] ) ) {
         update_post_meta( $post_id, '_wpc_color_coupon_text', sanitize_hex_color( $_POST['wpc_color_coupon_text'] ) );
     }
+    
+    // Pros & Cons Colors
+    if ( isset( $_POST['wpc_color_pros_bg'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_pros_bg', sanitize_hex_color( $_POST['wpc_color_pros_bg'] ) );
+    }
+    if ( isset( $_POST['wpc_color_pros_text'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_pros_text', sanitize_hex_color( $_POST['wpc_color_pros_text'] ) );
+    }
+    if ( isset( $_POST['wpc_color_cons_bg'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_cons_bg', sanitize_hex_color( $_POST['wpc_color_cons_bg'] ) );
+    }
+    if ( isset( $_POST['wpc_color_cons_text'] ) ) {
+        update_post_meta( $post_id, '_wpc_color_cons_text', sanitize_hex_color( $_POST['wpc_color_cons_text'] ) );
+    }
+    if ( isset( $_POST['wpc_enable_pros_cons_colors'] ) ) {
+        update_post_meta( $post_id, '_wpc_enable_pros_cons_colors', '1' );
+    } else {
+        update_post_meta( $post_id, '_wpc_enable_pros_cons_colors', '0' );
+    }
+
     if ( isset( $_POST['wpc_show_plan_buttons'] ) ) {
         update_post_meta( $post_id, '_wpc_show_plan_buttons', '1' );
     } else {
@@ -2258,3 +3012,17 @@ function wpc_dashboard_widget_function() {
     echo '</tbody></table>';
     wp_reset_postdata();
 }
+
+/**
+ * Rename Excerpt to Details for Comparison Item
+ */
+function wpc_change_excerpt_label( $translation, $original, $domain ) {
+    global $post;
+    if ( isset( $post ) && $post->post_type == 'comparison_item' ) {
+        if ( 'Excerpt' == $original ) {
+            return 'Details'; // Rename to Details
+        }
+    }
+    return $translation;
+}
+add_filter( 'gettext', 'wpc_change_excerpt_label', 10, 3 );

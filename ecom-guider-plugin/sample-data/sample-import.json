@@ -1,64 +1,89 @@
 {
-    "version": "1.0",
+    "version": "1.1",
     "categories": [
         {
-            "name": "Web Hosting",
-            "slug": "web-hosting",
-            "description": "General web hosting services"
+            "name": "All-in-One Platform",
+            "slug": "all-in-one-platform",
+            "description": "Complete ecommerce solutions"
         },
         {
-            "name": "E-commerce",
-            "slug": "ecommerce",
-            "description": "E-commerce platforms and hosting"
+            "name": "Open Source",
+            "slug": "open-source",
+            "description": "Free and open-source platforms"
+        },
+        {
+            "name": "Enterprise",
+            "slug": "enterprise",
+            "description": "Solutions for large businesses"
+        },
+        {
+            "name": "WordPress Plugin",
+            "slug": "wordpress-plugin",
+            "description": "WooCommerce and other WP solutions"
         }
     ],
     "features": [
-        {
-            "name": "Free SSL",
-            "slug": "free-ssl",
-            "description": ""
-        },
         {
             "name": "24/7 Support",
             "slug": "247-support",
             "description": ""
         },
         {
-            "name": "Free Domain",
-            "slug": "free-domain",
+            "name": "Free SSL",
+            "slug": "free-ssl",
+            "description": ""
+        },
+        {
+            "name": "Multi-Currency",
+            "slug": "multi-currency",
+            "description": ""
+        },
+        {
+            "name": "Abandoned Cart",
+            "slug": "abandoned-cart",
+            "description": ""
+        },
+        {
+            "name": "SEO Tools",
+            "slug": "seo-tools",
+            "description": ""
+        },
+        {
+            "name": "Dropshipping",
+            "slug": "dropshipping",
             "description": ""
         }
     ],
     "comparison_items": [
         {
-            "post_title": "Sample Platform",
-            "post_name": "sample-platform",
+            "post_title": "Shopify",
+            "post_name": "shopify",
             "post_status": "publish",
             "post_content": "",
             "meta": {
-                "_wpc_website_url": "https://example.com",
-                "_wpc_short_description": "A sample platform showing all available fields",
-                "_wpc_rating": "4.5",
+                "_wpc_website_url": "https://shopify.com",
+                "_wpc_short_description": "The leading all-in-one ecommerce platform",
+                "_wpc_rating": "4.8",
                 "_wpc_price": "$29",
                 "_wpc_price_period": "/mo",
-                "_wpc_external_logo_url": "",
-                "_wpc_details_link": "https://example.com/review",
-                "_wpc_direct_link": "https://example.com/go",
-                "_wpc_button_text": "Visit Website",
-                "_wpc_featured_badge_text": "Editor's Pick",
-                "_wpc_featured_badge_color": "#6366f1",
+                "_wpc_external_logo_url": "https://example.com/shopify-logo.png",
+                "_wpc_details_link": "/shopify-review",
+                "_wpc_direct_link": "https://shopify.com/start",
+                "_wpc_button_text": "Start Free Trial",
+                "_wpc_featured_badge_text": "Editor's Choice",
+                "_wpc_featured_badge_color": "#96bf48",
                 "_wpc_coupon_code": "SAVE20",
                 "_wpc_coupon_label": "Get 20% Off",
                 "_wpc_show_coupon": "1",
-                "_wpc_pros": "Pro item 1\nPro item 2\nPro item 3",
-                "_wpc_cons": "Con item 1\nCon item 2",
+                "_wpc_pros": "Easy to use drag-and-drop builder\n24/7 phone, email, and chat support\nBuilt-in payment processing\nExtensive app marketplace\nExcellent mobile responsiveness",
+                "_wpc_cons": "Transaction fees on external gateways\nLimited customization without coding\nMonthly fees add up with apps",
                 "_wpc_pricing_plans": [
                     {
                         "name": "Basic",
-                        "price": "$9.99",
+                        "price": "$29",
                         "period": "/mo",
-                        "features": "Feature 1\nFeature 2\nFeature 3",
-                        "link": "https://example.com/basic",
+                        "features": "2 staff accounts\nBasic reports\n4 inventory locations\n24/7 support",
+                        "link": "https://shopify.com/pricing",
                         "button_text": "Get Started",
                         "show_popup": "1",
                         "show_table": "1",
@@ -67,12 +92,12 @@
                         "banner_color": "#10b981"
                     },
                     {
-                        "name": "Professional",
-                        "price": "$29.99",
+                        "name": "Shopify",
+                        "price": "$79",
                         "period": "/mo",
-                        "features": "All Basic features\nPriority Support\nAdvanced Analytics",
-                        "link": "https://example.com/pro",
-                        "button_text": "Choose Pro",
+                        "features": "5 staff accounts\nProfessional reports\n5 inventory locations\nLower transaction fees",
+                        "link": "https://shopify.com/pricing",
+                        "button_text": "Choose Plan",
                         "show_popup": "1",
                         "show_table": "1",
                         "show_banner": "1",
@@ -80,42 +105,181 @@
                         "banner_color": "#10b981"
                     },
                     {
-                        "name": "Enterprise",
-                        "price": "$99.99",
+                        "name": "Advanced",
+                        "price": "$299",
                         "period": "/mo",
-                        "features": "All Pro features\nDedicated Support\nCustom Solutions",
-                        "link": "https://example.com/enterprise",
-                        "button_text": "Contact Sales",
+                        "features": "15 staff accounts\nAdvanced report builder\n8 inventory locations\nThird-party shipping rates",
+                        "link": "https://shopify.com/pricing",
+                        "button_text": "Go Advanced",
                         "show_popup": "1",
                         "show_table": "1",
                         "show_banner": "1",
                         "banner_text": "BEST VALUE",
                         "banner_color": "#f59e0b"
                     }
+                ],
+                "_wpc_plan_features": [
+                    {
+                        "name": "Staff Accounts",
+                        "values": [
+                            "2",
+                            "5",
+                            "15"
+                        ]
+                    },
+                    {
+                        "name": "Inventory Locations",
+                        "values": [
+                            "4",
+                            "5",
+                            "8"
+                        ]
+                    },
+                    {
+                        "name": "Reports",
+                        "values": [
+                            "Basic",
+                            "Professional",
+                            "Advanced"
+                        ]
+                    },
+                    {
+                        "name": "Transaction Fee",
+                        "values": [
+                            "2.0%",
+                            "1.0%",
+                            "0.5%"
+                        ]
+                    }
+                ],
+                "_wpc_custom_fields": [
+                    {
+                        "name": "Founded",
+                        "value": "2006"
+                    },
+                    {
+                        "name": "Headquarters",
+                        "value": "Ottawa, Canada"
+                    },
+                    {
+                        "name": "Free Trial",
+                        "value": "3 days"
+                    }
+                ],
+                "_wpc_competitors": [
+                    "WooCommerce",
+                    "BigCommerce",
+                    "Wix"
+                ],
+                "_wpc_schema_type": "SoftwareApplication",
+                "_wpc_schema_brand": "Shopify Inc.",
+                "_wpc_schema_sku": "SHOPIFY-BASIC",
+                "_wpc_text_overrides": {
+                    "pros_label": "Pros",
+                    "cons_label": "Cons",
+                    "price_label": "Starting at",
+                    "rating_label": "Our Rating",
+                    "visit_site": "Visit Shopify",
+                    "coupon_label": "Discount Code"
+                },
+                "_wpc_color_overrides": {
+                    "primary": "#96bf48",
+                    "accent": "#5c6ac4",
+                    "border": "#e2e8f0"
+                }
+            },
+            "categories": [
+                "all-in-one-platform"
+            ],
+            "features": [
+                "247-support",
+                "free-ssl",
+                "multi-currency",
+                "abandoned-cart",
+                "seo-tools",
+                "dropshipping"
+            ]
+        },
+        {
+            "post_title": "WooCommerce",
+            "post_name": "woocommerce",
+            "post_status": "publish",
+            "post_content": "",
+            "meta": {
+                "_wpc_website_url": "https://woocommerce.com",
+                "_wpc_short_description": "The most popular open-source ecommerce plugin for WordPress",
+                "_wpc_rating": "4.6",
+                "_wpc_price": "Free",
+                "_wpc_price_period": "",
+                "_wpc_details_link": "/woocommerce-review",
+                "_wpc_direct_link": "https://woocommerce.com/download",
+                "_wpc_button_text": "Download Free",
+                "_wpc_featured_badge_text": "Best Free Option",
+                "_wpc_featured_badge_color": "#7f54b3",
+                "_wpc_pros": "Completely free and open-source\nUnlimited customization\nHuge extension marketplace\nFull control over your data\nGreat for SEO",
+                "_wpc_cons": "Requires WordPress hosting\nSteeper learning curve\nExtensions can be expensive\nYou handle security",
+                "_wpc_pricing_plans": [
+                    {
+                        "name": "WooCommerce Core",
+                        "price": "Free",
+                        "period": "",
+                        "features": "Unlimited products\nAll payment gateways\nFull store control\nOpen source",
+                        "link": "https://woocommerce.com/download",
+                        "button_text": "Download",
+                        "show_popup": "1",
+                        "show_table": "1",
+                        "show_banner": "1",
+                        "banner_text": "FREE FOREVER",
+                        "banner_color": "#7f54b3"
+                    }
+                ],
+                "_wpc_custom_fields": [
+                    {
+                        "name": "Founded",
+                        "value": "2011"
+                    },
+                    {
+                        "name": "Headquarters",
+                        "value": "San Francisco, USA"
+                    },
+                    {
+                        "name": "License",
+                        "value": "GPLv3"
+                    }
+                ],
+                "_wpc_competitors": [
+                    "Shopify",
+                    "Magento",
+                    "PrestaShop"
                 ]
             },
             "categories": [
-                "web-hosting",
-                "ecommerce"
+                "open-source",
+                "wordpress-plugin"
             ],
             "features": [
-                "free-ssl",
-                "247-support",
-                "free-domain"
+                "seo-tools",
+                "multi-currency",
+                "dropshipping"
             ]
         }
     ],
     "custom_lists": [
         {
-            "post_title": "Sample Custom List",
-            "post_name": "sample-custom-list",
+            "post_title": "Top Ecommerce Platforms 2024",
+            "post_name": "top-ecommerce-platforms-2024",
             "post_status": "publish",
             "meta": {
-                "_wpc_list_items": [],
-                "_wpc_enable_comparison": "1",
-                "_wpc_show_filters": "1",
-                "_wpc_initial_visible_count": "6",
-                "_wpc_filter_layout": "top"
+                "_wpc_list_ids": [],
+                "_wpc_list_enable_comparison": "1",
+                "_wpc_list_show_checkboxes": "1",
+                "_wpc_list_filter_layout": "top",
+                "_wpc_list_show_filters_opt": "show",
+                "_wpc_list_show_search_opt": "show",
+                "_wpc_list_initial_visible": "8",
+                "_wpc_list_show_all_enabled": "1",
+                "_wpc_list_style": "grid",
+                "_wpc_list_badge_style": "floating"
             }
         }
     ],
@@ -124,6 +288,14 @@
         "wpc_accent_color": "#0d9488",
         "wpc_secondary_color": "#1e293b",
         "wpc_card_border_color": "#e2e8f0",
-        "wpc_pricing_banner_color": "#10b981"
+        "wpc_hover_button_color": "#4f46e5",
+        "wpc_pt_header_bg": "#f8fafc",
+        "wpc_pt_header_text": "#0f172a",
+        "wpc_pt_btn_bg": "#6366f1",
+        "wpc_pt_btn_text": "#ffffff",
+        "wpc_pricing_banner_color": "#10b981",
+        "wpc_show_filters": "1",
+        "wpc_show_search": "1",
+        "wpc_default_list_style": "grid"
     }
 }

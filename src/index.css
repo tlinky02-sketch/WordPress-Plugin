@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* FOUC Prevention: Hide comparison wrapper until CSS loads, then fade in */
+.wpc-comparison-wrapper {
+  opacity: 1;
+  transition: opacity 0.15s ease-out;
+}
+
+/* Before CSS loads, the container is hidden via inline style in PHP */
+.wpc-comparison-wrapper[data-loaded="true"] {
+  opacity: 1 !important;
+}
+
 @layer base {
   :root {
     --background: 210 20% 98%;

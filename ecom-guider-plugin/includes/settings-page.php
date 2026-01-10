@@ -679,34 +679,22 @@ function wpc_delete_all_data() {
 /**
  * Apply Theme Preset
  */
-add_action( 'wp_ajax_wpc_apply_theme_preset', 'wpc_apply_theme_preset' );
-function wpc_apply_theme_preset() {
-    if ( ! current_user_can( 'manage_options' ) ) {
-        wp_send_json_error( 'Unauthorized' );
-    }
-
-    check_ajax_referer( 'wpc_import_export_nonce', 'nonce' );
-
-    $theme = isset( $_POST['theme'] ) ? sanitize_text_field( $_POST['theme'] ) : 'indigo';
-    
-    $themes = array(
+function wpc_get_theme_presets() {
+    return array(
         'indigo' => array(
             'wpc_primary_color' => '#6366f1',
             'wpc_accent_color' => '#0d9488',
             'wpc_secondary_color' => '#1e293b',
             'wpc_card_border_color' => '#e2e8f0',
             'wpc_pricing_banner_color' => '#10b981',
-            // Pricing Table Visuals
             'wpc_pt_header_bg' => '#f8fafc',
             'wpc_pt_header_text' => '#0f172a',
             'wpc_pt_btn_bg' => '#0f172a',
             'wpc_pt_btn_text' => '#ffffff',
-            // Feature Table Defaults
             'wpc_ft_header_bg' => '#f3f4f6',
             'wpc_ft_check_color' => '#10b981',
             'wpc_ft_x_color' => '#ef4444',
             'wpc_ft_alt_row_bg' => '#f9fafb',
-            // Color Settings
             'wpc_color_pros_bg' => '#f0fdf4',
             'wpc_color_pros_text' => '#166534',
             'wpc_color_cons_bg' => '#fef2f2',
@@ -785,7 +773,7 @@ function wpc_apply_theme_preset() {
             'wpc_color_coupon_hover' => '#c7d2fe',
             'wpc_color_copied' => '#0ea5e9',
         ),
-         'minimal' => array(
+        'minimal' => array(
             'wpc_primary_color' => '#0f172a',
             'wpc_accent_color' => '#64748b',
             'wpc_secondary_color' => '#334155', 
@@ -809,11 +797,27 @@ function wpc_apply_theme_preset() {
             'wpc_color_copied' => '#0f172a',
         ),
     );
+}
+
+add_action( 'wp_ajax_wpc_apply_theme_preset', 'wpc_apply_theme_preset' );
+function wpc_apply_theme_preset() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( 'Unauthorized' );
+    }
+
+    check_ajax_referer( 'wpc_import_export_nonce', 'nonce' );
+
+    $theme = isset( $_POST['theme'] ) ? sanitize_text_field( $_POST['theme'] ) : 'indigo';
+    
+    $themes = wpc_get_theme_presets();
 
     if ( isset( $themes[$theme] ) ) {
         foreach ( $themes[$theme] as $key => $value ) {
             update_option( $key, $value );
         }
+        // Save Active Preset for Reset Functionality
+        update_option( 'wpc_active_preset', $theme );
+        
         wp_send_json_success( 'Theme applied successfully' );
     } else {
         wp_send_json_error( 'Theme not found' );
@@ -824,8 +828,11 @@ function wpc_apply_theme_preset() {
  * Render Settings Page
  */
 function wpc_render_settings_page() {
+    // Get active tab from URL parameter (or default to 'general')
+    $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'general';
+    
     ?>
-    <div class="wrap" style="padding-bottom: 60px;">
+    <div class="wrap wpc-settings-page" style="padding-bottom: 60px;">
         <h1><?php _e( 'Comparison Builder Settings', 'wp-comparison-builder' ); ?></h1>
         
         <!-- Premium UI Helpers -->
@@ -937,6 +944,15 @@ function wpc_render_settings_page() {
         };
         </script>
         
+        <?php
+        $presets = wpc_get_theme_presets();
+        $active_preset = get_option('wpc_active_preset', 'indigo');
+        ?>
+        <script>
+        window.wpcThemePresets = <?php echo json_encode($presets); ?>;
+        window.wpcActivePreset = "<?php echo esc_js($active_preset); ?>";
+        </script>
+
         <!-- Tab Navigation -->
         <nav class="nav-tab-wrapper wpc-tabs-nav" style="margin-bottom: 20px;">
             <a href="#" class="nav-tab nav-tab-active" data-tab="general">
@@ -953,6 +969,12 @@ function wpc_render_settings_page() {
             </a>
             <a href="#" class="nav-tab" data-tab="links">
                 <?php _e( 'Link Behavior', 'wp-comparison-builder' ); ?>
+            </a>
+            <a href="#" class="nav-tab" data-tab="ai-settings" style="color: #7c3aed;">
+                &#x1F916; <?php _e( 'AI Settings', 'wp-comparison-builder' ); ?>
+            </a>
+            <a href="#" class="nav-tab" data-tab="proscons">
+                ⚖️ <?php _e( 'Pros & Cons', 'wp-comparison-builder' ); ?>
             </a>
             <a href="#" class="nav-tab" data-tab="import-export">
                 <?php _e( 'Import / Export', 'wp-comparison-builder' ); ?>
@@ -984,6 +1006,14 @@ function wpc_render_settings_page() {
         
         <div class="wpc-tab-content" id="wpc-tab-schema-seo" style="display: none;">
             <?php wpc_render_schema_seo_tab(); ?>
+        </div>
+        
+        <div class="wpc-tab-content" id="wpc-tab-ai-settings" style="display: none;">
+            <?php wpc_render_ai_tab(); ?>
+        </div>
+
+        <div class="wpc-tab-content" id="wpc-tab-proscons" style="display: none;">
+            <?php wpc_render_proscons_tab(); ?>
         </div>
         
         <div class="wpc-tab-content" id="wpc-tab-import-export" style="display: none;">
@@ -1021,6 +1051,9 @@ function wpc_render_settings_page() {
             });
         });
         
+        // The switchTab function is no longer directly used by JS for display,
+        // as display is controlled by PHP based on the URL parameter.
+        // However, keeping it for reference or if some JS-only tabs are added later.
         function switchTab(tabName) {
             // Remove active class from all tabs
             tabs.forEach(function(t) {
@@ -1041,6 +1074,64 @@ function wpc_render_settings_page() {
                 activeContent.style.display = 'block';
             }
         }
+
+        
+        // Expose global reset function for Pros & Cons tab
+        window.wpcResetGlobalProsConsColors = function(btn, type) {
+            wpcAdmin.confirm(
+                'Reset Global Colors',
+                'Reset global ' + (type === 'pros' ? 'Pros' : 'Cons') + ' colors to the active theme preset?',
+                function() {
+                    wpcAdmin.loading(btn, 'Resetting...');
+                    
+                    setTimeout(function() {
+                        var presetName = window.wpcActivePreset || 'indigo';
+                        var theme = window.wpcThemePresets[presetName] || window.wpcThemePresets['indigo'];
+                        
+                        // Default fallbacks if theme data missing
+                        var defaults = {
+                            pros_bg: '#f0fdf4', pros_text: '#166534',
+                            cons_bg: '#fef2f2', cons_text: '#991b1b'
+                        };
+
+                        if (theme) {
+                            defaults.pros_bg = theme.wpc_color_pros_bg || defaults.pros_bg;
+                            defaults.pros_text = theme.wpc_color_pros_text || defaults.pros_text;
+                            defaults.cons_bg = theme.wpc_color_cons_bg || defaults.cons_bg;
+                            defaults.cons_text = theme.wpc_color_cons_text || defaults.cons_text;
+                        }
+
+                        if (type === 'pros') {
+                            var bg = document.querySelector('input[name="wpc_color_pros_bg"]');
+                            var txt = document.querySelector('input[name="wpc_color_pros_text"]');
+                            
+                            if (bg) { bg.value = defaults.pros_bg; bg.dispatchEvent(new Event('input')); bg.dispatchEvent(new Event('change')); }
+                            if (txt) { txt.value = defaults.pros_text; txt.dispatchEvent(new Event('input')); txt.dispatchEvent(new Event('change')); }
+                            
+                            // Also update the description text if possible (it's a <p> tag next to input)
+                            if (bg && bg.nextElementSibling) bg.nextElementSibling.innerText = defaults.pros_bg;
+                            if (txt && txt.nextElementSibling) txt.nextElementSibling.innerText = defaults.pros_text;
+                            
+                        } else {
+                            var bg = document.querySelector('input[name="wpc_color_cons_bg"]');
+                            var txt = document.querySelector('input[name="wpc_color_cons_text"]');
+                            
+                            if (bg) { bg.value = defaults.cons_bg; bg.dispatchEvent(new Event('input')); bg.dispatchEvent(new Event('change')); }
+                            if (txt) { txt.value = defaults.cons_text; txt.dispatchEvent(new Event('input')); txt.dispatchEvent(new Event('change')); }
+                            
+                             // Also update the description text
+                            if (bg && bg.nextElementSibling) bg.nextElementSibling.innerText = defaults.cons_bg;
+                            if (txt && txt.nextElementSibling) txt.nextElementSibling.innerText = defaults.cons_text;
+                        }
+                        
+                        wpcAdmin.reset(btn);
+                        wpcAdmin.toast((type === 'pros' ? 'Pros' : 'Cons') + ' colors reset to ' + presetName + ' preset.', 'success');
+                    }, 600);
+                },
+                'Reset',
+                '#d32f2f'
+            );
+        };
     })();
     </script>
     <?php
@@ -1692,13 +1783,77 @@ function wpc_render_import_export_tab() {
             <span id="wpc-import-status" style="margin-left: 10px;"></span>
         </div>
         
-        <!-- Sample JSON -->
-        <div style="background: #f0f6ff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 20px;">
-            <h3 style="margin-top: 0;"><?php _e( 'Sample JSON Template', 'wp-comparison-builder' ); ?></h3>
-            <p><?php _e( 'Download a comprehensive sample showing all supported fields.', 'wp-comparison-builder' ); ?></p>
-            <button type="button" id="wpc-sample-btn" class="button">
-                <?php _e( 'Download Sample JSON', 'wp-comparison-builder' ); ?>
-            </button>
+        <?php
+        // Check if AI is configured
+        $ai_configured = false;
+        $ai_provider = get_option( 'wpc_ai_active_provider', 'none' );
+        if ( $ai_provider !== 'none' && class_exists( 'WPC_AI_Handler' ) ) {
+            $ai_config = WPC_AI_Handler::get_active_provider();
+            $ai_configured = ! empty( $ai_config['api_key'] );
+        }
+        ?>
+        
+        <!-- AI Bulk Generator -->
+        <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 2px solid #8b5cf6; border-radius: 8px; padding: 20px; margin-top: 20px;">
+            <h3 style="margin-top: 0; color: #6d28d9; display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">&#x1F916;</span>
+                <?php _e( 'AI Bulk Generator', 'wp-comparison-builder' ); ?>
+                <?php if ( $ai_configured ) : ?>
+                <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;"><?php echo ucfirst( $ai_provider ); ?> Active</span>
+                <?php else : ?>
+                <span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500;">Not Configured</span>
+                <?php endif; ?>
+            </h3>
+            
+            <?php if ( $ai_configured ) : ?>
+            <p><?php _e( 'Generate multiple comparison items at once using AI. Enter product/service names (one per line) and click Generate.', 'wp-comparison-builder' ); ?></p>
+            
+            <?php wp_nonce_field( 'wpc_ai_nonce', 'wpc_ai_bulk_nonce' ); ?>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                    <?php _e( 'Products/Services to Generate:', 'wp-comparison-builder' ); ?>
+                </label>
+                <textarea id="wpc-ai-bulk-products" rows="6" style="width: 100%; font-family: monospace; padding: 10px;" placeholder="Shopify
+WooCommerce
+BigCommerce
+Squarespace Commerce
+Wix eCommerce"></textarea>
+                <p class="description"><?php _e( 'Enter one product or service name per line. AI will generate full comparison data for each.', 'wp-comparison-builder' ); ?></p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="wpc-ai-bulk-provider" style="height: 30px; margin-right: 5px; border-color: #8b5cf6;">
+                    <option value=""><?php _e( 'Default Provider', 'wp-comparison-builder' ); ?></option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Gemini</option>
+                    <option value="claude">Claude</option>
+                    <option value="custom">Custom</option>
+                </select>
+                <button type="button" id="wpc-ai-bulk-generate" class="button button-primary" style="background: #6d28d9; border-color: #6d28d9;">
+                    &#x2728; <?php _e( 'Generate All Items', 'wp-comparison-builder' ); ?>
+                </button>
+                <span id="wpc-ai-bulk-status" style="font-size: 13px;"></span>
+            </div>
+            
+            <!-- Progress Area -->
+            <div id="wpc-ai-bulk-progress" style="display: none; margin-top: 15px; padding: 15px; background: white; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span id="wpc-ai-bulk-current"><?php _e( 'Processing...', 'wp-comparison-builder' ); ?></span>
+                    <span id="wpc-ai-bulk-count">0 / 0</span>
+                </div>
+                <div style="background: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                    <div id="wpc-ai-bulk-bar" style="background: linear-gradient(90deg, #6d28d9, #8b5cf6); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <div id="wpc-ai-bulk-log" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; font-family: monospace;"></div>
+            </div>
+            
+            <?php else : ?>
+            <p><?php _e( 'Generate multiple comparison items at once using AI. Configure an AI provider first.', 'wp-comparison-builder' ); ?></p>
+            <a href="<?php echo admin_url( 'edit.php?post_type=comparison_item&page=wpc-settings' ); ?>" class="button" style="background: #6d28d9; color: white; border-color: #6d28d9;">
+                &#x2699; <?php _e( 'Configure AI Provider', 'wp-comparison-builder' ); ?>
+            </a>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -2043,6 +2198,116 @@ function wpc_render_import_export_tab() {
             URL.revokeObjectURL(url);
         });
         
+        // ========================================
+        // AI BULK GENERATION
+        // ========================================
+        <?php if ( $ai_configured ) : ?>
+        (function() {
+            var bulkBtn = document.getElementById('wpc-ai-bulk-generate');
+            var bulkNonce = document.getElementById('wpc_ai_bulk_nonce');
+            if (!bulkBtn || !bulkNonce) return;
+            
+            bulkBtn.addEventListener('click', async function() {
+                var textarea = document.getElementById('wpc-ai-bulk-products');
+                var provider = document.getElementById('wpc-ai-bulk-provider').value;
+                var products = textarea.value.trim().split('\n').filter(p => p.trim());
+                
+                if (products.length === 0) {
+                    wpcAdmin.toast('Please enter at least one product/service name', 'error');
+                    return;
+                }
+                
+                var statusEl = document.getElementById('wpc-ai-bulk-status');
+                var progressEl = document.getElementById('wpc-ai-bulk-progress');
+                var currentEl = document.getElementById('wpc-ai-bulk-current');
+                var countEl = document.getElementById('wpc-ai-bulk-count');
+                var barEl = document.getElementById('wpc-ai-bulk-bar');
+                var logEl = document.getElementById('wpc-ai-bulk-log');
+                
+                bulkBtn.disabled = true;
+                bulkBtn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Processing...';
+                progressEl.style.display = 'block';
+                logEl.innerHTML = '';
+                
+                var completed = 0;
+                var success = 0;
+                var failed = 0;
+                
+                for (var i = 0; i < products.length; i++) {
+                    var name = products[i].trim();
+                    currentEl.textContent = 'Generating: ' + name + '...';
+                    countEl.textContent = (i + 1) + ' / ' + products.length;
+                    barEl.style.width = ((i + 1) / products.length * 100) + '%';
+                    
+                    try {
+                        var result = await wpcBulkGenerateItem(name, bulkNonce.value, provider);
+                        if (result.success) {
+                            success++;
+                            logEl.innerHTML += '<div style="color:#16a34a;">✓ ' + name + ' - Created!</div>';
+                        } else {
+                            failed++;
+                            logEl.innerHTML += '<div style="color:#dc2626;">✗ ' + name + ' - ' + result.error + '</div>';
+                        }
+                    } catch (e) {
+                        failed++;
+                        logEl.innerHTML += '<div style="color:#dc2626;">✗ ' + name + ' - Request failed</div>';
+                    }
+                    
+                    completed++;
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+                
+                currentEl.textContent = 'Complete! ' + success + ' created, ' + failed + ' failed.';
+                bulkBtn.disabled = false;
+                bulkBtn.innerHTML = '&#x2728; Generate All Items';
+                statusEl.innerHTML = success > 0 ? '<span style="color:#16a34a;">✓ ' + success + ' items created!</span>' : '';
+            });
+            
+            async function wpcBulkGenerateItem(name, nonce, provider) {
+                var prompt = `Generate comparison data for "${name}".
+Return JSON: {
+  "title": "Product Name",
+  "description": "2-3 sentence description",
+  "rating": 4.5,
+  "price": "$29",
+  "period": "/mo",
+  "pros": ["Pro 1", "Pro 2", "Pro 3"],
+  "cons": ["Con 1", "Con 2"],
+  "pricing_plans": [{"name": "Basic", "price": "$9", "period": "/mo", "features": "Feature 1\\nFeature 2", "button_text": "Get Started"}]
+}`;
+                
+                // First, generate content with AI
+                var response = await jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_generate',
+                    nonce: nonce,
+                    prompt: prompt,
+                    provider: provider
+                });
+                
+                if (!response.success) {
+                    return { success: false, error: response.data || 'AI generation failed' };
+                }
+                
+                var data = response.data;
+                
+                // Create the comparison item
+                var createResponse = await jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_create_item',
+                    nonce: nonce,
+                    title: data.title || name,
+                    description: data.description || '',
+                    rating: data.rating || 4.5,
+                    price: data.price || '',
+                    period: data.period || '/mo',
+                    pros: JSON.stringify(data.pros || []),
+                    cons: JSON.stringify(data.cons || []),
+                    pricing_plans: JSON.stringify(data.pricing_plans || [])
+                });
+                
+                return createResponse;
+            }
+        })();
+        <?php endif; ?>
 
     })();
     </script>
@@ -2216,14 +2481,34 @@ function wpc_render_json_schema_tab() {
                     <tr><td><code>_wpc_website_url</code></td><td>Main website URL</td><td>string</td></tr>
                     <tr><td><code>_wpc_short_description</code></td><td>Brief description</td><td>string</td></tr>
                     <tr><td><code>_wpc_rating</code></td><td>Rating (0-5)</td><td>number</td></tr>
+                    <tr><td><code>_wpc_price</code></td><td>Starting price (e.g., "$29")</td><td>string</td></tr>
+                    <tr><td><code>_wpc_price_period</code></td><td>Price period (e.g., "/mo")</td><td>string</td></tr>
+                    <tr><td><code>_wpc_details_link</code></td><td>Link to review/details page</td><td>string</td></tr>
+                    <tr><td><code>_wpc_direct_link</code></td><td>Affiliate/direct link</td><td>string</td></tr>
+                    <tr><td><code>_wpc_button_text</code></td><td>CTA button text</td><td>string</td></tr>
+                    <tr><td><code>_wpc_external_logo_url</code></td><td>External logo URL</td><td>string</td></tr>
                     <tr><td><code>_wpc_pricing_plans</code></td><td>Array of pricing plans</td><td>array</td></tr>
                     <tr><td><code>_wpc_pros</code></td><td>List of pros (array or newline-separated string)</td><td>array/string</td></tr>
                     <tr><td><code>_wpc_cons</code></td><td>List of cons (array or newline-separated string)</td><td>array/string</td></tr>
                     <tr><td><code>_wpc_featured_badge_text</code></td><td>Featured badge text</td><td>string</td></tr>
                     <tr><td><code>_wpc_featured_badge_color</code></td><td>Featured badge color (hex)</td><td>string</td></tr>
-                    <tr><td><code>_wpc_competitors</code></td><td>Default competitor IDs</td><td>array</td></tr>
+                    <tr><td><code>_wpc_coupon_code</code></td><td>Coupon/promo code</td><td>string</td></tr>
+                    <tr><td><code>_wpc_coupon_label</code></td><td>Coupon display label</td><td>string</td></tr>
+                    <tr><td><code>_wpc_show_coupon</code></td><td>Show coupon ("1" or "0")</td><td>string</td></tr>
+                    <tr style="background:#f0fdf4;"><td><code>_wpc_custom_fields</code></td><td>Custom key-value fields [{name, value}]</td><td>array</td></tr>
+                    <tr style="background:#f0fdf4;"><td><code>_wpc_plan_features</code></td><td>Plan comparison features [{name, values:[]}]</td><td>array</td></tr>
+                    <tr style="background:#f0fdf4;"><td><code>_wpc_competitors</code></td><td>Default competitor names/IDs</td><td>array</td></tr>
+                    <tr style="background:#f0fdf4;"><td><code>_wpc_text_overrides</code></td><td>Per-item text labels {pros_label, cons_label, ...}</td><td>object</td></tr>
+                    <tr style="background:#f0fdf4;"><td><code>_wpc_color_overrides</code></td><td>Per-item colors {primary, accent, border}</td><td>object</td></tr>
+                    <tr style="background:#eff6ff;"><td><code>_wpc_schema_type</code></td><td>Schema.org type (SoftwareApplication, etc.)</td><td>string</td></tr>
+                    <tr style="background:#eff6ff;"><td><code>_wpc_schema_brand</code></td><td>Schema brand name</td><td>string</td></tr>
+                    <tr style="background:#eff6ff;"><td><code>_wpc_schema_sku</code></td><td>Schema SKU identifier</td><td>string</td></tr>
                 </tbody>
             </table>
+            <p class="description" style="margin-top: 10px;">
+                <span style="display:inline-block;width:12px;height:12px;background:#f0fdf4;border:1px solid #86efac;margin-right:5px;"></span> New advanced fields
+                <span style="display:inline-block;width:12px;height:12px;background:#eff6ff;border:1px solid #93c5fd;margin-left:15px;margin-right:5px;"></span> SEO Schema fields
+            </p>
         </div>
     </div>
     <?php
@@ -2610,47 +2895,50 @@ function wpc_render_danger_zone_tab() {
         });
         
         // Data Integrity Check
-        document.getElementById('wpc-integrity-btn').addEventListener('click', function() {
-            const btn = this;
-            wpcAdmin.loading(btn, 'Checking...');
-            showLoading('wpc-integrity-status', 'Running integrity check...');
-            
-            const formData = new FormData();
-            formData.append('action', 'wpc_integrity_check');
-            formData.append('nonce', nonce);
-            
-            fetch(ajaxurl, { method: 'POST', body: formData })
-                .then(r => r.json())
-                .then(data => {
-                    wpcAdmin.reset(btn);
-                    if (data.success) {
-                        const d = data.data;
-                        let html = '<strong>&#x2713; Integrity Check Complete</strong><br><br>';
-                        html += '<strong>Summary:</strong><br>';
-                        html += '\u2022 Total Items: ' + d.total_items + '<br>';
-                        html += '\u2022 Total Lists: ' + d.total_lists + '<br>';
-                        html += '\u2022 Categories: ' + d.total_categories + '<br>';
-                        html += '\u2022 Features: ' + d.total_features + '<br><br>';
-                        
-                        if (d.issues.length > 0) {
-                            html += '<strong style="color: #f59e0b;">\u26A0\uFE0F Issues Found (' + d.issues.length + '):</strong><br>';
-                            d.issues.forEach(function(issue) {
-                                html += '\u2022 ' + issue + '<br>';
-                            });
-                            showStatus('wpc-integrity-status', html, 'success');
+        var integrityBtn = document.getElementById('wpc-integrity-btn');
+        if (integrityBtn) {
+            integrityBtn.addEventListener('click', function() {
+                const btn = this;
+                wpcAdmin.loading(btn, 'Checking...');
+                showLoading('wpc-integrity-status', 'Running integrity check...');
+                
+                const formData = new FormData();
+                formData.append('action', 'wpc_integrity_check');
+                formData.append('nonce', nonce);
+                
+                fetch(ajaxurl, { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(data => {
+                        wpcAdmin.reset(btn);
+                        if (data.success) {
+                            const d = data.data;
+                            let html = '<strong>&#x2713; Integrity Check Complete</strong><br><br>';
+                            html += '<strong>Summary:</strong><br>';
+                            html += '\u2022 Total Items: ' + d.total_items + '<br>';
+                            html += '\u2022 Total Lists: ' + d.total_lists + '<br>';
+                            html += '\u2022 Categories: ' + d.total_categories + '<br>';
+                            html += '\u2022 Features: ' + d.total_features + '<br><br>';
+                            
+                            if (d.issues.length > 0) {
+                                html += '<strong style="color: #f59e0b;">\u26A0\uFE0F Issues Found (' + d.issues.length + '):</strong><br>';
+                                d.issues.forEach(function(issue) {
+                                    html += '\u2022 ' + issue + '<br>';
+                                });
+                                showStatus('wpc-integrity-status', html, 'success');
+                            } else {
+                                html += '<strong style="color: #16a34a;">\u2713 No issues found!</strong>';
+                                showStatus('wpc-integrity-status', html, 'success');
+                            }
                         } else {
-                            html += '<strong style="color: #16a34a;">\u2713 No issues found!</strong>';
-                            showStatus('wpc-integrity-status', html, 'success');
+                            showStatus('wpc-integrity-status', '\u2717 Error: ' + data.data, 'error');
                         }
-                    } else {
-                        showStatus('wpc-integrity-status', '\u2717 Error: ' + data.data, 'error');
-                    }
-                })
-                .catch(e => { 
+                    })
+                    .catch(e => { 
                     wpcAdmin.reset(btn);
                     showStatus('wpc-integrity-status', '\u2717 Operation failed', 'error'); 
                 });
-        });
+            });
+        }
         
         // ========== RESET SETTINGS ==========
         
@@ -3579,5 +3867,724 @@ function wpc_render_links_tab() {
 
         <?php submit_button(); ?>
     </form>
+    <?php
+}
+
+/**
+ * AI Settings Tab
+ */
+function wpc_render_ai_tab() {
+    // Get current settings
+    $active_provider = get_option( 'wpc_ai_active_provider', 'none' );
+    
+    // Get usage stats
+    $usage = [];
+    if ( class_exists( 'WPC_AI_Handler' ) ) {
+        $usage = WPC_AI_Handler::get_usage_stats();
+    }
+    
+    // Mask API key for display
+    $mask_key = function( $key ) {
+        if ( empty( $key ) || strlen( $key ) < 10 ) return '';
+        return substr( $key, 0, 4 ) . str_repeat( '•', 20 ) . substr( $key, -4 );
+    };
+    ?>
+    <style>
+        .wpc-ai-card { background: #fff; border: 1px solid #c3c4c7; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .wpc-ai-card h3 { margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .wpc-ai-card h3 .dashicons { font-size: 24px; width: 24px; height: 24px; }
+        .wpc-ai-provider-section { margin-bottom: 30px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+        .wpc-ai-provider-section.active { border-color: #6366f1; background: #f5f3ff; }
+        .wpc-ai-provider-section h4 { margin: 0 0 15px 0; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .wpc-ai-provider-section h4 img { width: 24px; height: 24px; }
+        .wpc-ai-field { margin-bottom: 15px; }
+        .wpc-ai-field label { display: block; font-weight: 500; margin-bottom: 5px; color: #374151; }
+        .wpc-ai-field input[type="text"], .wpc-ai-field input[type="password"], .wpc-ai-field select { width: 100%; max-width: 400px; }
+        .wpc-ai-key-wrapper { display: flex; gap: 10px; align-items: center; }
+        .wpc-ai-key-wrapper input { flex: 1; max-width: 350px; font-family: monospace; }
+        .wpc-ai-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .wpc-ai-status.connected { background: #d1fae5; color: #065f46; }
+        .wpc-ai-status.pending { background: #fef3c7; color: #92400e; }
+        .wpc-ai-status.error { background: #fee2e2; color: #991b1b; }
+        .wpc-ai-usage { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+        .wpc-ai-usage-stat { text-align: center; padding: 15px; background: #f1f5f9; border-radius: 8px; }
+        .wpc-ai-usage-stat .number { font-size: 28px; font-weight: 700; color: #6366f1; }
+        .wpc-ai-usage-stat .label { font-size: 12px; color: #64748b; margin-top: 5px; }
+        .wpc-ai-reveal-btn { background: none; border: none; cursor: pointer; color: #6366f1; font-size: 18px; padding: 5px; }
+    </style>
+    
+    <?php wp_nonce_field( 'wpc_ai_nonce', 'wpc_ai_nonce_field' ); ?>
+    
+    <div style="max-width: 900px;">
+        <!-- Header -->
+        <div class="wpc-ai-card" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none;">
+            <h2 style="margin: 0 0 10px 0; color: white;">&#x1F916; AI Integration</h2>
+            <p style="margin: 0; opacity: 0.9;">Generate comparison items, categories, and tags using AI. Configure your preferred provider below.</p>
+        </div>
+        
+        <!-- Saved AI Profiles -->
+        <div class="wpc-ai-card" id="wpc-ai-profiles-card">
+            <h3><span class="dashicons dashicons-id-alt"></span> <?php _e( 'Saved AI Profiles', 'wp-comparison-builder' ); ?></h3>
+            <p class="description"><?php _e( 'Create multiple profiles with different API keys. Select a default profile for AI generation.', 'wp-comparison-builder' ); ?></p>
+            
+            <?php
+            $profiles = [];
+            if ( class_exists( 'WPC_AI_Handler' ) ) {
+                $profiles = WPC_AI_Handler::get_profiles();
+            }
+            ?>
+            
+            <div id="wpc-ai-profiles-list" style="margin-top: 15px;">
+                <?php if ( empty( $profiles ) ) : ?>
+                <div class="wpc-ai-no-profiles" style="padding: 20px; background: #f1f5f9; border-radius: 8px; text-align: center; color: #64748b;">
+                    <span class="dashicons dashicons-info" style="font-size: 32px; width: 32px; height: 32px; margin-bottom: 10px;"></span>
+                    <p style="margin: 0;"><?php _e( 'No profiles saved yet. Configure a provider below and save to create your first profile.', 'wp-comparison-builder' ); ?></p>
+                </div>
+                <?php else : ?>
+                <table class="widefat striped" style="border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;"></th>
+                            <th><?php _e( 'Profile Name', 'wp-comparison-builder' ); ?></th>
+                            <th><?php _e( 'Provider', 'wp-comparison-builder' ); ?></th>
+                            <th><?php _e( 'Model', 'wp-comparison-builder' ); ?></th>
+                            <th><?php _e( 'Status', 'wp-comparison-builder' ); ?></th>
+                            <th style="width: 100px;"><?php _e( 'Actions', 'wp-comparison-builder' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $profiles as $profile ) : 
+                            $is_default = ! empty( $profile['is_default'] );
+                            $has_key = ! empty( $profile['api_key'] );
+                            $provider_labels = [
+                                'openai' => 'OpenAI',
+                                'gemini' => 'Gemini',
+                                'claude' => 'Claude',
+                                'custom' => 'Custom'
+                            ];
+                        ?>
+                        <tr data-profile-id="<?php echo esc_attr( $profile['id'] ); ?>" <?php echo $is_default ? 'style="background: #f5f3ff !important;"' : ''; ?>>
+                            <td style="text-align: center;">
+                                <?php if ( $is_default ) : ?>
+                                <span title="Default Profile" style="color: #6366f1;">&#x2605;</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <strong><?php echo esc_html( $profile['name'] ); ?></strong>
+                                <?php if ( $is_default ) : ?>
+                                <span style="background: #6366f1; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px;">DEFAULT</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo esc_html( $provider_labels[ $profile['provider'] ] ?? $profile['provider'] ); ?></td>
+                            <td><code style="font-size: 11px;"><?php echo esc_html( $profile['model'] ?: '-' ); ?></code></td>
+                            <td>
+                                <?php if ( $has_key ) : ?>
+                                <span class="wpc-ai-status connected">&#x2713; <?php _e( 'Ready', 'wp-comparison-builder' ); ?></span>
+                                <?php else : ?>
+                                <span class="wpc-ai-status error">&#x2717; <?php _e( 'No Key', 'wp-comparison-builder' ); ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ( ! $is_default ) : ?>
+                                <button type="button" class="button button-small wpc-ai-set-default" data-profile="<?php echo esc_attr( $profile['id'] ); ?>" title="Set as Default">&#x2605;</button>
+                                <?php endif; ?>
+                                <button type="button" class="button button-small wpc-ai-edit-profile" data-profile="<?php echo esc_attr( $profile['id'] ); ?>" title="Edit" style="color: #2563eb;">&#x270E;</button>
+                                <button type="button" class="button button-small wpc-ai-delete-profile" data-profile="<?php echo esc_attr( $profile['id'] ); ?>" title="Delete" style="color: #dc2626;">&#x1F5D1;</button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Quick Add Profile -->
+        <div class="wpc-ai-card" style="background: #f5f3ff; border-color: #8b5cf6;">
+            <h3><span class="dashicons dashicons-plus-alt"></span> <?php _e( 'Quick Add Profile', 'wp-comparison-builder' ); ?></h3>
+            <p class="description"><?php _e( 'Create a new AI profile with name, provider, API key, and model selection.', 'wp-comparison-builder' ); ?></p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 600px;">
+                <div class="wpc-ai-field" style="margin-bottom: 0;">
+                    <label><?php _e( 'Profile Name', 'wp-comparison-builder' ); ?> <span style="color: red;">*</span></label>
+                    <input type="text" id="wpc_quick_profile_name" placeholder="e.g. OpenAI Personal" style="width: 100%;" />
+                </div>
+                <div class="wpc-ai-field" style="margin-bottom: 0;">
+                    <label><?php _e( 'Provider', 'wp-comparison-builder' ); ?> <span style="color: red;">*</span></label>
+                    <select id="wpc_quick_provider" style="width: 100%;">
+                        <option value="">-- <?php _e( 'Select Provider', 'wp-comparison-builder' ); ?> --</option>
+                        <option value="openai">OpenAI (ChatGPT)</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="claude">Anthropic Claude</option>
+                        <option value="custom"><?php _e( 'Custom Provider', 'wp-comparison-builder' ); ?></option>
+                    </select>
+                </div>
+            </div>
+            <div class="wpc-ai-field" style="margin-top: 15px;">
+                <label><?php _e( 'API Key', 'wp-comparison-builder' ); ?> <span style="color: red;">*</span></label>
+                <div style="display: flex; gap: 10px; align-items: center; max-width: 600px;">
+                    <input type="password" id="wpc_quick_api_key" placeholder="sk-... / AIza... / sk-ant-..." style="flex: 1; font-family: monospace;" />
+                    <button type="button" id="wpc-quick-fetch-models" class="button" title="Fetch available models">
+                        &#x1F504; <?php _e( 'Fetch Models', 'wp-comparison-builder' ); ?>
+                    </button>
+                </div>
+            </div>
+            <div class="wpc-ai-field" id="wpc-quick-model-wrap" style="display: none; margin-top: 15px;">
+                <label><?php _e( 'Model', 'wp-comparison-builder' ); ?></label>
+                <select id="wpc_quick_model" style="max-width: 400px; width: 100%;">
+                    <option value=""><?php _e( '-- Fetch models first --', 'wp-comparison-builder' ); ?></option>
+                </select>
+                <p class="description" style="margin-top: 5px;"><?php _e( 'Leave empty to auto-select the best available model.', 'wp-comparison-builder' ); ?></p>
+            </div>
+            <input type="hidden" id="wpc_editing_profile_id" value="" />
+            <div class="wpc-ai-field">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="wpc_quick_set_default" />
+                    <?php _e( 'Set as default profile', 'wp-comparison-builder' ); ?>
+                </label>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="wpc-quick-add-profile" class="button button-primary" style="background: #6d28d9; border-color: #6d28d9;">
+                    &#x2795; <span id="wpc-profile-btn-text"><?php _e( 'Create Profile', 'wp-comparison-builder' ); ?></span>
+                </button>
+                <button type="button" id="wpc-cancel-edit-profile" class="button" style="display: none;">
+                    <?php _e( 'Cancel Edit', 'wp-comparison-builder' ); ?>
+                </button>
+                <span id="wpc-quick-add-status" style="margin-left: 10px;"></span>
+            </div>
+        </div>
+        <!-- Provider Configuration (Advanced) -->
+        <details style="margin-bottom: 20px;">
+            <summary style="cursor: pointer; padding: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-weight: 600; color: #374151;">
+                <span class="dashicons dashicons-admin-generic" style="vertical-align: middle;"></span>
+                <?php _e( 'Advanced: Configure Models &amp; Custom Providers', 'wp-comparison-builder' ); ?>
+            </summary>
+            <div style="padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
+        
+        <!-- OpenAI Settings -->
+        <div class="wpc-ai-provider-section <?php echo $active_provider === 'openai' ? 'active' : ''; ?>" id="wpc-ai-openai-section">
+            <h4>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z" fill="#10a37f"/></svg>
+                OpenAI (ChatGPT)
+            </h4>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'API Key', 'wp-comparison-builder' ); ?></label>
+                <div class="wpc-ai-key-wrapper">
+                    <input type="password" id="wpc_ai_openai_key" value="<?php echo esc_attr( WPC_AI_Handler::get_api_key('openai') ); ?>" placeholder="sk-..." />
+                    <button type="button" class="wpc-ai-reveal-btn" onclick="wpcToggleKey('openai')">&#x1F441;</button>
+                    <button type="button" class="button" onclick="wpcFetchModels('openai')"><?php _e( 'Fetch Models', 'wp-comparison-builder' ); ?></button>
+                </div>
+                <p class="description"><?php _e( 'Get your API key from', 'wp-comparison-builder' ); ?> <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></p>
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Model', 'wp-comparison-builder' ); ?></label>
+                <select id="wpc_ai_openai_model">
+                    <option value=""><?php _e( '-- Fetch models first --', 'wp-comparison-builder' ); ?></option>
+                </select>
+                <span id="wpc-ai-openai-status" class="wpc-ai-status pending"><?php _e( 'Not configured', 'wp-comparison-builder' ); ?></span>
+            </div>
+            <button type="button" class="button button-primary" onclick="wpcSaveProvider('openai')"><?php _e( 'Save OpenAI Settings', 'wp-comparison-builder' ); ?></button>
+        </div>
+        
+        <!-- Gemini Settings -->
+        <div class="wpc-ai-provider-section <?php echo $active_provider === 'gemini' ? 'active' : ''; ?>" id="wpc-ai-gemini-section">
+            <h4>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0L14.59 4.41L19.02 2.98L17.59 7.41L22 10L17.59 12.59L19.02 17.02L14.59 15.59L12 20L9.41 15.59L4.98 17.02L6.41 12.59L2 10L6.41 7.41L4.98 2.98L9.41 4.41L12 0Z" fill="#4285F4"/></svg>
+                Google Gemini
+            </h4>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'API Key', 'wp-comparison-builder' ); ?></label>
+                <div class="wpc-ai-key-wrapper">
+                    <input type="password" id="wpc_ai_gemini_key" value="<?php echo esc_attr( WPC_AI_Handler::get_api_key('gemini') ); ?>" placeholder="AIza..." />
+                    <button type="button" class="wpc-ai-reveal-btn" onclick="wpcToggleKey('gemini')">&#x1F441;</button>
+                    <button type="button" class="button" onclick="wpcFetchModels('gemini')"><?php _e( 'Fetch Models', 'wp-comparison-builder' ); ?></button>
+                </div>
+                <p class="description"><?php _e( 'Get your API key from', 'wp-comparison-builder' ); ?> <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></p>
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Model', 'wp-comparison-builder' ); ?></label>
+                <select id="wpc_ai_gemini_model">
+                    <option value=""><?php _e( '-- Fetch models first --', 'wp-comparison-builder' ); ?></option>
+                </select>
+                <span id="wpc-ai-gemini-status" class="wpc-ai-status pending"><?php _e( 'Not configured', 'wp-comparison-builder' ); ?></span>
+            </div>
+            <button type="button" class="button button-primary" onclick="wpcSaveProvider('gemini')"><?php _e( 'Save Gemini Settings', 'wp-comparison-builder' ); ?></button>
+        </div>
+        
+        <!-- Claude Settings -->
+        <div class="wpc-ai-provider-section <?php echo $active_provider === 'claude' ? 'active' : ''; ?>" id="wpc-ai-claude-section">
+            <h4>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#cc785c"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="10" font-weight="bold">C</text></svg>
+                Anthropic Claude
+            </h4>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'API Key', 'wp-comparison-builder' ); ?></label>
+                <div class="wpc-ai-key-wrapper">
+                    <input type="password" id="wpc_ai_claude_key" value="<?php echo esc_attr( WPC_AI_Handler::get_api_key('claude') ); ?>" placeholder="sk-ant-..." />
+                    <button type="button" class="wpc-ai-reveal-btn" onclick="wpcToggleKey('claude')">&#x1F441;</button>
+                    <button type="button" class="button" onclick="wpcFetchModels('claude')"><?php _e( 'Load Models', 'wp-comparison-builder' ); ?></button>
+                </div>
+                <p class="description"><?php _e( 'Get your API key from', 'wp-comparison-builder' ); ?> <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic Console</a></p>
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Model', 'wp-comparison-builder' ); ?></label>
+                <select id="wpc_ai_claude_model">
+                    <option value=""><?php _e( '-- Load models first --', 'wp-comparison-builder' ); ?></option>
+                </select>
+                <span id="wpc-ai-claude-status" class="wpc-ai-status pending"><?php _e( 'Not configured', 'wp-comparison-builder' ); ?></span>
+            </div>
+            <button type="button" class="button button-primary" onclick="wpcSaveProvider('claude')"><?php _e( 'Save Claude Settings', 'wp-comparison-builder' ); ?></button>
+        </div>
+        
+        <!-- Custom Provider -->
+        <div class="wpc-ai-provider-section <?php echo $active_provider === 'custom' ? 'active' : ''; ?>" id="wpc-ai-custom-section">
+            <h4>
+                <span class="dashicons dashicons-admin-plugins" style="font-size: 24px; width: 24px; height: 24px; color: #6366f1;"></span>
+                <?php _e( 'Custom Provider', 'wp-comparison-builder' ); ?>
+            </h4>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Provider Name', 'wp-comparison-builder' ); ?></label>
+                <input type="text" id="wpc_ai_custom_name" value="<?php echo esc_attr( get_option( 'wpc_ai_custom_name', '' ) ); ?>" placeholder="My AI Provider" />
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'API Endpoint', 'wp-comparison-builder' ); ?></label>
+                <input type="text" id="wpc_ai_custom_endpoint" value="<?php echo esc_attr( get_option( 'wpc_ai_custom_endpoint', '' ) ); ?>" placeholder="https://api.example.com/v1/chat/completions" style="max-width: 500px;" />
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Models Endpoint (Optional)', 'wp-comparison-builder' ); ?></label>
+                <input type="text" id="wpc_ai_custom_models_endpoint" value="<?php echo esc_attr( get_option( 'wpc_ai_custom_models_endpoint', '' ) ); ?>" placeholder="https://api.example.com/v1/models" style="max-width: 500px;" />
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'API Key', 'wp-comparison-builder' ); ?></label>
+                <div class="wpc-ai-key-wrapper">
+                    <input type="password" id="wpc_ai_custom_key" value="<?php echo esc_attr( WPC_AI_Handler::get_api_key('custom') ); ?>" placeholder="Your API key" />
+                    <button type="button" class="wpc-ai-reveal-btn" onclick="wpcToggleKey('custom')">&#x1F441;</button>
+                </div>
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Request Format', 'wp-comparison-builder' ); ?></label>
+                <select id="wpc_ai_custom_format">
+                    <option value="openai" <?php selected( get_option( 'wpc_ai_custom_format' ), 'openai' ); ?>><?php _e( 'OpenAI-Compatible', 'wp-comparison-builder' ); ?></option>
+                </select>
+            </div>
+            <div class="wpc-ai-field">
+                <label><?php _e( 'Model Name', 'wp-comparison-builder' ); ?></label>
+                <input type="text" id="wpc_ai_custom_model" value="<?php echo esc_attr( get_option( 'wpc_ai_custom_model', '' ) ); ?>" placeholder="model-name" />
+            </div>
+            <button type="button" class="button button-primary" onclick="wpcSaveProvider('custom')"><?php _e( 'Save Custom Settings', 'wp-comparison-builder' ); ?></button>
+        </div>
+        
+            </div><!-- .advanced-content -->
+        </details><!-- .advanced-accordion -->
+        
+        <!-- Usage Statistics -->
+        <div class="wpc-ai-card">
+            <h3><span class="dashicons dashicons-chart-bar"></span> <?php _e( 'Usage Statistics', 'wp-comparison-builder' ); ?></h3>
+            <div class="wpc-ai-usage">
+                <div class="wpc-ai-usage-stat">
+                    <div class="number"><?php echo intval( $usage['today'] ?? 0 ); ?></div>
+                    <div class="label"><?php _e( 'Today', 'wp-comparison-builder' ); ?></div>
+                </div>
+                <div class="wpc-ai-usage-stat">
+                    <div class="number"><?php echo intval( $usage['this_month'] ?? 0 ); ?></div>
+                    <div class="label"><?php _e( 'This Month', 'wp-comparison-builder' ); ?></div>
+                </div>
+                <div class="wpc-ai-usage-stat">
+                    <div class="number"><?php echo intval( $usage['total'] ?? 0 ); ?></div>
+                    <div class="label"><?php _e( 'All Time', 'wp-comparison-builder' ); ?></div>
+                </div>
+            </div>
+            <?php if ( ! empty( $usage['last_used'] ) ) : ?>
+            <p class="description" style="margin-top: 15px;"><?php printf( __( 'Last used: %s', 'wp-comparison-builder' ), $usage['last_used'] ); ?></p>
+            <?php endif; ?>
+        </div>
+    </div>
+    
+    <script>
+    (function() {
+        var nonce = document.getElementById('wpc_ai_nonce_field').value;
+        
+        // Quick Add Profile - Fetch Models
+        var quickFetchBtn = document.getElementById('wpc-quick-fetch-models');
+        if (quickFetchBtn) {
+            quickFetchBtn.addEventListener('click', function() {
+                var provider = document.getElementById('wpc_quick_provider').value;
+                var apiKey = document.getElementById('wpc_quick_api_key').value.trim();
+                var modelWrap = document.getElementById('wpc-quick-model-wrap');
+                var modelSelect = document.getElementById('wpc_quick_model');
+                
+                if (!provider) {
+                    wpcAdmin.toast('Please select a provider first', 'error');
+                    return;
+                }
+                if (!apiKey) {
+                    wpcAdmin.toast('Please enter an API key first', 'error');
+                    return;
+                }
+                
+                quickFetchBtn.disabled = true;
+                quickFetchBtn.innerHTML = '&#x23F3; Fetching...';
+                
+                jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_fetch_models',
+                    nonce: nonce,
+                    provider: provider,
+                    api_key: apiKey
+                }, function(response) {
+                    quickFetchBtn.disabled = false;
+                    quickFetchBtn.innerHTML = '&#x1F504; Fetch Models';
+                    
+                    if (response.success && response.data) {
+                        modelSelect.innerHTML = '<option value="">-- Auto-select best model --</option>';
+                        response.data.forEach(function(m) {
+                            var opt = document.createElement('option');
+                            var modelId = (typeof m === 'string') ? m : (m.id || m);
+                            var modelName = (typeof m === 'string') ? m : (m.name || m.id || m);
+                            opt.value = modelId;
+                            opt.textContent = modelName;
+                            modelSelect.appendChild(opt);
+                        });
+                        modelWrap.style.display = 'block';
+                        wpcAdmin.toast('Found ' + response.data.length + ' models!');
+                    } else {
+                        wpcAdmin.toast(response.data || 'Failed to fetch models', 'error');
+                    }
+                }).fail(function() {
+                    quickFetchBtn.disabled = false;
+                    quickFetchBtn.innerHTML = '&#x1F504; Fetch Models';
+                    wpcAdmin.toast('Request failed', 'error');
+                });
+            });
+        }
+        
+        // Quick Add/Edit Profile - Create or Update
+        var quickAddBtn = document.getElementById('wpc-quick-add-profile');
+        if (quickAddBtn) {
+            quickAddBtn.addEventListener('click', function() {
+                var name = document.getElementById('wpc_quick_profile_name').value.trim();
+                var provider = document.getElementById('wpc_quick_provider').value;
+                var apiKey = document.getElementById('wpc_quick_api_key').value.trim();
+                var model = document.getElementById('wpc_quick_model').value;
+                var isDefault = document.getElementById('wpc_quick_set_default').checked;
+                var editingId = document.getElementById('wpc_editing_profile_id').value;
+                var isEditing = editingId !== '';
+                var statusEl = document.getElementById('wpc-quick-add-status');
+                
+                if (!name) {
+                    wpcAdmin.toast('Please enter a profile name', 'error');
+                    return;
+                }
+                if (!provider) {
+                    wpcAdmin.toast('Please select a provider', 'error');
+                    return;
+                }
+                if (!apiKey) {
+                    wpcAdmin.toast('Please enter an API key', 'error');
+                    return;
+                }
+                
+                quickAddBtn.disabled = true;
+                document.getElementById('wpc-profile-btn-text').textContent = isEditing ? 'Updating...' : 'Creating...';
+                
+                var data = {
+                    action: 'wpc_ai_save_settings',
+                    nonce: nonce,
+                    profile_name: name,
+                    provider: provider,
+                    api_key: apiKey,
+                    model: model,
+                    is_default: isDefault
+                };
+                
+                if (isEditing) {
+                    data.profile_id = editingId;
+                }
+                
+                jQuery.post(ajaxurl, data, function(response) {
+                    quickAddBtn.disabled = false;
+                    document.getElementById('wpc-profile-btn-text').textContent = isEditing ? 'Update Profile' : 'Create Profile';
+                    
+                    if (response.success) {
+                        var msg = isEditing ? 'Profile updated!' : 'Profile created!';
+                        if (response.data.model_selected) {
+                            msg += ' Model: ' + response.data.model_selected;
+                        }
+                        wpcAdmin.toast(msg);
+                        setTimeout(function() { location.reload(); }, 1500);
+                    } else {
+                        wpcAdmin.toast(response.data || (isEditing ? 'Error updating profile' : 'Error creating profile'), 'error');
+                    }
+                }).fail(function() {
+                    quickAddBtn.disabled = false;
+                    document.getElementById('wpc-profile-btn-text').textContent = isEditing ? 'Update Profile' : 'Create Profile';
+                    wpcAdmin.toast('Request failed', 'error');
+                });
+            });
+        }
+        
+        // Cancel Edit
+        var cancelEditBtn = document.getElementById('wpc-cancel-edit-profile');
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', function() {
+                wpcResetProfileForm();
+            });
+        }
+        
+        // Reset Profile Form
+        function wpcResetProfileForm() {
+            document.getElementById('wpc_quick_profile_name').value = '';
+            document.getElementById('wpc_quick_provider').value = '';
+            document.getElementById('wpc_quick_api_key').value = '';
+            document.getElementById('wpc_quick_model').value = '';
+            document.getElementById('wpc_quick_set_default').checked = false;
+            document.getElementById('wpc_editing_profile_id').value = '';
+            document.getElementById('wpc-quick-model-wrap').style.display = 'none';
+            document.getElementById('wpc-profile-btn-text').textContent = 'Create Profile';
+            document.getElementById('wpc-cancel-edit-profile').style.display = 'none';
+        }
+        
+        // Edit Profile Handler
+        document.querySelectorAll('.wpc-ai-edit-profile').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var profileId = this.getAttribute('data-profile');
+                
+                console.log('Edit profile clicked, ID:', profileId);
+                
+                // Fetch profile data
+                jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_get_profile',
+                    nonce: nonce,
+                    profile_id: profileId
+                }, function(response) {
+                    console.log('Profile response:', response);
+                    
+                    if (response.success && response.data) {
+                        var profile = response.data;
+                        
+                        // Populate form
+                        document.getElementById('wpc_quick_profile_name').value = profile.name || '';
+                        document.getElementById('wpc_quick_provider').value = profile.provider || '';
+                        document.getElementById('wpc_quick_api_key').value = profile.api_key || '';
+                        document.getElementById('wpc_quick_model').value = profile.model || '';
+                        document.getElementById('wpc_quick_set_default').checked = profile.is_default || false;
+                        document.getElementById('wpc_editing_profile_id').value = profileId;
+                        
+                        // Show model dropdown if model exists
+                        if (profile.model) {
+                            var modelWrap = document.getElementById('wpc-quick-model-wrap');
+                            var modelSelect = document.getElementById('wpc_quick_model');
+                            modelSelect.innerHTML = '<option value="' + profile.model + '">' + profile.model + '</option>';
+                            modelWrap.style.display = 'block';
+                        }
+                        
+                        // Change button text
+                        document.getElementById('wpc-profile-btn-text').textContent = 'Update Profile';
+                        document.getElementById('wpc-cancel-edit-profile').style.display = 'inline-block';
+                        
+                        // Scroll to form
+                        var quickAddCard = document.querySelector('.wpc-ai-card[style*="background: #f5f3ff"]');
+                        if (quickAddCard) {
+                            quickAddCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        
+                        wpcAdmin.toast('Editing profile: ' + profile.name, 'success-no-icon');
+                    } else {
+                        console.error('Profile load failed:', response);
+                        wpcAdmin.toast(response.data || 'Failed to load profile', 'error');
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error('AJAX failed:', textStatus, errorThrown);
+                    wpcAdmin.toast('Failed to load profile: ' + textStatus, 'error');
+                });
+            });
+        });
+        
+        // Toggle API key visibility
+        window.wpcToggleKey = function(provider) {
+            var input = document.getElementById('wpc_ai_' + provider + '_key');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        };
+        
+        // Fetch models from provider
+        window.wpcFetchModels = function(provider) {
+            var keyInput = document.getElementById('wpc_ai_' + provider + '_key');
+            var modelSelect = document.getElementById('wpc_ai_' + provider + '_model');
+            var statusEl = document.getElementById('wpc-ai-' + provider + '-status');
+            
+            if (!keyInput.value.trim()) {
+                wpcAdmin.toast('Please enter an API key first', 'error');
+                return;
+            }
+            
+            statusEl.className = 'wpc-ai-status pending';
+            statusEl.innerHTML = '<span class="wpc-spinner-icon"></span> Fetching...';
+            
+            jQuery.post(ajaxurl, {
+                action: 'wpc_ai_fetch_models',
+                nonce: nonce,
+                provider: provider,
+                api_key: keyInput.value.trim()
+            }, function(response) {
+                if (response.success) {
+                    var models = response.data;
+                    modelSelect.innerHTML = '';
+                    models.forEach(function(m) {
+                        var opt = document.createElement('option');
+                        // Models can be strings or objects
+                        var modelId = (typeof m === 'string') ? m : (m.id || m);
+                        var modelName = (typeof m === 'string') ? m : (m.name || m.id || m);
+                        opt.value = modelId;
+                        opt.textContent = modelName;
+                        modelSelect.appendChild(opt);
+                    });
+                    statusEl.className = 'wpc-ai-status connected';
+                    statusEl.textContent = models.length + ' models found';
+                    wpcAdmin.toast('Models loaded successfully!');
+                } else {
+                    statusEl.className = 'wpc-ai-status error';
+                    statusEl.textContent = 'Error: ' + response.data;
+                    wpcAdmin.toast(response.data, 'error');
+                }
+            }).fail(function() {
+                statusEl.className = 'wpc-ai-status error';
+                statusEl.textContent = 'Connection failed';
+                wpcAdmin.toast('Failed to connect', 'error');
+            });
+        };
+        
+        // Save provider settings (creates/updates a profile)
+        window.wpcSaveProvider = function(provider) {
+            var apiKeyInput = document.getElementById('wpc_ai_' + provider + '_key');
+            if (!apiKeyInput || !apiKeyInput.value.trim()) {
+                wpcAdmin.toast('Please enter an API key first', 'error');
+                return;
+            }
+            
+            // Generate profile name based on provider
+            var profileName = provider.charAt(0).toUpperCase() + provider.slice(1) + ' Profile';
+            
+            // Check if any profiles exist to determine if this should be default
+            var profilesList = document.getElementById('wpc-ai-profiles-list');
+            var hasProfiles = profilesList && profilesList.querySelector('table');
+            
+            var data = {
+                action: 'wpc_ai_save_settings',
+                nonce: nonce,
+                provider: provider,
+                profile_name: profileName,
+                api_key: apiKeyInput.value.trim(),
+                is_default: !hasProfiles // Set as default if no profiles exist
+            };
+            
+            var modelSelect = document.getElementById('wpc_ai_' + provider + '_model');
+            if (modelSelect && modelSelect.value) {
+                data.model = modelSelect.value;
+            }
+            
+            // Custom provider extra fields
+            if (provider === 'custom') {
+                data.name = document.getElementById('wpc_ai_custom_name').value;
+                data.endpoint = document.getElementById('wpc_ai_custom_endpoint').value;
+                data.models_endpoint = document.getElementById('wpc_ai_custom_models_endpoint').value;
+                data.format = document.getElementById('wpc_ai_custom_format').value;
+                data.model = document.getElementById('wpc_ai_custom_model').value;
+            }
+            
+            jQuery.post(ajaxurl, data, function(response) {
+                if (response.success) {
+                    wpcAdmin.toast('Profile saved! Refreshing...');
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    wpcAdmin.toast(response.data, 'error');
+                }
+            }).fail(function() {
+                wpcAdmin.toast('Request failed', 'error');
+            });
+        };
+        
+        // Profile Actions: Set Default
+        document.querySelectorAll('.wpc-ai-set-default').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var profileId = this.getAttribute('data-profile');
+                jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_set_default_profile',
+                    nonce: nonce,
+                    profile_id: profileId
+                }, function(response) {
+                    if (response.success) {
+                        wpcAdmin.toast('Default profile updated!');
+                        location.reload();
+                    } else {
+                        wpcAdmin.toast(response.data, 'error');
+                    }
+                });
+            });
+        });
+        
+        // Profile Actions: Delete
+        document.querySelectorAll('.wpc-ai-delete-profile').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var profileId = this.getAttribute('data-profile');
+                
+                wpcAdmin.confirm(
+                    'Delete Profile',
+                    'Are you sure you want to delete this profile? This action cannot be undone.',
+                    function() {
+                        btn.disabled = true;
+                        btn.innerHTML = '...';
+                        
+                        jQuery.post(ajaxurl, {
+                            action: 'wpc_ai_delete_profile',
+                            nonce: nonce,
+                            profile_id: profileId
+                        }, function(response) {
+                            if (response.success) {
+                                wpcAdmin.toast('Profile deleted!');
+                                location.reload();
+                            } else {
+                                btn.disabled = false;
+                                btn.innerHTML = '&#x1F5D1;';
+                                wpcAdmin.toast(response.data || 'Failed to delete', 'error');
+                            }
+                        }).fail(function(xhr, status, error) {
+                            btn.disabled = false;
+                            btn.innerHTML = '&#x1F5D1;';
+                            wpcAdmin.toast('Request failed: ' + error, 'error');
+                        });
+                    },
+                    'Delete',
+                    '#dc2626'
+                );
+            });
+        });
+        
+        // Save active provider (legacy - may not exist in new UI)
+        var saveActiveBtn = document.getElementById('wpc-ai-save-active');
+        if (saveActiveBtn) {
+            saveActiveBtn.addEventListener('click', function() {
+                var provider = document.getElementById('wpc_ai_active_provider').value;
+                
+                jQuery.post(ajaxurl, {
+                    action: 'wpc_ai_save_settings',
+                    nonce: nonce,
+                    active_provider: provider
+                }, function(response) {
+                    if (response.success) {
+                        wpcAdmin.toast('Active provider saved!');
+                        document.querySelectorAll('.wpc-ai-provider-section').forEach(function(el) {
+                            el.classList.remove('active');
+                        });
+                        if (provider !== 'none') {
+                            var section = document.getElementById('wpc-ai-' + provider + '-section');
+                            if (section) section.classList.add('active');
+                        }
+                    } else {
+                        wpcAdmin.toast(response.data, 'error');
+                    }
+                });
+            });
+        }
+    })();
+    </script>
     <?php
 }

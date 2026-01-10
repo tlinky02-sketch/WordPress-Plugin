@@ -56,6 +56,8 @@ export interface ComparisonItem {
     featured_badge_color?: string;
     direct_link?: string;
     content?: string;
+    hero_subtitle?: string; // New field for Hero
+    analysis_label?: string; // New field for Hero
     product_details?: {
         category?: string;
         brand?: string;

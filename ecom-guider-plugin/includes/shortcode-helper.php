@@ -34,6 +34,16 @@ add_action( 'add_meta_boxes', 'wpc_add_shortcode_metabox' );
  */
 function wpc_render_shortcode_metabox( $post ) {
     ?>
+    <script>
+    function wpcCopyToast(type) {
+        var msg = (type === 'URL') ? 'URL copied!' : 'Shortcode copied!';
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:30px;right:30px;background:#10b981;color:white;padding:12px 20px;border-radius:8px;font-weight:500;z-index:100000;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+        toast.textContent = '✓ ' + msg;
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 2000);
+    }
+    </script>
     <div style="background: #f0f6ff; border: 2px solid #0d9488; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
         <p style="margin: 0 0 10px; font-weight: 600; color: #333;">Hero Section Shortcode:</p>
         <div style="position: relative;">
@@ -43,7 +53,7 @@ function wpc_render_shortcode_metabox( $post ) {
                 readonly 
                 id="hero-shortcode-<?php echo $post->ID; ?>"
                 style="width: 100%; padding: 8px; font-family: monospace; font-size: 12px; background: white; border: 1px solid #ddd; border-radius: 4px;"
-                onclick="this.select(); document.execCommand('copy'); alert('Shortcode copied!');"
+                onclick="this.select(); document.execCommand('copy'); wpcCopyToast();"
             />
         </div>
         <p style="margin: 10px 0 0; font-size: 11px; color: #666;">
@@ -59,7 +69,7 @@ function wpc_render_shortcode_metabox( $post ) {
                 value='<?php echo get_permalink( $post->ID ); ?>' 
                 readonly 
                 style="width: 100%; padding: 8px; font-family: monospace; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;"
-                onclick="this.select(); document.execCommand('copy'); alert('URL copied!');"
+                onclick="this.select(); document.execCommand('copy'); wpcCopyToast('URL');"
             />
         </div>
         <p style="margin: 10px 0 0; font-size: 11px; color: #666;">
@@ -95,7 +105,7 @@ function wpc_render_review_shortcodes( $post ) {
             readonly 
             placeholder="[shortcode will appear here]"
             style="width: 100%; padding: 8px; font-family: monospace; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;"
-            onclick="this.select(); document.execCommand('copy'); alert('Shortcode copied!');"
+            onclick="this.select(); document.execCommand('copy'); wpcCopyToast();"
         />
         <p style="font-size: 11px; color: #666; margin: 0;">Select an item above to generate hero shortcode</p>
     </div>
@@ -109,7 +119,7 @@ function wpc_render_review_shortcodes( $post ) {
             value='[wpc_compare]' 
             readonly 
             style="width: 100%; padding: 8px; font-family: monospace; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;"
-            onclick="this.select(); document.execCommand('copy'); alert('Shortcode copied!');"
+            onclick="this.select(); document.execCommand('copy'); wpcCopyToast();"
         />
         <p style="font-size: 11px; color: #666; margin: 5px 0 0;">Shows all items with filters</p>
     </div>
@@ -122,7 +132,7 @@ function wpc_render_review_shortcodes( $post ) {
             readonly 
             placeholder="Select an item first"
             style="width: 100%; padding: 8px; font-family: monospace; font-size: 11px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;"
-            onclick="this.select(); document.execCommand('copy'); alert('Shortcode copied!');"
+            onclick="this.select(); document.execCommand('copy'); wpcCopyToast();"
         />
         <p style="font-size: 11px; color: #666; margin: 5px 0 0;">Button with dropdown to compare with other items</p>
     </div>
@@ -134,7 +144,7 @@ function wpc_render_review_shortcodes( $post ) {
             value='[wpc_compare ids="1,2,3" featured="1,2"]' 
             readonly 
             style="width: 100%; padding: 8px; font-family: monospace; font-size: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;"
-            onclick="this.select(); document.execCommand('copy'); alert('Shortcode copied!');"
+            onclick="this.select(); document.execCommand('copy'); wpcCopyToast();"
         />
         <p style="font-size: 11px; color: #666; margin: 5px 0 0;">Replace with actual item IDs</p>
     </div>

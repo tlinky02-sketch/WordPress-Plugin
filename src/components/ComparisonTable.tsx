@@ -180,12 +180,14 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
                         >
                           {item.button_text || item.visitSiteLabel || getText('visitSite', "Visit Site")} <ExternalLink className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2 flex-shrink-0" />
                         </a>
-                        <button
-                          onClick={() => onRemove(item.id)}
-                          className="mt-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 w-full"
-                        >
-                          <X className="w-3 h-3" /> {getText('remove', 'Remove')}
-                        </button>
+                        {!config?.hideRemoveButton && (
+                          <button
+                            onClick={() => onRemove(item.id)}
+                            className="mt-2 text-xs text-muted-foreground hover:text-destructive flex items-center justify-center gap-1 w-full"
+                          >
+                            <X className="w-3 h-3" /> {getText('remove', 'Remove')}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </th>
@@ -259,12 +261,14 @@ const ComparisonTable = ({ items, onRemove, labels, config }: ComparisonTablePro
           <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
             {items.map((item) => (
               <div key={item.id} className="p-1.5 text-center border-r border-border last:border-r-0 relative group flex flex-col items-center justify-center min-h-[60px]">
-                <button
-                  onClick={() => onRemove(item.id)}
-                  className="absolute top-0.5 right-0.5 text-muted-foreground/50 hover:text-destructive p-1 bg-white/80 rounded-full z-10"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                {!config?.hideRemoveButton && (
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    className="absolute top-0.5 right-0.5 text-muted-foreground/50 hover:text-destructive p-1 bg-white/80 rounded-full z-10"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
                 <div className="w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 bg-white rounded p-0.5 border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
                   {item.logo ? (
                     <img src={item.logo} alt={item.name} className="w-full h-full object-contain" />

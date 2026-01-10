@@ -191,6 +191,9 @@ function wpc_get_items() {
                 ),
                 'custom_fields' => get_post_meta($id, '_wpc_custom_fields', true) ?: [],
                 'button_text' => get_post_meta( $id, '_wpc_button_text', true ),
+                'hero_subtitle' => get_post_meta( $id, '_wpc_hero_subtitle', true ),
+                'analysis_label' => get_post_meta( $id, '_wpc_analysis_label', true ),
+                'dashboard_image' => get_post_meta( $id, '_wpc_dashboard_image', true ),
                 // Footer / Display Settings (Independent of Design Overrides)
                 'footer_button_text' => get_post_meta( $id, '_wpc_footer_button_text', true ),
                 'show_footer_popup' => get_post_meta( $id, '_wpc_show_footer_popup', true ) !== '0',
